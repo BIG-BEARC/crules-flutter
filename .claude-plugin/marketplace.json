@@ -1,0 +1,12 @@
+{
+  "name": "crules-flutter-market",
+  "owner": { "name": "chuxiong" },
+  "plugins": [
+    {
+      "name": "crules-flutter",
+      "source": "./",
+      "version": "0.0.1",
+      "description": "面向 Flutter 工程的独立协作规则 plugin"
+    }
+  ]
+}

@@ -13,8 +13,8 @@
 claude plugin marketplace add https://github.com/BIG-BEARC/crules-flutter.git --scope user
 claude plugin install crules-flutter@crules-flutter-market --scope user
 
-# ② 新工程：复制 app/CLAUDE.md（App）或 plugin/CLAUDE.md（Plugin/工具库）到项目根，
-#    完成模板内【复制后必填】的技术栈选型
+# ② 在 Flutter 工程根目录跑（装好 plugin 后任何工程可用；命令带命名空间，裸名不可用）
+/crules-flutter:init
 ```
 
 ### 环境要求与更新信任

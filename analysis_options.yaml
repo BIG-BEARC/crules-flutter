@@ -1,6 +1,6 @@
 # crules-flutter 模板 · 静态分析基线（安装时复制到项目根；项目已有自己的则保留项目的）
 # 定位：把可确定性判定的规则从散文变 analyzer 硬拦（外审⑧「规则工具化」首期）
-# 依赖：flutter_lints（模板自带，pubspec 无需显式声明即可 include）
+# 依赖：flutter_lints（须在 pubspec dev_dependencies——缺依赖时 analyzer 会**静默跳过** include，基线不生效；flutter create 脚手架默认已带）
 include: package:flutter_lints/flutter.yaml
 
 analyzer:

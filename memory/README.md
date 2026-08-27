@@ -24,7 +24,7 @@
 
 ## 触发更新
 
-- 全量刷新：在 Claude Code 里发送 `/update-memory`
+- 全量刷新：在 Claude Code 里发送 `/crules-flutter:update-memory`
 - 自动维护：AI 执行新建 / 重命名 / 删除源文件、新增状态单元 / 组件 / 路由 / 接口、做出架构决策等操作时**必须顺手**更新对应索引
 
 ## 维护原则

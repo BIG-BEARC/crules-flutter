@@ -9,9 +9,15 @@ disable-model-invocation: true
 
 ## 执行步骤
 
-### 0. 定位源
+### 0. 定位源（glob 自发现——`${CLAUDE_PLUGIN_ROOT}` 仅 hook 进程内可用，Bash 工具环境为空，不可依赖）
 
-本命令随 plugin 分发，机械安装脚本在 plugin 源：优先本仓库 `scripts/install.sh`（本地开发态）；从 plugin cache 运行时用 `${CLAUDE_PLUGIN_ROOT}/scripts/install.sh`。找不到则提示需求方指定源后停止。
+```bash
+# ① plugin cache 最大版本（命令的主受众——cache 安装用户）
+ls -d ~/.claude/plugins/cache/*/crules-flutter/*/scripts/install.sh | sort -V | tail -1
+# ② 找不到（本地开发态 / 手动部署）→ 提示需求方给 crules-flutter 仓库路径后停止
+```
+
+取到源根后，后续 install / check-imports 均用该绝对路径（跨目录操作一律绝对路径纪律）。
 
 ### 1. 分流（自动）
 

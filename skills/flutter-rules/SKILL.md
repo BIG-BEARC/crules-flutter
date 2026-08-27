@@ -180,8 +180,7 @@ linter:
 ```
 
 ### State Management
-* **Built-in Solutions:** Prefer Flutter's built-in state management solutions.
-  Do not use a third-party package unless explicitly requested.
+* **Built-in Solutions:** 以项目 CLAUDE.md §七 预设为准（项目已选 Riverpod/Bloc/Provider 时本条不适用）；未指定时 prefer Flutter's built-in solutions（`ValueNotifier`/`ChangeNotifier`），third-party 仅在明确要求时引入。
 * **Streams:** Use `Streams` and `StreamBuilder` for handling a sequence of
   asynchronous events.
 * **Futures:** Use `Futures` and `FutureBuilder` for handling a single

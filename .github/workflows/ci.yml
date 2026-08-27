@@ -1,0 +1,30 @@
+# crules-flutter CI —— deny-list fixture + 语法编译 + 脚本自测 + deny-list 同步比对（crules 单一权威看守）
+name: ci
+on:
+  push:
+  pull_request:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+      - name: deny-list 回归（对抗样本库，fork 自 crules）
+        if: always()
+        run: python3 hooks/test_deny_list.py
+      - name: 语法编译
+        if: always()
+        run: python3 -m py_compile hooks/deny-list.py hooks/test_deny_list.py hooks/pending-updates.py
+      - name: 脚本自测（应报错断言 + 幂等断言）
+        if: always()
+        run: bash scripts/test-self.sh
+      - name: deny-list 同步比对（crules 单一权威——不一致即红，须从 crules 同步后再合并）
+        if: always()
+        run: |
+          curl -sfL https://raw.githubusercontent.com/BIG-BEARC/crules/main/hooks/deny-list.py -o /tmp/up.py
+          curl -sfL https://raw.githubusercontent.com/BIG-BEARC/crules/main/hooks/test_deny_list.py -o /tmp/upt.py
+          diff <(tail -n +2 hooks/deny-list.py) /tmp/up.py || { echo "deny-list 与 crules 主分支不一致——SYNCED-FROM 义务：先同步再合并"; exit 1; }
+          diff <(tail -n +2 hooks/test_deny_list.py) /tmp/upt.py || { echo "test_deny_list 与 crules 主分支不一致"; exit 1; }
+          echo "deny-list 与 crules 主分支一致（SYNCED-FROM: $(sed -n 2p hooks/deny-list.py | grep -o 'crules@[a-f0-9]*')）"

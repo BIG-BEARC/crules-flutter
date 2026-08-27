@@ -218,11 +218,19 @@
 
 ### 8.1 全栈通用（任何预设生效）
 
-> 【批 3 上移占位】——主子工程 assets package 加载 / 文件头注释格式 / Import 排序等，自消费工程实战规范上移（逐条做适用面判定后填入）。
+- **多 package 工程 assets 加载**：子工程被主工程引用时，加载子工程自己的 assets 用项目统一的加载入口（内部默认带 `package` 参数），**不要**用裸 `load()`——跨 package 资源不加 package 名必空；新增 assets 后需**完全重启**应用（热重载不加载新资源）
+- **文件头注释**（如项目要求）：新建 Dart 文件含开发者信息，**注释放在 import 语句之后**（不是文件开头）；格式按项目模板（@Author / @Created at / @Email / @Company / @Description），可配脚本读 Git 配置自动生成
+- **Import 排序**：Dart SDK → Flutter SDK → 外部包（字母序）→ 内部包（绝对路径 `package:<项目>/...`）→ 相对路径
+- 代码风格细则（const 构造 / 命名 / 行宽 / 方法行数）见 **flutter-rules** skill（避免与本文件双份）
 
 ### 8.2 预设 A（Riverpod）特有——**选 A 时生效**
 
-> 【批 3 上移占位】——Notifier 模式 / Provider 组织 / ConsumerWidget 强制等 Riverpod 细则；选 B/C 的项目本小节不适用。
+- **Notifier 模式**：不可变 `State` 类（含 `copyWith`）+ `Notifier<T>`（`build()` 里 `ref.read` 注入依赖，不用过时 `StateNotifier`）
+- **Provider 组织（就近原则）**：模块专用 Provider 放模块自己的 `presentation/` 或 `data/`；全局 DAO / API / 用户态等放全局 providers 目录——禁止把模块专用状态挂到全局
+- **ConsumerWidget vs ConsumerStatefulWidget（强制）**：当私有方法需要 `ref` 时，**必须用 `ConsumerStatefulWidget`，禁止把 `WidgetRef` 作为参数传给私有方法**（`ref` 作类属性自动可用）；仅 `build` 用 `ref` → `ConsumerWidget`；需 `initState` / `dispose` / 访问构造参数 → `ConsumerStatefulWidget`
+- **生命周期**：页面级状态用 `autoDispose`（离开页面释放），全局单例显式不 dispose——策略在 Provider 定义处声明，不在调用处补救
+
+> 本小节源自消费工程实战规范上移（批 3a，适用面判定见 `docs/fork-coverage.md` §三）；选 B/C 的项目本小节**不适用**，等价规范由对应预设沉淀。
 
 ---
 

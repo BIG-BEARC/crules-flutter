@@ -31,9 +31,19 @@
 | §八/§九 验证纪律 / 后台 diff（旧版） | 并入 §四 / 替换为 §六 |
 | §十/§十一 skill 速查 | §十一 保留全量 |
 
-## 三、批 3 追加位（上移适用面判定时填）
+## 三、批 3a 上移适用面判定（源：saas_pos CLAUDE.md，2026-08-27）
 
-- §八 Flutter 专项规范 8.1 全栈通用 / 8.2 预设 A 特有——两占位待 saas_pos 上移，每条记适用面判定于此表。
+| 上移条目 | 判定 | 通用化处理 |
+|---|---|---|
+| 多 package assets 加载（AppImageLoader.assets() 带 package / 新资源冷启动） | **全栈通用** → 8.1 | 机制通用（任何多 package 工程）；去 saas_pos 专有类名，改「项目统一加载入口」 |
+| 文件头注释（import 后 / @Author 块 / 脚本生成） | **全栈通用** → 8.1 | 公司抬头改占位（@Company 按项目模板） |
+| Import 排序五段式 | **全栈通用** → 8.1 | 原样（纯通用） |
+| 代码风格细则（const / 命名 / 行宽 / 方法行数） | **不搬** | 与 flutter-rules skill 重叠（去重原则：细节归 skill，本文件只留结构性规范） |
+| Riverpod：Notifier 模式（不可变 State + copyWith + ref.read 注入） | **预设 A 特有** → 8.2 | 去 saas_pos 语境；补「不用过时 StateNotifier」（预设 A 定义一致） |
+| Riverpod：Provider 组织就近原则（模块专用 vs 全局分层） | **预设 A 特有** → 8.2 | 表格通用化（去具体文件路径，保留分层判据） |
+| Riverpod：ConsumerWidget vs ConsumerStatefulWidget 强制（禁传 ref 参数） | **预设 A 特有** → 8.2 | 原样（机制纯 Riverpod，对照表保留） |
+| Riverpod：autoDispose 生命周期策略 | **预设 A 特有** → 8.2 | 从 checklist「生命周期合理」细化为策略句 |
+| 架构 MVVM+Repository / 分层依赖 P1 / 目录结构 / 网络层 / 间距 / 文本样式 / 数据库 / 核心架构（购物车算价）等 | **不上移**（批 3b 处置） | 属项目架构与业务域知识——批 3b 下沉 saas_pos 记忆库，不入模板 |
 
 ## 四、批 2b 归位核对（✂️ 项处置结果）
 

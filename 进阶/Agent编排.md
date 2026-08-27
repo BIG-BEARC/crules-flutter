@@ -40,7 +40,7 @@
 | `error` | 中 | 运行时错误、崩溃、编译异常排查 |
 | `reviewer` | 高 | 代码 Review、质量检查（只报不改） |
 
-**技术栈专属角色**（按技术栈到对应子目录；Flutter 见 Flutter 规则包（crules 模板包同级 `../flutter/agents/`，未安装则忽略；非该技术栈项目用不到））：
+**Flutter 专属角色**（frontend / backend / i18n / platform——**plugin 自动挂载**，无需复制）：
 
 | Agent | 任务难度 | 主责 |
 |---|---|---|

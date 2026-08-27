@@ -12,6 +12,7 @@ mkdir -p "$D/old"
 printf '# 老项目\n' > "$D/old/CLAUDE.md"
 t 1 "bash $SRC/scripts/install.sh $D/old --app"           "install 老项目（无戳）应中止"
 t 1 "bash $SRC/scripts/release.sh abc"                     "release 非法版本号应报错"
+t 0 "bash $SRC/scripts/release.sh draft"                    "release draft 应正常出稿（外审②回归断言）"
 t 0 "python3 $SRC/hooks/test_deny_list.py"                 "deny-list fixture 应全绿"
 
 # 幂等断言：同输入两次运行结论一致且均 block（双 plugin 共存的可测背书）

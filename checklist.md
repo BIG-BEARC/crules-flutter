@@ -22,7 +22,7 @@
 
 **5. 国际化**：用户可见文本走 i18n；新增 Key 同步多语言文件；必要时执行 i18n 代码生成。
 
-**6. 代码规范**：文件头注释（如项目要求）；无调试日志（用统一日志工具）；无硬编码 URL / 密钥；命名规范；无新引入 lint 警告；import 分组有序。
+**6. 代码规范**：文件头注释（如项目要求）；无调试日志（**`avoid_print` lint 已拦**，抽查即可）；无硬编码 URL / 密钥；命名规范；**无新引入 lint 警告（`flutter analyze` 零 warning 是硬门——模板自带 `analysis_options.yaml` 基线）**；import 分组有序。
 
 **7. 功能完整性**：spec 功能点均已实现（非 stub）；用户可完成完整流程；关键路径无崩溃；新增入口 / 路由已注册。
 
@@ -36,7 +36,7 @@
 
 ### 组件 / 视图（Flutter 专项）
 
-- [ ] 避免不必要 rebuild（`const` 构造、`Selector` / `Consumer` 精确订阅、不在 `build` 里做重活）
+- [ ] 避免不必要 rebuild（`const` 构造——**lint 已拦**（`prefer_const_constructors`），抽查即可；`Selector` / `Consumer` 精确订阅、不在 `build` 里做重活）
 - [ ] 颜色 / 文本样式 / 间距归口主题或常量类，无 inline 字面量
 - [ ] 新增颜色语义化命名，禁止 `color0xXXXXXX` 复读式命名
 - [ ] 暗黑模式 / 主题切换走 `ThemeExtension` 或统一扩展，不硬编码

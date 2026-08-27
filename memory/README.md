@@ -6,7 +6,7 @@
 2. **保留架构决策** —— 关键架构决策的「为什么」
 3. **加速大项目检索** —— 给 AI 一份「地图」，不用每次全库 grep
 
-> git 纳管政策（单一权威见 [MAINTENANCE.md](MAINTENANCE.md)「git 分层」节）：**制度资产进 git、生成物不进**——`patterns.md` / `business-rules.md` / `INVARIANTS.md` / `decisions/` 团队共享，`indexes/` / `.pending-updates` 本机。crules 源仓库中本目录是**模板**，随仓库进 git 供分发。
+> git 纳管政策（单一权威见 [MAINTENANCE.md](MAINTENANCE.md)「git 分层」节）：**制度资产进 git、生成物不进**——`patterns.md` / `business-rules.md` / `INVARIANTS.md` / `decisions/` 团队共享，`indexes/` / `.pending-updates` 本机。crules-flutter 仓库中本目录是**模板**，随仓库进 git 供分发。
 > 完整维护规则见模板包 `进阶/记忆库体系.md`；本目录运行时规则见 [MAINTENANCE.md](MAINTENANCE.md)。
 
 ## 文件结构

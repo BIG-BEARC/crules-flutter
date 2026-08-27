@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # crules-flutter 安装器（fork 自 crules install.sh 思路，批 2c）——模板为「复制后必填」型（含技术栈三选一交互），故只有完整模式（无轻装 @ 导入）
 # 用法：bash scripts/install.sh <目标项目根> --app | --plugin [--dry-run] [--force]
-# 行为：模板（app|plugin/CLAUDE.md → 目标 CLAUDE.md + 版本戳）+ checklist/进阶 → 项目根 + agents → .claude/agents/ + memory → .claude/memory/
+# 行为：模板（app|plugin/CLAUDE.md → 目标 CLAUDE.md + 版本戳）+ checklist/进阶 → 项目根 + memory → .claude/memory/
+#       agents 不复制——plugin 自动挂载 7 角色（外审⑤：双通道分发 = AUTO-SYNC 漂移模式，plugin-only 消灭孪生）
 # 护栏：目标已有 CLAUDE.md 且无 crules-flutter 戳 → 中止（老项目人工合并）；有戳 → 重装（默认跳过已存在）
 set -uo pipefail
 SRC=$(cd "$(dirname "$0")/.." && pwd)
@@ -31,8 +32,8 @@ do_write "CLAUDE.md（$KIND 模板+戳）" "$TARGET/CLAUDE.md" "$(cat "$SRC/$KIN
 
 $STAMP"
 do_write "checklist.md" "$TARGET/checklist.md" "" "$SRC/checklist.md"
+do_write "analysis_options.yaml（lint 基线，项目已有则保留项目的）" "$TARGET/analysis_options.yaml" "" "$SRC/analysis_options.yaml"
 for f in "$SRC"/进阶/*.md; do do_write "进阶/$(basename "$f")" "$TARGET/进阶/$(basename "$f")" "" "$f"; done
-for f in "$SRC"/agents/*.md; do do_write ".claude/agents/$(basename "$f")" "$TARGET/.claude/agents/$(basename "$f")" "" "$f"; done
 for f in "$SRC"/memory/*.md; do do_write ".claude/memory/$(basename "$f")" "$TARGET/.claude/memory/$(basename "$f")" "" "$f"; done
 echo "== 汇总：写入/将写 $W，跳过 $S =="
 echo "== 下一步 == ① 完成 CLAUDE.md §七【复制后必填】三选一 ② 填 §十二项目附录 ③ flutter-rules skill 随 plugin 自动可用"

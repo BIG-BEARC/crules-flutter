@@ -6,7 +6,7 @@
 
 ## 想找什么 → 去哪查（模板，按项目实际改）
 
-> 下表是索引结构示例，术语偏 Flutter / 移动端；非 Flutter 项目按自身技术栈替换（如 widget→组件、view→页面、provider→状态）。Flutter 专项索引与清单见 Flutter 规则包（crules 模板包同级 `../flutter/` 目录，未安装则忽略）。
+> 下表是索引结构示例，术语偏 Flutter / 移动端；非 Flutter 项目按自身技术栈替换（如 widget→组件、view→页面、provider→状态）。Flutter 专项清单见**项目根 `checklist.md`**（安装时随模板落位）。
 
 ### 通用基础设施
 

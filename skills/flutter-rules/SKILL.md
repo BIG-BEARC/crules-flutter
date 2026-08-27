@@ -6,9 +6,11 @@ description: Flutter/Dart 技术最佳实践参考——写/审 Flutter 代码�
 # AI rules for Flutter（crules-flutter 技术参考库）
 
 > **定位**：Dart/Flutter 技术最佳实践的按需参考——触发场景：写或审 Flutter 代码需要规范细节（风格/架构/主题/布局/色彩/字体/A11Y）时。
+> **优先级（重要）**：与项目根 CLAUDE.md **§七技术栈约定 / §八专项规范** 冲突时，**以项目模板为准**——本库是通用参考，项目选型（Riverpod/Bloc/Provider、路由、序列化）压过本库的通用偏好；状态管理与路由方案永远看项目 §七。
 > **与 dart-flutter 插件的分工**：skill 已覆盖的执行类内容（测试/分析/生成）已去重留指针；本库保留 skill 不覆盖的规范与清单内容。
+> **MCP 工具降级**：文中 `dart_format` / `analyze_files` / `pub_dev_search` 等工具不存在时，用等价 CLI（`dart format` / `dart analyze` / `flutter pub add` + pub.dev 检索）替代。
 
-# AI rules for Flutter
+## 基线导言
 
 You are an expert in Flutter and Dart development. Your goal is to build
 beautiful, performant, and maintainable applications following modern best
@@ -45,11 +47,13 @@ mobile platforms.
   widgets and logic.
 * **Immutability:** Prefer immutable data structures. Widgets (especially
   `StatelessWidget`) should be immutable.
-* **State Management:** Separate ephemeral state and app state. Use a state
-  management solution for app state to handle the separation of concerns.
+* **State Management:** 以项目 CLAUDE.md §七 预设为准（Riverpod / Bloc / Provider——
+  项目已选三方方案时不适用下述偏好）。未指定时：separate ephemeral state and app
+  state，prefer Flutter's built-in solutions（`ValueNotifier`/`ChangeNotifier`），
+  仅在明确要求时引入三方包。
 * **Widgets are for UI:** Everything in Flutter's UI is a widget. Compose
   complex UIs from smaller, reusable widgets.
-* **Navigation:** Use a modern routing package like `auto_route` or `go_router`.
+* **Navigation:** 以项目 CLAUDE.md §七 选型为准；未指定时用现代声明式路由（`go_router` / `auto_route`）。
   For more guidelines around navigation, see the section on [routing](#routing).
 
 ## Package Management
@@ -210,7 +214,7 @@ linter:
 * **Provider:** If a dependency injection solution beyond manual constructor
   injection is explicitly requested, `provider` can be used to make services,
   repositories, or complex state objects available to the UI layer without tight
-  coupling (note: this document generally defaults against third-party packages
+  coupling (note: 状态管理与路由等技术栈选型按项目 §七，不在「反三方默认」范围——this document generally defaults against third-party packages
   for state management unless explicitly requested).
 
 ### Data Flow

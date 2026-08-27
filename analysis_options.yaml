@@ -1,0 +1,35 @@
+# crules-flutter 模板 · 静态分析基线（安装时复制到项目根；项目已有自己的则保留项目的）
+# 定位：把可确定性判定的规则从散文变 analyzer 硬拦（外审⑧「规则工具化」首期）
+# 依赖：flutter_lints（模板自带，pubspec 无需显式声明即可 include）
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+
+linter:
+  rules:
+    # 对应 checklist「组件/视图」类——归口与硬编码
+    - prefer_const_constructors
+    - prefer_const_declarations
+    - prefer_final_locals
+    - prefer_final_fields
+    - unnecessary_late
+    - avoid_print                    # 统一日志工具（checklist §6）
+    - avoid_unnecessary_containers
+    - prefer_single_quotes
+    # 对应 checklist「边界处理」类——异步纪律
+    - unawaited_futures
+    - cancelled_token_use
+    - always_declare_return_types
+    # 公开面纪律（plugin/库场景加重）
+    - public_member_api_docs: false  # 文档化按项目要求开，模板不强制
+    - type_annotate_public_apis
+    - prefer_typing_uninitialized_variables
+
+# 说明：
+# - 「禁 inline 颜色字面量 / 禁传 ref 参数 / import 五段分组」等语义规则 analyzer 原生不覆盖，
+#   属 custom_lint 范畴（外审⑦ 大杠杆项，二期：颜色字面量 / ConsumerWidget ref 传参 / import 分组均可写成 custom_lint 规则）
+# - strict-* 三开关会暴露存量代码告警——新项目直接用；存量项目可先注释 strict 段渐进收紧

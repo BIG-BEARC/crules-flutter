@@ -18,11 +18,17 @@ usage() { sed -n '2,7p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
 
 case "$1" in
   draft)
-    # 取 CHANGELOG 顶部最近段日期（## MM-DD · …）之后的 commits，列 subject 供人工编段
-    last_date=$(grep -m1 -oE '^## [0-9]{2}-[0-9]{2}' docs/CHANGELOG.md | grep -oE '[0-9]{2}-[0-9]{2}')
-    echo "# CHANGELOG 建议段草稿（人工过滤：记能力不记笔误；零分发文件轮不记——v58/v59 先例）"
-    echo "# 基准：顶部段日期 $last_date 之后的 commits（今日：$(date +%m-%d)）"
-    git log --since="$(date +%Y)-$last_date 00:00:00" --pretty=format:'- %s（%h）'
+    # fork 版：CHANGELOG 在仓库根、段头为版本式（## X.Y.Z · …）——按「顶部版本号对应的发版 commit」取边界
+    top_ver=$(grep -m1 -oE '^## [0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+    echo "# CHANGELOG 建议段草稿（人工过滤：记能力不记笔误）"
+    echo "# 基准：顶部版本 v$top_ver 发版 commit 之后的未记 commits"
+    anchor=$(git log --oneline --grep="$top_ver" -1 --format=%H || true)
+    if [ -n "$anchor" ]; then
+      git log "${anchor}..HEAD" --pretty=format:'- %s（%h）' | grep -v "^$" || echo "-（无未记 commits）"
+    else
+      echo "# ⚠️ 未找到含 $top_ver 的发版 commit，列最近 10 条供人工筛："
+      git log -10 --pretty=format:'- %s（%h）'
+    fi
     echo ""
     ;;
   verify-cache)

@@ -1,3 +1,13 @@
+---
+name: flutter-rules
+description: Flutter/Dart 技术最佳实践参考——写/审 Flutter 代码时查找风格、架构、主题、布局、颜色、字体、无障碍等规范细节用（按需加载的参考库，非常驻）。与 dart-flutter skills 重叠处以 skill 为准，本 skill 是补充参考（清单/规范类内容为主）。
+---
+
+# AI rules for Flutter（crules-flutter 技术参考库）
+
+> **定位**：Dart/Flutter 技术最佳实践的按需参考——触发场景：写或审 Flutter 代码需要规范细节（风格/架构/主题/布局/色彩/字体/A11Y）时。
+> **与 dart-flutter 插件的分工**：skill 已覆盖的执行类内容（测试/分析/生成）已去重留指针；本库保留 skill 不覆盖的规范与清单内容。
+
 # AI rules for Flutter
 
 You are an expert in Flutter and Dart development. Your goal is to build
@@ -149,6 +159,8 @@ When building reusable APIs, such as a library, follow these principles.
   improves navigability and scalability.
 
 ## Lint Rules
+
+> 与 dart-flutter 关系：静态分析执行走 `dart-run-static-analysis` / `dart fix --apply`；本节是 lint 规则的**内容参考**，非执行入口。
 
 Include the package in the `analysis_options.yaml` file. Use the following
 `analysis_options.yaml` file as a starting point:
@@ -322,29 +334,8 @@ linter:
   ```
 
 ## Testing
-* **Running Tests:** To run tests, use the `run_tests` tool if it is available,
-  otherwise use `flutter test`.
-* **Unit Tests:** Use `package:test` for unit tests.
-* **Widget Tests:** Use `package:flutter_test` for widget tests.
-* **Integration Tests:** Use `package:integration_test` for integration tests.
-* **Assertions:** Prefer using `package:checks` for more expressive and readable
-  assertions over the default `matchers`.
 
-### Testing Best practices
-* **Convention:** Follow the Arrange-Act-Assert (or Given-When-Then) pattern.
-* **Unit Tests:** Write unit tests for domain logic, data layer, and state
-  management.
-* **Widget Tests:** Write widget tests for UI components.
-* **Integration Tests:** For broader application validation, use integration
-  tests to verify end-to-end user flows.
-* **integration_test package:** Use the `integration_test` package from the
-  Flutter SDK for integration tests. Add it as a `dev_dependency` in
-  `pubspec.yaml` by specifying `sdk: flutter`.
-* **Mocks:** Prefer fakes or stubs over mocks. If mocks are absolutely
-  necessary, use `mockito` or `mocktail` to create mocks for dependencies. While
-  code generation is common for state management (e.g., with `freezed`), try to
-  avoid it for mocks.
-* **Coverage:** Aim for high test coverage.
+> 已去重：测试方法论由 dart-flutter skills 覆盖（`dart-add-unit-test` / `dart-collect-coverage` / `flutter-add-widget-test` / `flutter-add-integration-test`）——见项目根 CLAUDE.md §十一速查，本处不再重复。
 
 ## Visual Design & Theming
 * **UI Design:** Build beautiful and intuitive user interfaces that follow

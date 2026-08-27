@@ -2,7 +2,7 @@
 
 面向 **Flutter 工程**的独立协作规则 plugin——通用协作层 fork 自 [crules](https://github.com/BIG-BEARC/crules) 基线 `v74-fork-base`（commit ea4d25c），**此后独立演进、互不依赖**（唯一例外见「与 crules 的关系」）。
 
-> **当前状态：批 1 骨架阶段**——plugin 通道已可用（可安装），**内容整合（模板重组 / rules skill 化 / checklist 扩充 / 进阶搬运 / hooks）在批 2 执行**（方案见 crules 仓 `docs/整合方案-crules-flutter.md`）。本 README 描述目标形态与既定事实，集成完成前安装获得的是 flutter 包既有文件。
+> **当前状态：批 2a/2b 已完成**——两模板重组为本尊（覆盖 diff 验收：[docs/fork-coverage.md](docs/fork-coverage.md)）、checklist 自持、进阶 5 篇 + memory + agents 通用角色落位、rules skill 化。**剩批 2c（hooks + CI 同步比对 + scripts）与批 3/4**（方案见 crules 仓 `docs/整合方案-crules-flutter.md`）。
 
 ---
 

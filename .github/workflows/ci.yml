@@ -25,6 +25,6 @@ jobs:
         run: |
           curl -sfL https://raw.githubusercontent.com/BIG-BEARC/crules/main/hooks/deny-list.py -o /tmp/up.py
           curl -sfL https://raw.githubusercontent.com/BIG-BEARC/crules/main/hooks/test_deny_list.py -o /tmp/upt.py
-          diff <(tail -n +2 hooks/deny-list.py) /tmp/up.py || { echo "deny-list 与 crules 主分支不一致——SYNCED-FROM 义务：先同步再合并"; exit 1; }
-          diff <(tail -n +2 hooks/test_deny_list.py) /tmp/upt.py || { echo "test_deny_list 与 crules 主分支不一致"; exit 1; }
+          diff <(sed '2d' hooks/deny-list.py) /tmp/up.py || { echo "deny-list 与 crules 主分支不一致——SYNCED-FROM 义务：先同步再合并"; exit 1; }
+          diff <(sed '2d' hooks/test_deny_list.py) /tmp/upt.py || { echo "test_deny_list 与 crules 主分支不一致"; exit 1; }
           echo "deny-list 与 crules 主分支一致（SYNCED-FROM: $(sed -n 2p hooks/deny-list.py | grep -o 'crules@[a-f0-9]*')）"

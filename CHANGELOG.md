@@ -1,5 +1,9 @@
 # crules-flutter CHANGELOG
 
+## 0.1.4 · CI 首跑红修复——同步比对剥戳逻辑
+
+- **`ci.yml` 同步比对步**：剥戳从 `tail -n +2`（从第2行起=保留戳，错位）改 `sed '2d'`（删第2行戳，shebang 后）——CI 首跑红抓出的实现 bug，本地以 `git show origin/main` 模拟比对验证一致（v48「CI 首跑红→根因修复」同款先例）
+
 ## 0.1.3 · 批 3a 修复——skill 目录归位
 
 - **`skills/flutter-rules/`**：SKILL.md 从 `.claude/skills/`（项目级约定）移至 plugin 根级 `skills/`（plugin 组件约定）——批 3a 消费侧首验抓出 Skills(0) 未挂载，plugin details 复验修复

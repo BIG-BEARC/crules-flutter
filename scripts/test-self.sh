@@ -15,6 +15,19 @@ t 1 "bash $SRC/scripts/release.sh abc"                     "release 非法版本
 t 0 "bash $SRC/scripts/release.sh draft"                    "release draft 应正常出稿（外审②回归断言）"
 t 0 "python3 $SRC/hooks/test_deny_list.py"                 "deny-list fixture 应全绿"
 
+# F2 回归三断言（真机 fixture 固化——2026-08-27 flutter create 28 行注释版产物签入 testdata/）
+T1=/tmp/cf-ao1; T2=/tmp/cf-ao2; mkdir -p "$T1" "$T2"
+cp "$SRC/scripts/testdata/scaffold-analysis_options.yaml" "$T1/analysis_options.yaml"
+printf 'include: package:flutter_lints/flutter.yaml\nlinter:\n  rules:\n    - always_use_package_imports\n' > "$T2/analysis_options.yaml"
+o1=$(bash $SRC/scripts/install.sh $T1 --app 2>/dev/null | grep -c UPGRADE)
+[ "$o1" -ge 1 ] && [ -f "$T1/analysis_options.yaml.scaffold-bak" ] && { PASS=$((PASS+1)); echo "PASS  真机脚手架 fixture → UPGRADE（F1 回归）"; } || { FAIL=$((FAIL+1)); echo "FAIL  脚手架应 UPGRADE"; }
+o2=$(bash $SRC/scripts/install.sh $T2 --app 2>/dev/null | grep -c SIDE-CAR)
+[ "$o2" -ge 1 ] && grep -q 'always_use_package_imports' "$T2/analysis_options.yaml" && { PASS=$((PASS+1)); echo "PASS  自定义 lint → SIDE-CAR 伴生且原文保留"; } || { FAIL=$((FAIL+1)); echo "FAIL  自定义应 SIDE-CAR"; }
+printf 'WR-SENTINEL\n' > "$T1/.claude/memory/business-rules.md"
+bash $SRC/scripts/install.sh $T1 --app --force >/dev/null 2>&1
+grep -q 'WR-SENTINEL' "$T1/.claude/memory/business-rules.md" && [ -f "$T1/CLAUDE.md.new" ] && { PASS=$((PASS+1)); echo "PASS  force 升级：memory 哨兵 KEEP + CLAUDE.md 出 .new"; } || { FAIL=$((FAIL+1)); echo "FAIL  force 安全升级"; }
+rm -rf /tmp/cf-ao1 /tmp/cf-ao2
+
 # 幂等断言：同输入两次运行结论一致且均 block（双 plugin 共存的可测背书）
 BADCMD="git push --fo""rce origin main"   # 分段拼接，避免源码含完整字面串
 j1=$(printf '{"tool_input":{"command":"%s"}}' "$BADCMD")

@@ -50,14 +50,16 @@ do_write "checklist.md" "$TARGET/checklist.md" "" "$SRC/checklist.md"
 # analysis_options 智能落位（N3）
 AO="$TARGET/analysis_options.yaml"
 if [ -f "$AO" ]; then
-  lines=$(wc -l < "$AO" | tr -d ' ')
-  if [ "$lines" -le 6 ] && grep -q 'flutter_lints/flutter.yaml' "$AO" && ! grep -qE '^\s+-\s' "$AO"; then
-    # 脚手架默认（无信息量）→ 升级替换为基线（同样遵 .new 语义：force 时伴生，默认直接换？脚手架默认无决策价值——直接替换但留 .bak）
-    if [ "$DRYRUN" != "1" ]; then cp "$AO" "$AO.scaffold-bak"; cp "$SRC/analysis_options.yaml" "$AO"; fi
-    echo "  UPGRADE（脚手架默认 → lint 基线，原文件留 .scaffold-bak）  $AO"
-  else
+  # 剥注释/空行后签名判定（F1：真机 flutter create 是 28 行注释版，行数判定是死代码）——
+  # 剩余非空行 ⊆ {flutter_lints include, linter:, rules:} 即脚手架默认（无自定义规则）
+  stripped=$(grep -vE '^[[:space:]]*#|^[[:space:]]*$' "$AO")   # [[:space:]]：BSD grep 不认 \s（v59 探针同款坑）
+  if printf '%s\n' "$stripped" | grep -qvE '^[[:space:]]*(include: package:flutter_lints/flutter.yaml|linter:|rules:)?[[:space:]]*$'; then
     if [ "$DRYRUN" != "1" ]; then cp "$SRC/analysis_options.yaml" "$TARGET/analysis_options.crules-flutter.yaml"; fi
     echo "  SIDE-CAR（项目已有自定义 lint，基线落伴生文件，请人工合并）  $TARGET/analysis_options.crules-flutter.yaml"
+  else
+    # 脚手架默认（无决策价值）→ 升级替换为基线，原文件留 .scaffold-bak
+    if [ "$DRYRUN" != "1" ]; then cp "$AO" "$AO.scaffold-bak"; cp "$SRC/analysis_options.yaml" "$AO"; fi
+    echo "  UPGRADE（脚手架默认 → lint 基线，原文件留 .scaffold-bak）  $AO"
   fi
 else
   do_write "analysis_options.yaml（lint 基线）" "$AO" "" "$SRC/analysis_options.yaml"

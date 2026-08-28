@@ -2,7 +2,7 @@
 
 面向 **Flutter 工程**的独立协作规则 plugin——通用协作层 fork 自 [crules](https://github.com/BIG-BEARC/crules) 基线 `v74-fork-base`（commit ea4d25c），**此后独立演进、互不依赖**（唯一例外见「与 crules 的关系」）。
 
-> **当前状态：整合线批 1-4 完成**（模板本尊 / 知识层 / 基建含 CI 同步比对 / saas_pos 上移，方案见 crules 仓 `docs/整合方案-crules-flutter.md`）；唯批 3b（saas_pos 瘦身）等稳定期。外审 P1 收口轮进行中（[fork-coverage](docs/fork-coverage.md) 留痕）。
+> **当前状态：整合线批 1-4 完成，独立外审四轮收口（P1×5 / N1-N6 / F1-F2，至 0.2.3）**——模板本尊 / 知识层 / 基建含 CI 同步比对 / saas_pos 上移（方案见 crules 仓 `docs/整合方案-crules-flutter.md`，外审处置留痕 [fork-coverage](docs/fork-coverage.md)）；唯批 3b（saas_pos 瘦身）等稳定期。
 
 ---
 
@@ -16,6 +16,35 @@ claude plugin install crules-flutter@crules-flutter-market --scope user
 # ② 在 Flutter 工程根目录跑（装好 plugin 后任何工程可用；命令带命名空间，裸名不可用）
 /crules-flutter:init
 ```
+
+### 工程接入与升级
+
+`/crules-flutter:init` 的落位物（目标已有 CLAUDE.md 且无本包版本戳 → **不自动装**，转人工合并）：
+
+| 落位物 | 位置 | 说明 |
+|---|---|---|
+| `CLAUDE.md`（App / Plugin 模板二选一 + 版本戳） | 项目根 | 协作规则本体 |
+| `checklist.md` | 项目根 | 审查清单（通用 8 类 + Flutter 专项） |
+| `analysis_options.yaml` | 项目根 | 三态落位：flutter 脚手架默认 → 升级替换（原文件留 `.scaffold-bak`）；已有自定义 → 落 `analysis_options.crules-flutter.yaml` 伴生待人工合并；无 → 写入 |
+| `进阶/` 5 篇 | 项目根 | 工程化流程 / 审查纪律 / 方案评审闭环 / Agent 编排 / 记忆库体系 |
+| `memory/` 6 模板 | `.claude/memory/` | **永不覆盖（含 --force）**——落地后即项目制度资产 |
+
+agents 不复制——plugin 已自动挂载 7 角色（`crules-flutter:frontend` 等）。
+
+**装完必填两处**：① `CLAUDE.md` §七【复制后必填】技术栈三选一（选定后删未选项）；② §十二项目附录（项目名 / 构建·分析·测试命令）。
+
+**升级**：`plugin update` 只更新 plugin 通道（hooks / agents / skill / 命令）；项目内模板按三步升级——
+
+```bash
+# ① 定位源（plugin cache 最大版本；本地开发态可换本仓克隆路径）
+SRC=$(ls -d ~/.claude/plugins/cache/*/crules-flutter/*/scripts/install.sh | sort -V | tail -1 | xargs dirname)/..
+# ② 查模板版本差
+bash "$SRC/scripts/check-imports.sh" <项目根>
+# ③ 模板升级：已存在文件出 .new 伴生供对照合并（memory 永不覆盖）
+bash "$SRC/scripts/install.sh" <项目根> --app --force
+```
+
+**记忆库兜底**：`/crules-flutter:update-memory`——索引全量刷新（日常仍以「写代码顺手更新」为主，见 `.claude/memory/MAINTENANCE.md`）。
 
 ### 环境要求与更新信任
 

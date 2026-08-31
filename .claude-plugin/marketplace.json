@@ -7,7 +7,7 @@
     {
       "name": "crules-flutter",
       "source": "./",
-      "version": "0.2.4",
+      "version": "0.3.0",
       "description": "面向 Flutter 工程的独立协作规则 plugin"
     }
   ]

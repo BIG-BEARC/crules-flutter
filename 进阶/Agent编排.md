@@ -85,6 +85,23 @@
 
 **并行（无文件冲突、无依赖）**：`frontend` 写页面骨架 + `backend` 写业务/数据层同时进行；`i18n` 补翻译 + `reviewer` 审查同时进行。
 
+```mermaid
+sequenceDiagram
+    participant U as 需求方
+    participant M as 主控
+    participant A as 子代理(后台)
+    U->>M: 需求
+    M->>M: 方案设计 + 任务拆分
+    M->>U: 方案确认【Gate】
+    U-->>M: 确认
+    M->>A: 派发任务书（签名原文+用例+红线）
+    Note over A: 后台执行·完成回传通知
+    A-->>M: 完成通知 + 摘要
+    M->>M: git status/diff 对照摘要 + 编译校验
+    M->>U: 汇报（完整 diff）
+    U-->>M: 确认 + 提交授权
+```
+
 ---
 
 ## 调用约定

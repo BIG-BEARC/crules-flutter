@@ -52,6 +52,8 @@
 | 路由表 | [routes.md](indexes/routes.md) | `<routes-config-file>` |
 | 国际化 Key 与资源 | [i18n.md](indexes/i18n.md) | `<i18n-resources-dir>` |
 | 调试相关 | [debug.md](indexes/debug.md) | `<debug-dir>` |
+| 同行 / 领域参考系（谁值得看、去哪查） | [reference-map.md](reference-map.md) | — |
+| 平台坑（支持矩阵 / 坑卡检索） | [platform-pitfalls.md](platform-pitfalls.md) | — |
 | 项目特有代码模式 | [../patterns.md](patterns.md) | — |
 | 设计决策历史 | [../decisions/](decisions/) | — |
 

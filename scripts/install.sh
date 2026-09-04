@@ -68,5 +68,5 @@ fi
 for f in "$SRC"/进阶/*.md; do do_write "进阶/$(basename "$f")" "$TARGET/进阶/$(basename "$f")" "" "$f"; done
 for f in "$SRC"/memory/*.md; do do_write ".claude/memory/$(basename "$f")" "$TARGET/.claude/memory/$(basename "$f")" "" "$f" "never"; done
 echo "== 汇总：写入 $W，跳过/保留 $S，.new 待合并 $N =="
-echo "== 下一步 == ① 完成 CLAUDE.md §七【复制后必填】三选一 ② 填 §十二附录 ③ 有 .new 文件时对照合并后替换 ④ flutter-rules skill 与 7 agents 已随 plugin 就位"
+echo "== 下一步 == ① 完成 CLAUDE.md §七【复制后必填】三选一 ② 填 §十二附录 ③ 填 .claude/memory/platform-pitfalls.md 支持矩阵（/crules-flutter:init 三段式初稿） ④ 有 .new 文件时对照合并后替换 ⑤ flutter-rules skill 与 7 agents 已随 plugin 就位"
 exit 0

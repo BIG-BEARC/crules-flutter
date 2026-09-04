@@ -19,6 +19,8 @@
 | `patterns.md` | 项目特有代码模式 | 实现新功能前 Read |
 | `business-rules.md` | 业务真实规则（业务可达性，软约束·审查 Gate 拦） | 审查 / 方案评审涉域前 Read |
 | `INVARIANTS.md` | 技术不变量（任何路径都必须成立，硬约束·测试拦） | 改约束密集模块前 Read |
+| `reference-map.md` | 分域调研参考系（只存指针不存结论） | 涉成熟领域做方案前 Read |
+| `platform-pitfalls.md` | 平台坑库（支持矩阵 + 结构化坑卡） | 引依赖 / 写平台代码 / 升级前 Read |
 | `indexes/*.md` | 各核心目录的代码索引 | 在该目录工作前 Read |
 | `decisions/YYYY-MM-DD-*.md` | 单次重要架构决策日志 | 涉及该模块改动时 Read |
 

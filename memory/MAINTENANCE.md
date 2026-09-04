@@ -29,6 +29,19 @@
 
 **判定标准**：如果改动会让「未来 AI 找东西的路径」发生变化，就必须更新。
 
+## 沉淀直写与走闸（v0.4.0）
+
+写完代码 / 修完 bug 后的知识落点分两档（完整闸流程见 `/crules-flutter:distill` 命令）：
+
+| 落点 | 闸级 |
+|---|---|
+| `docs/复盘-*.md`（踩坑叙事）· NAVIGATION 机械索引 · patterns.md **描述性**条目（代码 ≥2 处实证，附两处 file:line + 日期） | **直写**（随手层，AI 自主，零仪式） |
+| patterns.md **规范性**条目 · business-rules.md · INVARIANTS.md · 坑卡 · reference-map.md 新参考系 | **走闸**（等 `/crules-flutter:distill` 分组预览裁决后局部 Edit 落盘） |
+
+- **【待蒸馏】标记格式**：复盘文件中候选段落紧跟一行 `**【待蒸馏】**：<一句话候选>`——`/distill` 按 `grep -rn '【待蒸馏】' docs/` 清点队列
+- 坑卡**归属**字段（OS 平台 / Flutter SDK / 三方依赖 / 未定性）= 层级归属，独立于根因查明可填，T0–T5 检索键
+- **无人值守硬线**：后台 agent 独立完成的需求，闸类落点一律不写（复盘直写等人回来过闸）；NAVIGATION 机械索引豁免
+
 ## 维护时机优先级
 
 1. **写代码时顺手**（最高）→ 2. **决策做出时立即** → 3. **`/crules-flutter:update-memory` 兜底** → 4. **会话结束前自检**

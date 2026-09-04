@@ -28,6 +28,19 @@ bash $SRC/scripts/install.sh $T1 --app --force >/dev/null 2>&1
 grep -q 'WR-SENTINEL' "$T1/.claude/memory/business-rules.md" && [ -f "$T1/CLAUDE.md.new" ] && { PASS=$((PASS+1)); echo "PASS  force 升级：memory 哨兵 KEEP + CLAUDE.md 出 .new"; } || { FAIL=$((FAIL+1)); echo "FAIL  force 安全升级"; }
 rm -rf /tmp/cf-ao1 /tmp/cf-ao2
 
+# 0.4.0 批1断言（设计 §5 test-self 行）：落位 8 模板 / init 三处必填 / twin 一致性
+T4=/tmp/cf-pitfalls; mkdir -p "$T4"
+bash $SRC/scripts/install.sh $T4 --app >/dev/null 2>&1
+nm=$(ls "$T4/.claude/memory"/*.md 2>/dev/null | wc -l | tr -d ' ')
+[ "$nm" = "8" ] && { PASS=$((PASS+1)); echo "PASS  memory 落位 8 模板"; } || { FAIL=$((FAIL+1)); echo "FAIL  memory 应落位 8 模板（实为 $nm）"; }
+rm -rf "$T4"
+grep -q '支持矩阵' "$SRC/commands/init.md" && grep -q '矩阵' "$SRC/scripts/install.sh" && { PASS=$((PASS+1)); echo "PASS  init 必填三处引导（init.md + install.sh 下一步提示均含矩阵）"; } || { FAIL=$((FAIL+1)); echo "FAIL  init 三处缺矩阵引导"; }
+tw1=$(sed -n '/twin:mem-files/,/^$/p' "$SRC/memory/README.md" | grep -c '^| `')
+tw2=$(sed -n '/twin:mem-files/,/^$/p' "$SRC/进阶/记忆库体系.md" | grep -c '^| `')
+act=$(ls "$SRC"/memory/*.md | grep -v 'README.md' | wc -l | tr -d ' ')
+lst=$(sed -n '/twin:mem-files/,/^$/p' "$SRC/memory/README.md" | grep -oE '`[A-Za-z-]+\.md`' | sort -u | wc -l | tr -d ' ')
+[ "$tw1" = "$tw2" ] && [ "$act" = "$lst" ] && [ "$tw1" -ge 7 ] && { PASS=$((PASS+1)); echo "PASS  twin:mem-files 一致（双侧 $tw1 行，实际模板 $act = 表列 $lst）"; } || { FAIL=$((FAIL+1)); echo "FAIL  twin:mem-files 漂移（tw1=$tw1 tw2=$tw2 act=$act lst=$lst）"; }
+
 # 幂等断言：同输入两次运行结论一致且均 block（双 plugin 共存的可测背书）
 BADCMD="git push --fo""rce origin main"   # 分段拼接，避免源码含完整字面串
 j1=$(printf '{"tool_input":{"command":"%s"}}' "$BADCMD")

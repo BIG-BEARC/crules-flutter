@@ -41,8 +41,24 @@ bash <源>/scripts/install.sh <项目根> --app | --plugin [--dry-run]
 ### 4. 引导必填（AI 交互）
 
 1. **§七【复制后必填】**：技术栈三选一（App）或插件类型二选一（Plugin）——逐项问清后**删掉未选项**、填「本项目最终技术栈/类型」行
-2. **§十二项目附录 3 必填**：项目名 / 构建·分析·测试命令 / （协作偏好可选项提示：固定语言、提交触发词覆写、提速档）
-3. 提示：flutter-rules skill 与 7 个 agent 已随 plugin 就位（无需复制）；导入巡检 `bash <源>/scripts/check-imports.sh <项目根>`
+2. **§十二项目附录 3 必填**：项目名 / 构建·分析·测试命令 / （协作偏好可选项提示：固定语言、提交触发词覆写、提速档、沉淀闸档位）
+3. **支持矩阵（`.claude/memory/platform-pitfalls.md` 头部）**：按步骤 5 三段式生成初稿并引导核对补全
+4. 提示：flutter-rules skill 与 7 个 agent 已随 plugin 就位（无需复制）；导入巡检 `bash <源>/scripts/check-imports.sh <项目根>`
+
+### 5. 支持矩阵三段式（自动初稿 → 人核对 → 人补）
+
+**① 机械读（AI 执行——读得到才填）**：
+
+- 平台目录存在性：`ls <项目根>` 看 `android/ ios/ windows/ macos/ linux/ web/` 哪些在——目录在 ≠ 发版支持，仅作初稿
+- Android 下限：`grep -n 'minSdk' android/app/build.gradle*`；值为 `flutter.minSdkVersion` 间接引用时写「flutter.minSdkVersion（随 SDK，当时解析值：<值>）」
+- iOS 下限：`grep -n 'platform :ios' ios/Podfile`
+- **失败分支**：`build.gradle.kts` 等变体 / 解析失败 / 文件缺失 → **保留占位符 `【待填·init 三段式生成】`**，显式报告未解析原因，**不瞎填**
+
+**② 人核对（AI 呈初稿，需求方裁决）**：生成了目录但从未发版的平台划掉；构建下限 ≠ 实际支持下限的改正。
+
+**③ 人补（工程内查不到，问需求方）**：各平台**实测支持上限** + 现场设备实态（通常一行）。
+
+初稿写入矩阵表后标「待核对」，②③ 完成后才去掉。矩阵格式与消费端兜底（读占位符即顶回）见 `.claude/memory/platform-pitfalls.md` 头部说明。
 
 ## 依据
 

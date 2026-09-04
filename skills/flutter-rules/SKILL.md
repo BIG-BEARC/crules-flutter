@@ -1,6 +1,6 @@
 ---
 name: flutter-rules
-description: Flutter/Dart 技术最佳实践参考——写/审 Flutter 代码时查找风格、架构、主题、布局、颜色、字体、无障碍等规范细节用（按需加载的参考库，非常驻）。与 dart-flutter skills 重叠处以 skill 为准，本 skill 是补充参考（清单/规范类内容为主）。
+description: Flutter/Dart 技术最佳实践参考——写/审 Flutter 代码时查找风格、架构、主题、布局、颜色、字体、无障碍等规范细节用；写设计方案 / 出方案时用「方案骨架」节（章节模板 / 裁剪档位 / 配图约定）；引平台依赖或排查平台坑时查「平台坑库」节（按需加载的参考库，非常驻）。与 dart-flutter skills 重叠处以 skill 为准，本 skill 是补充参考（清单/规范类内容为主）。
 ---
 
 # AI rules for Flutter（crules-flutter 技术参考库）
@@ -38,6 +38,46 @@ mobile platforms.
 ## Project Structure
 * **Standard Structure:** Assumes a standard Flutter project structure with
   `lib/main.dart` as the primary application entry point.
+
+## 方案骨架（写设计方案时用）
+
+**单一模板 + 裁剪档位**。写方案时复制以下骨架按需裁剪：
+
+```text
+# <方案名>
+> 状态（讨论稿→已确认→已落地/已废弃·指向取代者）· 日期 · 关联需求 · 面向对象
+
+1 目标与范围        要解决什么 / 不做什么 / 老行为变更清单        [需求 Gate ①②③④]
+2 核心决策          编号，每条一句话可独立成立                    [方案浓缩·前置]
+3 现状              timeline / sequence / 问题表                  [新功能可整节省略]
+3.5 行业参考        参考对象 / 关键做法 / 对本方案的启示 / 出处链接 [涉成熟领域必填·查项目 memory/reference-map.md]
+4 目标方案          候选对比（含平台矩阵可行性列）→ flowchart / 组件职责表 / 规则表 / ER / 接口定义
+5 影响面            用户 / 数据 / 已有功能 + 平台矩阵影响行         [方案 Gate ⑤]
+6 测试与验收
+  6.1 验收标准表    WHAT——业务级判据                              [需求 Gate ⑤]
+  6.2 自测用例表    HOW——前置/步骤/预期/平台(矩阵)/结果证据        [涉平台/资损强制]
+7 分阶段落地        大需求保留                                     [裁剪点]
+8 风险与回退                                                      [方案 Gate ⑦]
+9 待确认事项        问题 / 责任 / 是否阻塞                         [需求 Gate ⑥]
+```
+
+- **裁剪档位**：极简改动 = 1 / 2 / 6.1 / 8 四节；标准 = 全 9 节；大需求（新页面 / 跨模块 / 多端）= 全节 + 独立评审（`plan-reviewer`，见项目根 CLAUDE.md §三）
+- **6.2 自测用例表生命周期**：方案期写（test-first 前移，写不出用例 = 验收标准不合格）→ 交付期执行（结果列挂证据分级，矩阵列全绿 = 完成定义达标）→ 回归期复用（修 bug / 升级后重跑，成为常驻回归资产）；可自动化项优先固化真测试代码，表内记指针
+- **行业参考查证纪律**：参考条目必须查证带链接出处；查不到标「未查证·凭记忆」——防 AI 凭训练记忆编造同行行为
+
+## 配图约定（人读文档配什么图）
+
+| 内容形态 | 图型 |
+|---|---|
+| 流程 / 决策 | flowchart |
+| 调用链 / 交互时序 | sequenceDiagram |
+| 数据模型 | erDiagram |
+| 状态流转 | stateDiagram |
+| 演进编年 | timeline |
+| 规则 / 枚举 / 对比 | 表格 |
+| 命名 / 协议 / 正则 | 代码块 |
+
+边界：**AI 常驻上下文文件不加图**（根 CLAUDE.md / `.claude/memory/*`——图对 AI 无增益、白耗每会话 token）。存量文档补图用 `/crules-flutter:diagram`。
 
 ## Flutter style guide
 * **SOLID Principles:** Apply SOLID principles throughout the codebase.
@@ -769,3 +809,42 @@ education levels, and learning styles.
   labels for UI elements.
 * **Screen Reader Testing:** Regularly test your app with TalkBack (Android) and
   VoiceOver (iOS).
+
+## 平台坑库（预置首批 · 维护者策展）
+
+> **定位**：框架级通用坑住本节（跨项目复现）；项目相关坑住消费工程 `.claude/memory/platform-pitfalls.md`。项目坑跨项目复现后经 `/crules-flutter:distill` 提名进本节（fork 维护者裁决）。
+> **入预置门槛**（满足其一，防 stale 大杂烩）：①我们 / 同行实证踩过 ②官方 issue / release notes 明示版本区间 ③常见矩阵区间内高概率触发。每条带出处与「最后核验」；查不到出处不预置。首批 ≤10 条宁缺毋滥（Android 允许一卡多区间合并）。
+> **维护义务**：Flutter / 平台大版本出现 → 扫本节标【待重验】→ 核验刷新——此后每次 minor 的例行内容（「技术栈相关 → 只进本包」查表逻辑）。
+
+### 三方依赖
+
+#### [Windows 7] permission_handler 初始化导致启动闪退
+
+- 归属：三方依赖（插件层 permission_handler Windows 实现 + Flutter 引擎层 Windows 桌面支持）
+- 触发场景：Win7 目标机上启动即崩（permission_handler 平台初始化路径） ｜ 症状：应用完全无法启动（issue 原文 "nothing, but app can't start"）、无有效日志 ｜ 根因：Flutter 本体仅支持 Windows 10+，维护者不为 Win7 投入支持；早期 Win10 版本同类崩溃源于插件静态链接新版 Win10 API（PR #1389 改动态加载修复「早期 Win10」区间，不覆盖 Win7） ｜ 规避：dependency_overrides 指向 no-op 实现（github.com/localsend/permission_handler_windows_noop）/ fork 插件剔除 Windows 实现 / 不将插件引入 Windows 构建
+- 区间：issue #1322 针对 v11.3.1 报告并 Closed as not planned；其他版本区间未查证（官方未声明 Win7 支持矩阵、未见修复版本）——倾向结论：全区间不受支持（官方口径 Win10+），精确闪退区间未查证
+- 状态：未修复（Closed as not planned） ｜ 最后核验：2026-09-04
+- 出处：实证复盘（升格自原模板样例卡）+ [issue #1322](https://github.com/Baseflow/flutter-permission-handler/issues/1322)（Win7 无法启动，v11.3.1）、[issue #1388](https://github.com/Baseflow/flutter-permission-handler/issues/1388)（旧版 Windows 崩溃）、[PR #1389](https://github.com/Baseflow/flutter-permission-handler/pull/1389)（早期 Win10 崩溃修复：动态加载 API）、[flutter#129716](https://github.com/flutter/flutter/issues/129716)（Flutter 本体在 Win7 崩溃）、[pub.dev](https://pub.dev/packages/permission_handler)
+
+### Flutter SDK
+
+#### [iOS 26.x] tabbar / draw 渲染异常
+
+- 归属：Flutter SDK（引擎 / 框架层——iOS 26 Liquid Glass 新 UI 与 Flutter 渲染不匹配）
+- 触发场景：iOS 26 真机 / 模拟器上运行 Flutter 应用，涉及 CupertinoTabBar / 绘制类渲染 ｜ 症状：tab bar 样式与 iOS 26 Liquid Glass 不符（内容不延伸到底栏下方）、真机黑屏不渲染、debug 模式不可用等 ｜ 根因：iOS 26 引入 Liquid Glass 新 UI 范式，Flutter 未实现对应视觉 / 过渡特性（官方文档列 iPad 风格 tab bar #150590、liquid glass 支持 #170310 等为「尚未完全实现」；#186572 黑屏关联 Flutter 3.38 的 UISceneDelegate 迁移） ｜ 规避：等待官方实现（跟踪 #170310 / #150590）；社区方案 cupertino_native_better 提供 SwiftUI 原生 Liquid Glass tab bar
+- 区间：受影响 Flutter 版本区间 / 修复版本——官方未给数字（截至官方文档 3.47.2 快照未列 affected/fixed 版本），倾向全区间（iOS 26 上）；社区信息称 debug 模式问题自 3.35.x 改善、黑屏与 3.38 迁移相关，但无 issue 内里程碑确认
+- 状态：未修复（官方跟踪中） ｜ 最后核验：2026-09-04
+- 出处：[Flutter 官方 iOS 26 支持状态文档](https://docs.flutter.dev/platform-integration/ios/ios-latest)、[flutter#150590](https://github.com/flutter/flutter/issues/150590)（iPad 风格 tab bar）、[flutter#170310](https://github.com/flutter/flutter/issues/170310)（liquid glass 支持）、[flutter#186572](https://github.com/flutter/flutter/issues/186572)（iOS 26 真机黑屏）、[cupertino_native_better](https://pub.dev/packages/cupertino_native_better)、[Stack Overflow 79747677](https://stackoverflow.com/questions/79747677/)
+
+### OS 平台
+
+#### [Android] 版本兼容基线（一卡多区间合并）
+
+- 归属：OS 平台（Android 平台 / 系统策略层）
+- 覆盖：
+  1. **Scoped storage**：targetSdkVersion 29+（Android 10）起分区存储生效；API 29 可用 `requestLegacyExternalStorage` 临时豁免，Android 11 起强制
+  2. **Photo picker**：系统级照片选择器原生随 Android 11（API 30）+ 提供，backport 到 Android 4.4（兼容库，经 Google Play services / ActivityResult）
+  3. **Predictive back（返回手势）**：Android 13（API 33）引入预测性返回手势；targetSdk 34+ 对部分组件行为有强制要求（强制细节未逐字核验）
+- 症状：越过基线后旧存储 API 失效 / 权限模型变化 / 返回手势行为差异 ｜ 规避：按官方文档采用 MediaStore / photo picker / OnBackPressedDispatcher + predictive back 声明
+- 状态：官方文档口径（API 29 / 33 关键锚点）；photo picker 与 predictive back 细节部分未逐字核验 ｜ 最后核验：2026-09-04
+- 出处：[Android 11 存储隐私](https://developer.android.com/about/versions/11/privacy/storage)、[存储总览](https://developer.android.com/training/data-storage)、[photo picker](https://developer.android.com/training/data-storage/shared/photopicker)、[预测性返回手势](https://developer.android.com/guide/navigation/predictive-back-gesture)

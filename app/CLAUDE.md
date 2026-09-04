@@ -93,7 +93,7 @@
 ### 方案 Gate（必须）
 
 修改前**必须**列出：① 受影响文件 ② 修改位置 ③ 当前实现 / 问题 ④ 修改方式或 Diff 方向 ⑤ 对用户 / 数据 / 网络 / 已有功能的影响 ⑥ 预期效果 ⑦ 风险、回退方式、验证方法。按规模裁剪：极简改动只需 ①+④+⑦。方案获明确确认后才能动手。
-> 方案文档写法（章节骨架 / 裁剪档位 / 配图约定）见 **flutter-rules** skill「方案骨架」节——写方案时按需加载。
+> 方案文档写法（章节骨架 / 裁剪档位 / 配图约定）见 **flutter-rules** skill「方案骨架」（`references/design-doc.md`）——写方案时按需加载。
 
 > **跨模块大改动**（新页面 / 新业务流 / 跨多模块或多端）：升级为 PRD 分模块逐段确认 + 独立方案评审 + 两阶段代码审查——完整流程见 `进阶/工程化流程.md` 与 `进阶/方案评审闭环.md`。
 
@@ -172,16 +172,17 @@
 > 本项目使用 Flutter App 开发。下方列了 3 套主流预设 + 1 个自定义模板。
 > **复制到项目后：选定一套，删掉其余，把结果填到「本项目最终技术栈」。**
 > 涉及这些技术时，优先调用 dart-flutter 对应 skill，不另造轮子。
+> 预设条目按「最后核验」日期维护（**最后核验：2026-09-05**）；栈审视与 skill 坑节维护义务并列，每次 minor 例行刷新。
 
 ### 预设 A：Riverpod + go_router + Dio（现代主流）
 
 - 状态管理：`flutter_riverpod`（优先 `Notifier`/`AsyncNotifier`，避免过时 `StateNotifier`）
 - 路由：`go_router`（声明式，`MaterialApp.router`）
-- 网络：`dio` + `retrofit`（接口声明式）+ `interceptors`（鉴权/日志/重试）
+- 网络：`dio` + `interceptors`（鉴权/日志/重试）；接口规模大可加 `retrofit`（声明式 codegen 层，与 Dio 非互斥）
 - 序列化：`json_serializable` + `build_runner`（`.g.dart` 生成，不手写）
-- 本地存储：`hive` 或 `shared_preferences`
-- 国际化：`easy_localization` 或 `flutter_localizations` + `intl`
-- 主题/适配：`flutter_screenutil` + 暗黑模式走统一 `ThemeExtension`
+- 本地存储：`shared_preferences`（轻 KV）或 `drift`（结构化）；`hive` 原版已停更（稳定版停于 2022-06）——NoSQL 需求用社区延续 `hive_ce`
+- 国际化：官方 `flutter_localizations` + `gen-l10n`（或 `slang`）；`easy_localization` 维护缓慢，不推荐新项目
+- 主题/适配：暗黑模式走统一 `ThemeExtension`；适配优先 `MediaQuery` / `LayoutBuilder` 断点方案——`flutter_screenutil` 已停更（2024-05 起）且平板 / 桌面多端有短板
 
 ### 预设 B：Bloc + go_router + Dio（事件驱动、强约束）
 
@@ -226,7 +227,7 @@
 - **多 package 工程 assets 加载**：子工程被主工程引用时，加载子工程自己的 assets 用项目统一的加载入口（内部默认带 `package` 参数），**不要**用裸 `load()`——跨 package 资源不加 package 名必空；新增 assets 后需**完全重启**应用（热重载不加载新资源）
 - **文件头注释**（如项目要求）：新建 Dart 文件含开发者信息，**注释放在 import 语句之后**（不是文件开头）；格式按项目模板（@Author / @Created at / @Email / @Company / @Description），可配脚本读 Git 配置自动生成
 - **Import 排序**：Dart SDK → Flutter SDK → 外部包（字母序）→ 内部包（绝对路径 `package:<项目>/...`）→ 相对路径
-- 代码风格细则（const 构造 / 命名 / 行宽 / 方法行数）见 **flutter-rules** skill（避免与本文件双份）
+- 代码风格细则不双份维护：通用风格（const 构造 / 命名 / 行宽）模型已知 + lint 基线硬拦；项目特有风格（头注释 / 适配 / import 分组）见本节各条；主题与布局细节按需查 **flutter-rules** skill `references/theming.md` / `layout.md`
 
 ### 8.2 预设 A（Riverpod）特有——**选 A 时生效**
 
@@ -246,6 +247,8 @@
 | 流程层 | **superpowers** | brainstorming→writing-plans→worktree→TDD→subagent→verification→review→finishing 工程闭环 |
 | 技术层 | **dart-flutter** | 每个 Flutter 任务怎么写对（架构/路由/i18n/测试/序列化/响应式） |
 | 工具层 | **dart-flutter** Dart MCP + Stop hooks | 暴露 Dart 工具；会话停止自动 `dart-format` + `dart-analyze` |
+
+> 未装 superpowers / dart-flutter 时**本节可忽略**——本节定义的是叠加协作，非前置依赖。
 
 **核心心智模型**：superpowers 说「做什么」（先写失败测试→看它失败→写最小实现），dart-flutter 说「Flutter 里怎么做」。两者分层，**不冲突**。
 
@@ -305,6 +308,12 @@
 | Flutter 专项审查清单 | 项目根 `checklist.md`（安装时落位） |
 | 多 agent 角色（通用 3 + Flutter 4） | **plugin 自动挂载**（`crules-flutter:frontend` 等，无需复制） |
 | 项目特有信息（必填 3 项：项目名 / 技术栈 / 构建·分析·测试命令；协作偏好覆写 / 提交覆写） | 本节下方「项目附录」 |
+
+### 记忆库接线（init 落位后生效）
+
+@.claude/memory/NAVIGATION.md
+
+> 找东西的第一站，启动即内联载入（约 +3KB 常驻）；`MAINTENANCE.md` / `patterns.md` / `business-rules.md` / `INVARIANTS.md` 等经 NAVIGATION 指针**涉域前 Read**，不整库 @import（按需加载设计——0.4.1 A2 最小集接线）。小项目不用记忆库时：删本行与 `.claude/memory/`（启用条件见 `进阶/记忆库体系.md`）。
 
 ### 项目附录（复制后填写）
 

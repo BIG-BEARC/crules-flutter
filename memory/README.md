@@ -14,8 +14,8 @@
 <!-- twin:mem-files -->
 | 文件 | 用途 | 加载时机 |
 |---|---|---|
-| `NAVIGATION.md` | 顶层导航地图，告诉 AI 去哪找东西 | CLAUDE.md 引用，每次会话隐式加载 |
-| `MAINTENANCE.md` | 自动维护规则，AI 何时该更新本库 | CLAUDE.md 引用，每次会话隐式加载 |
+| `NAVIGATION.md` | 顶层导航地图，告诉 AI 去哪找东西 | CLAUDE.md §十二 @import 启动内联（0.4.1 接线） |
+| `MAINTENANCE.md` | 自动维护规则，AI 何时该更新本库 | NAVIGATION 指针按需 Read（不常驻） |
 | `patterns.md` | 项目特有代码模式 | 实现新功能前 Read |
 | `business-rules.md` | 业务真实规则（业务可达性，软约束·审查 Gate 拦） | 审查 / 方案评审涉域前 Read |
 | `INVARIANTS.md` | 技术不变量（任何路径都必须成立，硬约束·测试拦） | 改约束密集模块前 Read |

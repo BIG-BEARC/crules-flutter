@@ -11,15 +11,51 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.x"
+      - uses: dart-lang/setup-dart@v1
+      - name: 模板 AO 内容过真 analyzer（0.4.1 A1 回归——死配置零容忍）
+        if: always()
+        run: |
+          D=/tmp/ao_check && dart create --no-pub "$D" >/dev/null
+          cd "$D" && dart pub add dev:flutter_lints >/dev/null
+          cp "$GITHUB_WORKSPACE/analysis_options.yaml" analysis_options.yaml
+          OUT=$(dart analyze . 2>&1 || true); echo "$OUT"
+          if ! printf '%s' "$OUT" | grep -q 'Analyzing'; then echo "❌ dart analyze 未跑起（create/pub 失败）"; exit 1; fi
+          if printf '%s' "$OUT" | grep -qiE 'warning|error'; then echo "❌ 模板 AO 含 warning/error（死配置或规则名失效）"; exit 1; else echo "✅ 零 warning"; fi
       - name: deny-list 回归（对抗样本库，fork 自 crules）
         if: always()
         run: python3 hooks/test_deny_list.py
       - name: 语法编译
         if: always()
-        run: python3 -m py_compile hooks/deny-list.py hooks/test_deny_list.py hooks/pending-updates.py
+        run: python3 -m py_compile hooks/deny-list.py hooks/test_deny_list.py hooks/pending-updates.py hooks/stop-reminder.py hooks/test_stop_reminder.py
       - name: 脚本自测（应报错断言 + 幂等断言）
         if: always()
         run: bash scripts/test-self.sh
+      - name: markdown 链接检查（坑卡出处——404/410/5xx 红；反爬与限流态视为不可机检放行）
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import glob, re, sys, urllib.request
+          urls = set()
+          for f in glob.glob("skills/flutter-rules/references/*.md"):
+              urls |= set(re.findall(r'https?://[^\s\)\]】，、]+', open(f, encoding="utf-8").read()))
+          bad = []
+          for u in sorted(urls):
+              req = urllib.request.Request(u, headers={"User-Agent": "Mozilla/5.0 (ci-link-check)"})
+              try:
+                  with urllib.request.urlopen(req, timeout=15) as r:
+                      status = r.status
+              except urllib.error.HTTPError as e:
+                  status = e.code
+              except Exception as e:
+                  bad.append((u, f"网络错误 {type(e).__name__}")); continue
+              if status in (404, 410) or status >= 500:
+                  bad.append((u, status))
+              elif not (200 <= status < 400 or status in (401, 403, 405, 429, 999)):
+                  print(f"  不可机检放行 {status}  {u}")
+          for u, s in bad: print(f"❌ {s}  {u}")
+          print(f"链接检查：{len(urls)} 条，坏 {len(bad)} 条")
+          sys.exit(1 if bad else 0)
+          PY
       - name: deny-list 同步比对（crules 单一权威——不一致即红，须从 crules 同步后再合并）
         if: always()
         run: |

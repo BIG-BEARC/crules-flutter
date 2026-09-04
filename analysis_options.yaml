@@ -20,12 +20,12 @@ linter:
     - avoid_print                    # 统一日志工具（checklist §6）
     - avoid_unnecessary_containers
     - prefer_single_quotes
-    # 对应 checklist「边界处理」类——异步纪律
+    # 对应 checklist「边界处理」类——异步纪律（CancelToken 纪律无对应 lint 规则：
+    # cancelled_token_use 系 analyzer 诊断名而非 lint 规则，曾列此为死配置已删——落点 checklist 异步纪律节，custom_lint 二期候选）
     - unawaited_futures
-    - cancelled_token_use
     - always_declare_return_types
-    # 公开面纪律（plugin/库场景加重）
-    - public_member_api_docs: false  # 文档化按项目要求开，模板不强制
+    # 公开面纪律（plugin/库场景加重）；public_member_api_docs 按项目自开（flutter_lints 未启用它，
+    # map 形态 disable 条目曾扰动列表解析致报警行号偏移，已删——0.4.1 A1）
     - type_annotate_public_apis
     - prefer_typing_uninitialized_variables
 

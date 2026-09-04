@@ -29,8 +29,11 @@ try:
         lines = {l.strip() for l in open(queue, encoding="utf-8") if l.strip()}
     lines.add(os.path.relpath(real, root))
     with open(queue, "a+", encoding="utf-8") as f:  # a+ 使 flock 生效于已存在/新建文件
-        import fcntl
-        fcntl.flock(f, fcntl.LOCK_EX)               # 防并发 async hook 读-改-写竞态
+        try:
+            import fcntl
+            fcntl.flock(f, fcntl.LOCK_EX)           # 防并发 async hook 读-改-写竞态
+        except ImportError:
+            pass  # Windows 无 fcntl（D3，2026-09-05）：降级无锁追加——O_APPEND 单行写具原子性，竞态窗口远小于「完全不记」
         f.seek(0)
         lines |= {l.strip() for l in f.read().splitlines() if l.strip()}
         f.seek(0); f.truncate()

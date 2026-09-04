@@ -4,7 +4,7 @@
 > 配套根规则：[`../CLAUDE.md`](../app/CLAUDE.md)。本篇不重复根规则（提交、范围、后台 diff 展示等），只定义角色分工与调度。
 > 启用 superpowers / spec-kit 时，多 agent 阶段的 skill 映射（如 `subagent-driven-development`）见 项目根 CLAUDE.md §九（superpowers + dart-flutter 协作）。
 >
-> **术语**：本篇「主控」指分发任务的 agent（通常即主对话）；「子代理」指被派发的 agent。模型档位按任务难度选型，不写死——难度越高用越强模型。
+> **术语**：本篇「主控」指分发任务的 agent（通常即主对话）；「子代理」指被派发的 agent。模型档位按任务难度选型，不写死——难度越高用越强模型。0.5.2 起各角色卡 frontmatter 已设默认 `model`（i18n=haiku 低档 / frontend·backend·platform·error=sonnet 中档 / reviewer·plan-reviewer=opus 高档）——档位名随当前可用模型演进，升级 Claude Code 后复核一次。
 
 ---
 

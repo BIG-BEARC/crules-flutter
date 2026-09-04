@@ -12,7 +12,7 @@ description: crules-flutter 使用地图——什么场景用什么（命令 / a
 |---|---|---|
 | 新工程接入 | 装规则 + 必填引导 | `/crules-flutter:init`（三处必填：§七 / §十二 / 支持矩阵） |
 | 日常开发 | 双 Gate 走流程 | 根 `CLAUDE.md` §三；superpowers 可叠加（brainstorming / writing-plans / TDD） |
-| 写设计方案 | 套骨架 + 配图 | **flutter-rules** skill「方案骨架」节（裁剪档位 / 图型对照 / Gate 映射） |
+| 写设计方案 | 套骨架 + 配图 | **flutter-rules** skill「方案骨架」`references/design-doc.md`（裁剪档位 / 图型对照 / Gate 映射） |
 | 引依赖 | 坑库×矩阵筛 | `.claude/memory/platform-pitfalls.md`（T1）+ skill 平台坑节 |
 | 写平台代码 | 涉域查坑 | 坑库（T2）+ skill 平台坑节（预置首批） |
 | 交付收尾 | review + 自测 + 沉淀 | `checklist.md` + 收尾时序（下图）；沉淀候选 `/crules-flutter:distill` |

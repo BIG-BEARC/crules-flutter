@@ -2,6 +2,7 @@
 name: reviewer
 description: "代码审核。对代码变更做规范合规与质量审查；只报告发现与建议，不改码。"
 tools: Read, Glob, Grep
+model: opus
 ---
 
 你是项目的代码审核员。

@@ -20,7 +20,7 @@ TARGET=$1; KIND=""; DRYRUN=0; FORCE=0
 for a in "$@"; do case "$a" in --app) KIND=app;; --plugin) KIND=plugin;; --dry-run) DRYRUN=1;; --force) FORCE=1;; esac; done
 [ "$KIND" = "app" ] || [ "$KIND" = "plugin" ] || { echo "❌ 须指定 --app 或 --plugin"; exit 2; }
 [ -d "$TARGET" ] || { echo "❌ 目标目录不存在: $TARGET"; exit 2; }
-W=0; S=0; N=0
+W=0; S=0; N=0; E=0
 
 do_write() { # $1=描述 $2=目标 $3=内容(空则源复制 $4) [$5=never_force]
   local desc=$1 dst=$2 content=${3:-} src=${4:-} never=${5:-}
@@ -30,7 +30,11 @@ do_write() { # $1=描述 $2=目标 $3=内容(空则源复制 $4) [$5=never_force
   mkdir -p "$(dirname "$dst")"
   local out="$dst"
   if [ -e "$dst" ] && [ "$FORCE" = "1" ]; then out="$dst.new"; fi
-  if [ -n "$src" ]; then cp -R "$src" "$out"; else printf '%s\n' "$content" > "$out"; fi
+  if [ -n "$src" ]; then
+    cp -R "$src" "$out" || { E=$((E+1)); echo "  ERROR（复制失败，不计入写入）  $dst"; return; }
+  else
+    printf '%s\n' "$content" > "$out" || { E=$((E+1)); echo "  ERROR（写入失败，不计入写入）  $dst"; return; }
+  fi
   if [ "$out" = "$dst.new" ]; then N=$((N+1)); echo "  UPDATE-NEW（对照合并后替换）  $out"
   else W=$((W+1)); echo "  WRITE $desc  $dst"; fi
 }
@@ -67,6 +71,15 @@ fi
 
 for f in "$SRC"/进阶/*.md; do do_write "进阶/$(basename "$f")" "$TARGET/进阶/$(basename "$f")" "" "$f"; done
 for f in "$SRC"/memory/*.md; do do_write ".claude/memory/$(basename "$f")" "$TARGET/.claude/memory/$(basename "$f")" "" "$f" "never"; done
-echo "== 汇总：写入 $W，跳过/保留 $S，.new 待合并 $N =="
+echo "== 汇总：写入 ${W}，跳过/保留 ${S}，.new 待合并 ${N}，失败 ${E} =="
+
+# D3：hooks 环境显式降级警告（不阻塞安装——静默降级改显式，2026-09-05）
+if command -v python3 >/dev/null 2>&1; then
+  python3 -c "import fcntl" 2>/dev/null || echo "⚠️ 本机 python3 缺 fcntl（Windows 常见）——deny-list 硬闸与 Stop 收尾提醒可用，pending-updates 漂移队列降级为无锁追加（仍记录）"
+else
+  echo "⚠️ 本机无 python3——deny-list 硬闸 / 漂移队列 / Stop 收尾提醒三 hooks 均不生效，防线回到 Claude Code 原生权限确认（README「环境要求与更新信任」）"
+fi
+
 echo "== 下一步 == ① 完成 CLAUDE.md §七【复制后必填】三选一 ② 填 §十二附录 ③ 填 .claude/memory/platform-pitfalls.md 支持矩阵（/crules-flutter:init 三段式初稿） ④ 有 .new 文件时对照合并后替换 ⑤ flutter-rules skill 与 7 agents 已随 plugin 就位"
+[ "${E}" -eq 0 ] || exit 1
 exit 0

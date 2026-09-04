@@ -2,7 +2,7 @@
 
 面向 **Flutter 工程**的独立协作规则 plugin——通用协作层 fork 自 [crules](https://github.com/BIG-BEARC/crules) 基线 `v74-fork-base`（commit ea4d25c），**此后独立演进、互不依赖**（唯一例外见「与 crules 的关系」）。
 
-> **当前状态：0.4.0 易用性与知识沉淀体系落地**——5 命令面板 / memory 8 模板（含平台坑库与分域参考系）/ 沉淀闸 / review 主工位（设计方案与实施计划见 `docs/`，评审两轮通过）；整合线历史（外审四轮至 0.2.3）见 [CHANGELOG](CHANGELOG.md)，唯批 3b（saas_pos 瘦身）等稳定期。
+> **当前状态：0.5.2 三审链收官**——外审 13 项发现经「外审→复核→复核之复核」三审互纠全数裁决落地（0.4.1 lint 死配置+记忆库接线 / 0.5.0 skill 瘦身 39KB→4.3KB 薄索引+references 四域 / 0.5.1 三坑卡+预设栈刷新+双模板孪生守护 / 0.5.2 Stop 读侧闭环+hooks 降级链）；test-self 14 断言全绿；整合线历史见 [CHANGELOG](CHANGELOG.md)，唯批 3b（saas_pos 瘦身）与 B2/B3（常驻瘦身）等稳定期/试点观测。
 
 ---
 
@@ -73,7 +73,9 @@ agents 不复制——plugin 已自动挂载 7 角色（`crules-flutter:frontend
 
 ```bash
 # ① 定位源（plugin cache 最大版本；本地开发态可换本仓克隆路径）
-SRC=$(ls -d ~/.claude/plugins/cache/*/crules-flutter/*/scripts/install.sh | sort -V | tail -1 | xargs dirname)/..
+SRC=$(ls -d ~/.claude/plugins/cache/*/crules-flutter/*/scripts/install.sh 2>/dev/null | sort -V | tail -1)
+[ -n "$SRC" ] || { echo "❌ 未找到 plugin cache——先装 plugin，或把 SRC 手动指向本仓克隆路径"; exit 1; }
+SRC=$(dirname "$SRC")/..
 # ② 查模板版本差
 bash "$SRC/scripts/check-imports.sh" <项目根>
 # ③ 模板升级：已存在文件出 .new 伴生供对照合并（memory 永不覆盖）
@@ -84,7 +86,7 @@ bash "$SRC/scripts/install.sh" <项目根> --app --force
 
 ### 环境要求与更新信任
 
-- **环境要求：macOS / Linux**（hooks 依赖 `python3` 与 `fcntl`；Windows 上 hook 静默失效，终极防线回到原生权限确认——批 2c 起携带 hooks）
+- **环境要求：macOS / Linux**（hooks 依赖 `python3`；Windows 上 deny-list 硬闸与 Stop 收尾提醒不可用、漂移队列降级为无锁追加——install 时显式警告，终极防线回到原生权限确认）
 - **更新信任（供应链）**：本 plugin 的 hooks 在每次 Bash 调用前执行——`plugin update` 后新 hook 代码静默生效，被污染的更新 = 任意代码执行。建议 update 前先看 hooks 变更（`git -C <本仓> diff <旧tag>..<新tag> -- hooks/`）或锁定 commit。
 
 ### 停用与恢复
@@ -114,4 +116,5 @@ crules（母版，保持活跃）──fork──► crules-flutter（本包，�
 - 治理从简：README + CHANGELOG + 最简检查（crules 的五维雷达/评审轮次体系**不复制**——治理成本延后到真有痛感再付）
 - 定期外审选项保留（crules 的独立 subagent 复审模式可复用，防规则滑向单项目特有）
 - **skill 平台坑节维护义务**（0.4.0 起）：Flutter / 平台大版本出现 → 扫 skill 坑节标【待重验】→ 核验刷新（每次 minor 例行）
+- **预设栈审视义务**（0.5.1 起）：app 模板 §七 预设的包维护态与争议项按「最后核验」日期例行刷新，与坑节维护义务并列（每次 minor）
 - **沉淀闸蜜月期**（0.4.0 起）：真实试点上前 5 次 `/distill` 建议全闸档校准（人工改写条目多 = AI 判准偏差信号）；观测项：弃用率、`/context` 常驻快照、skill 触发体积

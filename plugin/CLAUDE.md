@@ -86,7 +86,7 @@
 ### 方案 Gate（必须）
 
 修改前列出：① 受影响文件 ② 修改位置 ③ 当前实现 / 问题 ④ 修改方式 ⑤ 对**下游使用者** / 数据 / 已有功能的影响 ⑥ 预期效果 ⑦ 风险、回退、验证方法。按规模裁剪：极简改动只需 ①+④+⑦。方案获明确确认后才能动手。
-> 方案文档写法（章节骨架 / 裁剪档位 / 配图约定）见 **flutter-rules** skill「方案骨架」节——写方案时按需加载。
+> 方案文档写法（章节骨架 / 裁剪档位 / 配图约定）见 **flutter-rules** skill「方案骨架」（`references/design-doc.md`）——写方案时按需加载。
 
 > **改公开 API 的方案 Gate 加严**：签名变更须列出全工程（含 example/）引用点逐个确认，并同步其测试与 mock（改实现不改测试 = 假绿）。
 
@@ -133,6 +133,7 @@
 
 - **禁止笼统"已验证"**：明确说"静态检查完成 / 测试全绿 / example 验证过"
 - **长输出先裁剪再入上下文**：只取结论行 + 失败详情，禁全量输出反复进上下文；单点问题定向复跑
+- **静默失败验到现象层**：无构建期信号的失败（资源加载 / 热重载残留 / 平台行为）必须验证到可观察现象层；example 新增 assets 需完全重启（热重载不加载新资源）
 - 当前环境无法完成某级验证时，**必须**报告未验证内容和原因，不谎报
 
 ### 失败处理
@@ -213,6 +214,8 @@
 | 流程层 | **superpowers** | brainstorming→writing-plans→worktree→TDD→subagent→verification→review→finishing 工程闭环 |
 | 技术层 | **dart-flutter** | Dart/Flutter 任务怎么写对（测试/分析/模式匹配/序列化/FFI） |
 | 工具层 | **dart-flutter** Dart MCP + Stop hooks | 暴露 Dart 工具；会话停止自动 `dart-format` + `dart-analyze` |
+
+> 未装 superpowers / dart-flutter 时**本节可忽略**——本节定义的是叠加协作，非前置依赖。
 
 **核心心智模型**：superpowers 说「做什么」，dart-flutter 说「Dart 里怎么做」。两者分层，**不冲突**。**触发规则**：每个任务开始前先检查是否有 skill 适用（superpowers 的 1% 规则）。
 
@@ -295,6 +298,12 @@ plugin 极契合 TDD——大量纯函数和明确的公开 API。**public API �
 | Flutter 专项审查清单 | 项目根 `checklist.md`（安装时落位） |
 | 多 agent 角色（通用 3 + Flutter 4） | **plugin 自动挂载**（`crules-flutter:frontend` 等，无需复制） |
 | 项目特有信息（必填 3 项 / 协作偏好覆写） | 本节下方「项目附录」 |
+
+### 记忆库接线（init 落位后生效）
+
+@.claude/memory/NAVIGATION.md
+
+> 找东西的第一站，启动即内联载入（约 +3KB 常驻）；`MAINTENANCE.md` / `patterns.md` 等经 NAVIGATION 指针**涉域前 Read**，不整库 @import（按需加载设计——0.4.1 A2 最小集接线）。小项目不用记忆库时：删本行与 `.claude/memory/`（启用条件见 `进阶/记忆库体系.md`）。
 
 ### 项目附录（复制后填写）
 

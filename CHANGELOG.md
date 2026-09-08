@@ -1,5 +1,17 @@
 # crules-flutter CHANGELOG
 
+## 0.6.2 · 🟢 轻微项清池批 + 外部复核必修批——审查留池全清 + 语义闸上闸
+
+> [审查 §四](docs/审查-2026-09-05-时效性与合适性.md) 🟢 9 条：2 条已随 0.5.0 瘦身消化，7 条本批清；随后外部复核（AI-coding 侧）抓出必修 3 + 漂移 2，同批修并上闸。**两轮审查留池至此全空。**
+
+- **必修（外部复核，全部核验属实）**：checklist:78 触控目标错标纠正——`48dp（Material/Android 最低推荐）/ 44pt（Apple HIG·iOS）`（原 44×44 误标 Material）；frontend.md + app §十 两处 screenutil 正面残留清除（改指 §七 所选方案——0.6.2 首轮只修了 checklist 漏了执行面）；app 预设 B 裸 `hive` → `hive_ce`（0.5.1 栈审视刷了 A 漏了 B 的同文件矛盾）
+- **漂移修复**：README 横幅 0.5.2 → 0.6.2（滞后三个版本）；help.md hooks ×2 → ×3（0.5.2 stop-reminder 漏计——自称权威全表恰最不该漂）
+- **语义闸上闸（test-self 第 15 断言）**：README 横幅版本 ↔ plugin.json 分发版本一致 / help hooks 数 ↔ `hooks/*.py` 实际数一致 / 停更栈禁推（agents 无 screenutil 推荐、app 无未注记裸 hive）——把本轮 grep 级可检的漂移形态机械化看守；首跑即抓到自注记误伤，口径与 hive 一致排除「停更」注记行
+- **过度绝对化软化**：layout.md「不要混用 Expanded/Flexible」→ 合法常见写法 + 明确弹性意图（外部复核 🟡 采纳项）；app 预设 C 手写序列化 + 边界注记（skill 默认生成不手写，此为克制依赖例外）
+- **🟢 轻微项 7 条**：checklist:45 `Selector` 按方案对号（provider `Selector` / Riverpod `select`）｜agents ×7 `§2`→`§二（提交策略）` 15 处｜error.md「修复」→「诊断与修复建议」｜platform.md 职责 + Web｜app 预设 C 注「仅极端克制依赖时选」｜memory/reference-map 三行餐饮示例压一行占位｜AO 头注 +flutter_lints 大版本复查
+- **使用面同步补遗（0.6.0 漏同步）**：README「装完必填三处」① 与 init 引导补**适配方案三选一 + 字体策略**（公共必选）；README 升级节新增**跨版本迁移要点表**（≤0.3→0.4 checklist 重排与记忆库接线 / 0.5→0.6 两必填环节补答 / 任意跨度 memory 只对照不强合）——老工程合并 `.new` 此前只有机械三步、无合并要点指引
+- **留池（独立裁决项，非本批）**：性能 profiling / CI·发布（flavor·签名·混淆·符号化）/ 线上崩溃监控三领域空白；POS 垂直内容拆 core+pos-vertical（开源定位裁决）；patterns/INVARIANTS 机械钩子推广；plugin §八 Pigeon/发布检查补位
+
 ## 0.6.1 · 审查留池收尾批——S16 checklist 补节 + S9-S11 关闭核验
 
 > 审查文档（[时效性与合适性审查](docs/审查-2026-09-05-时效性与合适性.md)）留池项收尾：S9-S16 全部关闭，仅余 🟢 轻微项随日常维护消化。

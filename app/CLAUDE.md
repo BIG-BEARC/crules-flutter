@@ -190,15 +190,15 @@
 - 路由：`go_router`
 - 网络：`dio`
 - 序列化：`freezed` + `json_serializable`（不可变模型 + 联合类型）
-- 本地存储：`hive`
+- 本地存储：`hive_ce`（hive 原版已停更 2022-06——社区延续版，口径同预设 A 存储注记）
 - 国际化：`flutter_localizations` + `intl`
 
-### 预设 C：Provider + http（轻量小项目）
+### 预设 C：Provider + http（仅极端克制依赖时选——整体偏旧，常规项目选 A/B）
 
 - 状态管理：`provider` + `ChangeNotifier`
 - 路由：`Navigator 1.0`（命名路由）
 - 网络：`http` 包
-- 序列化：`dart:convert` 手写 `fromJson`/`toJson`
+- 序列化：`dart:convert` 手写 `fromJson`/`toJson`（选 C 即接受手写维护成本——skill 默认 `json_serializable` 生成不手写，此为本预设克制依赖的例外）
 - 本地存储：`shared_preferences`
 - 国际化：`flutter_localizations` + `intl`
 
@@ -297,7 +297,7 @@ flutter_screenutil（.w/.h 按稿缩放）。注：5.9.3 后 ~28 个月无稳定
 - **Data 层**：Repository 模式。Service 包外部 API（HTTP/DB/平台插件）；Repository 消费 Service、转 Domain Model、管缓存/重试
 - **Logic 层（Domain，可选）**：仅当业务逻辑复杂到污染 ViewModel、或需跨 ViewModel 复用时抽 Use Case
 - **跨层纪律**：View 只调自己的 ViewModel/聚合层，**不跨页面调别人的状态、不跨层直接 watch 多个底层源**
-- **响应式/暗黑**：走统一扩展（`ThemeExtension`/`ScreenUtil`），颜色/字号/间距归口常量类，**不硬编码**
+- **响应式/暗黑**：走统一扩展（`ThemeExtension` + §七 所选适配方案），颜色/字号/间距归口常量类，**不硬编码**
 
 ---
 

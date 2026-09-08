@@ -75,6 +75,24 @@ for s in 一 三 四 五 六; do
 done
 [ "$tt_ok" = "1" ] && { PASS=$((PASS+1)); echo "PASS  双模板孪生结构一致（节序号集 + §一/三/四/五/六 条数，D1 回归）"; } || { FAIL=$((FAIL+1)); echo "FAIL  双模板孪生漂移（见上——单侧改动须同源对照改或显式豁免）"; }
 
+# 0.6.2 断言：孪生语义闸——对外口径三处一致 + 停更栈禁推（两轮审查抓到的 grep 级漂移上闸）
+sem_ok=1
+# ① README 横幅版本 == plugin.json 分发版本
+pj_ver=$(grep -o '"version": "[^"]*"' "${SRC}/.claude-plugin/plugin.json" | head -1 | cut -d'"' -f4)
+br_ver=$(grep -m1 '当前状态：' "${SRC}/README.md" | grep -oE '当前状态：[0-9]+\.[0-9]+\.[0-9]+' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+if [ -n "${pj_ver}" ] && [ "${br_ver}" = "${pj_ver}" ]; then :; else sem_ok=0; echo "  ↳ README 横幅版本(${br_ver:-无}) ≠ plugin.json(${pj_ver})"; fi
+# ② help.md hooks ×N == hooks/*.py 实际数
+hook_n=$(ls "${SRC}"/hooks/*.py 2>/dev/null | grep -vc test_ || true)
+help_n=$(grep -oE 'hooks ×[0-9]+' "${SRC}/commands/help.md" | head -1 | grep -oE '[0-9]+')
+if [ -n "${help_n}" ] && [ "${help_n}" = "${hook_n}" ]; then :; else sem_ok=0; echo "  ↳ help.md hooks ×${help_n:-无} ≠ 实际 ${hook_n}"; fi
+# ③ 停更栈禁推：agents 无 screenutil 正面示例；app 模板无未注记的裸 hive
+su_hit=$(grep -ih screenutil "${SRC}"/agents/*.md 2>/dev/null | grep -cv '停更' || true)
+[ "${su_hit}" -eq 0 ] || { sem_ok=0; echo "  ↳ agents 含 screenutil ×${su_hit}（A2 已判停更，勿作示例）"; }
+bare_hive=$(grep -i 'hive' "${SRC}/app/CLAUDE.md" | grep -v 'hive_ce' | grep -cv '停更' || true)
+[ "${bare_hive}" -eq 0 ] || { sem_ok=0; echo "  ↳ app 模板存在未注记裸 hive ×${bare_hive}（原版停更 2022-06，须 hive_ce 或停更注记）"; }
+[ "${sem_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  孪生语义闸（横幅/help/hooks 版本口径 + 停更栈 screenutil·hive 禁推）"; } || { FAIL=$((FAIL+1)); echo "FAIL  语义闸（见上——对外口径与停更栈表述漂移）"; }
+
+
 # 幂等断言：同输入两次运行结论一致且均 block（双 plugin 共存的可测背书）
 BADCMD="git push --fo""rce origin main"   # 分段拼接，避免源码含完整字面串
 j1=$(printf '{"tool_input":{"command":"%s"}}' "$BADCMD")

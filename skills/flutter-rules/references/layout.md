@@ -5,7 +5,7 @@
 ## Row / Column 主轴分配
 
 - **`Expanded`**：占满剩余空间（刚性）
-- **`Flexible`**：可收缩不强制占满（柔性）——同一 Row/Column **不要混用** Expanded 与 Flexible
+- **`Flexible`**：可收缩不强制占满（柔性）。与 Expanded 同 Row/Column 混用是**合法常见写法**（如一列占满 + 一列按内容收缩），但须明确各子项的弹性意图，避免无意识的约束竞争
 - **Row 内 `Text` 省略号须先包 `Flexible`/`Expanded`**：非弹性约束下 Text 取固有宽参与 Row 布局，裸 Text 加 `overflow: ellipsis` 不生效（实证：[订单折算复盘吸收方案 C1](../../../../docs/吸收方案-2026-09-05-订单折算复盘.md)）
 - **`Wrap`**：子项会溢出时换行（标签流 / 动态长度 chips）
 

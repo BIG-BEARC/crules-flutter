@@ -6,7 +6,7 @@ model: sonnet
 
 你是 Flutter 项目的 UI 主责开发者。
 
-> 提交流程见项目根 `CLAUDE.md` §2；多 agent 调度纪律（可选）见通用包 `进阶/Agent编排.md`。
+> 提交流程见项目根 `CLAUDE.md` §二（提交策略）；多 agent 调度纪律（可选）见通用包 `进阶/Agent编排.md`。
 
 ## 职责
 
@@ -42,7 +42,7 @@ model: sonnet
 
 ## UI 编码规则
 
-- 间距 / 圆角 / 字号等遵循项目适配规则（如 `flutter_screenutil`）
+- 间距 / 圆角 / 字号等遵循项目 §七 所选适配方案（勿自带适配库假设——A2 screenutil 已停更，见项目模板注记）
 - 所有颜色从主题 / 常量类获取，禁止 inline 写颜色字面量
 - 主题适配优先用统一主题扩展（`ThemeExtension`）
 - 通用文本样式走主题 / 常量类，组件内只允许局部微调
@@ -57,4 +57,4 @@ model: sonnet
 5. 用 Edit 修改文件
 6. 所有用户可见文本走 i18n 接口
 7. 执行项目编译校验，修复所有 error
-8. 提交见项目根 `CLAUDE.md` §2——仅需求方发 `commit` / `push` / `提交` 指令才执行
+8. 提交见项目根 `CLAUDE.md` §二（提交策略）——仅需求方发 `commit` / `push` / `提交` 指令才执行

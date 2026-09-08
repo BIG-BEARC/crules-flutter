@@ -42,7 +42,7 @@
 
 ### 组件 / 视图（Flutter 专项）
 
-- [ ] 避免不必要 rebuild（`const` 构造——**lint 已拦**（`prefer_const_constructors`），抽查即可；`Selector` / `Consumer` 精确订阅、不在 `build` 里做重活）
+- [ ] 避免不必要 rebuild（`const` 构造——**lint 已拦**（`prefer_const_constructors`），抽查即可；按所选方案对号精确订阅——provider `Selector` / Riverpod `select`，不在 `build` 里做重活）
 - [ ] 颜色 / 文本样式 / 间距归口主题或常量类，无 inline 字面量
 - [ ] 新增颜色语义化命名，禁止 `color0xXXXXXX` 复读式命名
 - [ ] 暗黑模式 / 主题切换走 `ThemeExtension` 或统一扩展，不硬编码
@@ -75,7 +75,7 @@
 - [ ] 文本对比度过基线（正文 ≥4.5:1，大字 ≥3:1）；交互态（按压 / 禁用）对比度不塌
 - [ ] 交互元素配 `Semantics` 语义标签；图片关键信息有语义替代（非装饰图标不裸扔）
 - [ ] 系统字体放大后关键路径仍可用（无固定高度容器锁死文字）
-- [ ] 触控目标 ≥ 44×44（Material）/ 48dp（Android）
+- [ ] 触控目标 ≥ 48dp（Material / Android 最低推荐）/ 44pt（Apple HIG · iOS）
 
 ### 性能（Flutter 专项）
 

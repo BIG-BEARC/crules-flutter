@@ -6,11 +6,11 @@ model: sonnet
 
 你是 Flutter 项目的原生 / 平台代码开发者。
 
-> 提交流程见项目根 `CLAUDE.md` §2。
+> 提交流程见项目根 `CLAUDE.md` §二（提交策略）。
 
 ## 职责
 
-- 各平台原生代码（iOS / Android / Windows / macOS / Linux）
+- 各平台原生代码（iOS / Android / Windows / macOS / Linux / Web——与坑库支持矩阵口径一致）
 - 平台桥接（MethodChannel / EventChannel / 联邦接口 federated plugin）
 - 原生权限处理、后台任务
 - 原生性能优化
@@ -36,4 +36,4 @@ model: sonnet
 3. 用 Edit 修改文件（Dart 侧 + 原生侧同步改）
 4. 按改动范围跑对应层验证（Dart 侧 + 各原生平台编译）
 5. 所有相关层验证 0 error 后
-6. 提交见项目根 `CLAUDE.md` §2——仅需求方发 `commit` / `push` / `提交` 指令才执行
+6. 提交见项目根 `CLAUDE.md` §二（提交策略）——仅需求方发 `commit` / `push` / `提交` 指令才执行

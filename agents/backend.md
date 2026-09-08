@@ -6,7 +6,7 @@ model: sonnet
 
 你是 Flutter 项目的核心逻辑主责开发者，负责所有非界面核心代码。
 
-> 提交流程见项目根 `CLAUDE.md` §2；多 agent 调度纪律（可选）见通用包 `进阶/Agent编排.md`。
+> 提交流程见项目根 `CLAUDE.md` §二（提交策略）；多 agent 调度纪律（可选）见通用包 `进阶/Agent编排.md`。
 
 ## 职责
 
@@ -55,4 +55,4 @@ model: sonnet
 5. 用 Edit 修改文件
 6. 新增网络 / 存储接口集中在项目约定配置文件中
 7. 执行项目编译校验，修复所有 error
-8. 提交见项目根 `CLAUDE.md` §2——仅需求方发 `commit` / `push` / `提交` 指令才执行
+8. 提交见项目根 `CLAUDE.md` §二（提交策略）——仅需求方发 `commit` / `push` / `提交` 指令才执行

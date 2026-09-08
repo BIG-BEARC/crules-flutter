@@ -2,7 +2,7 @@
 
 面向 **Flutter 工程**的独立协作规则 plugin——通用协作层 fork 自 [crules](https://github.com/BIG-BEARC/crules) 基线 `v74-fork-base`（commit ea4d25c），**此后独立演进、互不依赖**（唯一例外见「与 crules 的关系」）。
 
-> **当前状态：0.5.2 三审链收官**——外审 13 项发现经「外审→复核→复核之复核」三审互纠全数裁决落地（0.4.1 lint 死配置+记忆库接线 / 0.5.0 skill 瘦身 39KB→4.3KB 薄索引+references 四域 / 0.5.1 三坑卡+预设栈刷新+双模板孪生守护 / 0.5.2 Stop 读侧闭环+hooks 降级链）；test-self 14 断言全绿；整合线历史见 [CHANGELOG](CHANGELOG.md)，唯批 3b（saas_pos 瘦身）与 B2/B3（常驻瘦身）等稳定期/试点观测。
+> **当前状态：0.6.2 审查池全清**——两轮审查（时效性 S1-S16 + 外审 A-E）与 🟢 轻微项全数收口（0.6.0 适配三选一+字体策略+IoT 抽层 / 0.6.1 checklist 无障碍·性能节 / 0.6.2 轻微项清池+使用面补遗+孪生语义闸）；常驻基线 11.5K 已实测落档（B2 不触发）；test-self 断言全绿；整合线历史见 [CHANGELOG](CHANGELOG.md)，余性能 profiling / CI·发布 / 崩溃监控三领域空白按需单开。
 
 ---
 
@@ -67,7 +67,7 @@ sequenceDiagram
 
 agents 不复制——plugin 已自动挂载 7 角色（`crules-flutter:frontend` 等）。
 
-**装完必填三处**：① `CLAUDE.md` §七【复制后必填】技术栈三选一（选定后删未选项）；② §十二项目附录（项目名 / 构建·分析·测试命令）；③ **支持矩阵**——`.claude/memory/platform-pitfalls.md` 头部（`/crules-flutter:init` 三段式初稿：机械读 → 人核对 → 人补实测上限）。
+**装完必填三处**：① `CLAUDE.md` §七【复制后必填】——技术栈三选一（选定后删未选项），App 形态另含**适配方案三选一 + 字体策略**（公共必选，0.6.0 起）；② §十二项目附录（项目名 / 构建·分析·测试命令）；③ **支持矩阵**——`.claude/memory/platform-pitfalls.md` 头部（`/crules-flutter:init` 三段式初稿：机械读 → 人核对 → 人补实测上限）。
 
 **升级**：`plugin update` 只更新 plugin 通道（hooks / agents / skill / 命令）；项目内模板按三步升级——
 
@@ -83,6 +83,15 @@ bash "$SRC/scripts/install.sh" <项目根> --app --force
 ```
 
 **记忆库兜底**：`/crules-flutter:update-memory`——索引全量刷新（日常仍以「写代码顺手更新」为主，见 `.claude/memory/MAINTENANCE.md`）。
+
+**跨版本迁移要点**（合并 `.new` 时按升级跨度对号；逐版本细节查 [CHANGELOG](CHANGELOG.md)）：
+
+| 升级跨度 | 合并 `.new` 时注意 |
+|---|---|
+| ≤0.3 → 0.4+ | **checklist 直接采新版**（0.4.0 全量重排为编号 0–9，把项目自加条目并入对应节，别在旧结构上打补丁）；CLAUDE.md §十二新增「记忆库接线」`@import` 行——接线后**裁剪 NAVIGATION 占位表**为项目实际目录；memory/ 多出 `reference-map` / `platform-pitfalls` 两模板（缺失文件自动落地，**支持矩阵必填**） |
+| 0.4 → 0.5 | 项目侧无结构变化——skill 瘦身 / 坑卡补强全走 plugin 通道，`plugin update` 即得，模板通常无 `.new` |
+| 0.5 → 0.6 | CLAUDE.md §七新增**适配方案三选一 + 字体策略**两必填环节（合并后补答，老工程按既有适配方式对号）；文件头规则语义反转（@Author 默认要求 → 跟随项目现状——存量带头循既有格式）；checklist 新增无障碍 / 性能 / 折算专项节 + R1-R4 并条（自加条目对号入座） |
+| 任意跨度 | memory/ 永不覆盖——新增模板文件自动补齐，既有八文件**只人工对照不强合**；agents / hooks / skill / 命令不随模板升级走（plugin 通道自动）；项目自改的 §七技术栈 / §十二附录是合并主体，勿被新版冲掉 |
 
 ### 环境要求与更新信任
 

@@ -73,6 +73,6 @@ final ButtonStyle myButtonStyle = ButtonStyle(
 
 ## 无障碍（A11Y）
 
-- 文本对比度：正文 ≥ **4.5:1**，大字（18pt / 14pt bold）≥ **3:1**（WCAG）
+- 文本对比度：正文 ≥ **4.5:1**，大字（18pt / 14pt bold）≥ **3:1**（WCAG 2.2，数值与 2.1 相同）
 - 系统字体放大后 UI 仍可用（禁固定高度容器锁死文字）
 - 交互元素配 `Semantics` 语义标签；发布前 TalkBack / VoiceOver 过关键路径

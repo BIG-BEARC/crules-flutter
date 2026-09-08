@@ -1,5 +1,10 @@
 # crules-flutter CHANGELOG
 
+## 0.6.5 · 坑卡例行核验刷新——iOS 26.x 与 Impeller 双卡 2026-09-08 复核
+
+- **Impeller 卡**：desktop 3.47 默认经官方 blog 复核属实；+桌面初期阵痛实证 [flutter#191860](https://github.com/flutter/flutter/issues/191860)（Windows 3.47.1 Impeller 启动显著慢于 Skia——桌面升 3.47 启动回归先核此 issue）；最后核验 09-05 → 09-08
+- **iOS 26.x 卡**：状态维持「未修复·官方跟踪中」；+社区口径「Flutter 团队不打算在 Cupertino 组件实现 Liquid Glass（设计决策非待修 bug）」标注（以官方 issue 里程碑为准）；`cupertino_native_better` 社区方案活跃维持；最后核验 09-04 → 09-08
+
 ## 0.6.4 · saas-cashier 生产实证吸收批——列表 key 错乱 / SP 启动白屏 / 图片解码异常 / Impeller Vulkan 崩溃
 
 > 用户指认三笔生产问题（列表错乱加 key / Windows SP 白屏 / 图片异常），经 saas-cashier 全史 git 检索钉出实证后吸收；点单页库存角标错乱未钉到单笔 commit，按同型多笔实证吸收并如实标注。

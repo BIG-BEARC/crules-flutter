@@ -39,7 +39,7 @@
 - 归属：Flutter SDK（引擎 / 框架层——iOS 26 Liquid Glass 新 UI 与 Flutter 渲染不匹配）
 - 触发场景：iOS 26 真机 / 模拟器上运行 Flutter 应用，涉及 CupertinoTabBar / 绘制类渲染 ｜ 症状：tab bar 样式与 iOS 26 Liquid Glass 不符（内容不延伸到底栏下方）、真机黑屏不渲染、debug 模式不可用等 ｜ 根因：iOS 26 引入 Liquid Glass 新 UI 范式，Flutter 未实现对应视觉 / 过渡特性（官方文档列 iPad 风格 tab bar #150590、liquid glass 支持 #170310 等为「尚未完全实现」；#186572 黑屏关联 Flutter 3.38 的 UISceneDelegate 迁移） ｜ 规避：等待官方实现（跟踪 #170310 / #150590）；社区方案 cupertino_native_better 提供 SwiftUI 原生 Liquid Glass tab bar
 - 区间：受影响 Flutter 版本区间 / 修复版本——官方未给数字（截至官方文档 3.47.2 快照未列 affected/fixed 版本），倾向全区间（iOS 26 上）；社区信息称 debug 模式问题自 3.35.x 改善、黑屏与 3.38 迁移相关，但无 issue 内里程碑确认
-- 状态：未修复（官方跟踪中） ｜ 最后核验：2026-09-04
+- 状态：未修复（官方跟踪中；2026-09-08 复核——社区口径称 Flutter 团队**不打算**在 Cupertino 组件实现 Liquid Glass（设计决策非待修 bug，[Stackademic 报道](https://blog.stackademic.com/flutter-wont-ship-liquid-glass-support-your-ios-26-app-is-stuck-in-2024-40a26af9b8fc)——以官方 issue 里程碑为准）；社区原生方案 `cupertino_native_better` 活跃（含 TabBar） ｜ 最后核验：2026-09-08
 - 出处：[Flutter 官方 iOS 26 支持状态文档](https://docs.flutter.dev/platform-integration/ios/ios-latest)、[flutter#150590](https://github.com/flutter/flutter/issues/150590)（iPad 风格 tab bar）、[flutter#170310](https://github.com/flutter/flutter/issues/170310)（liquid glass 支持）、[flutter#186572](https://github.com/flutter/flutter/issues/186572)（iOS 26 真机黑屏）、[cupertino_native_better](https://pub.dev/packages/cupertino_native_better)、[Stack Overflow 79747677](https://stackoverflow.com/questions/79747677/)
 
 ### [iOS/Android/Desktop] Impeller 渲染器换代——Skia 时代绕法失效
@@ -47,8 +47,8 @@
 - 归属：Flutter SDK（引擎层——渲染器自 Skia 换代 Impeller，分平台分批默认）
 - 触发场景：渲染异常 / 性能问题排查时套用 Skia 时代老绕法与性能 hack ｜ 症状：老绕法不生效或行为反转、渲染结果与 Skia 时期不一致 ｜ 根因：Impeller 已成默认引擎——**iOS 唯一支持引擎、无切回 Skia 能力**；Android API 29+ 默认（低版本或无 Vulkan 设备回退 legacy OpenGL；`--no-enable-impeller` 仅调试用）；macOS/Linux/Windows 自 **3.47** 默认（官方预告未来移除 opt-out）；Web 仍 Skia ｜ 规避：渲染问题按 Impeller 语境排查不套 Skia 经验；关注官方 migration 指南与 issue；Android 低端机注意 OpenGL 回退路径的行为差异
 - 区间：iOS 全区间（唯一引擎）；Android API 29+ 默认（起默认的引擎版本号未逐字核验，官方 availability 节只给现状）；desktop 自 3.47；Web 全区间 Skia
-- 状态：现行官方口径 ｜ 最后核验：2026-09-05
-- 出处：[Impeller 官方文档 availability 节（3.47 快照逐字核验）](https://docs.flutter.dev/perf/impeller)｜**实证追加（2026-09-08）**：saas-cashier `d1a86dc1d`——Android POS 定制设备 Vulkan GPU native crash（SIGSEGV），`AndroidManifest` `EnableImpeller=false` 回退 Skia 修复——无 Vulkan / 驱动残缺的定制设备是回退开关的现实主战场（白屏 / 崩溃排障时先核设备 GPU 驱动）
+- 状态：现行官方口径 ｜ 最后核验：2026-09-08（desktop 3.47 默认经官方 blog 复核属实；desktop 初期阵痛实证：[flutter#191860](https://github.com/flutter/flutter/issues/191860) Windows 3.47.1 Impeller 启动显著慢于 Skia——桌面升级 3.47 后启动回归先核此 issue）
+- 出处：[Impeller 官方文档 availability 节](https://docs.flutter.dev/perf/impeller) + [3.47 官方 blog](https://flutter.dev/blog/whats-new-in-flutter-3-47)｜**实证追加（2026-09-08）**：saas-cashier `d1a86dc1d`——Android POS 定制设备 Vulkan GPU native crash（SIGSEGV），`AndroidManifest` `EnableImpeller=false` 回退 Skia 修复——无 Vulkan / 驱动残缺的定制设备是回退开关的现实主战场（白屏 / 崩溃排障时先核设备 GPU 驱动）
 
 ### [Android/Windows/macOS] 系统字体回退不可信——跨端字重/字形异常
 

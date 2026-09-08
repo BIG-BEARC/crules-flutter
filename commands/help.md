@@ -43,3 +43,23 @@ sequenceDiagram
 - **skill**：flutter-rules（技术规范参考 + 方案骨架 + 平台坑节）
 - **hooks ×3**：deny-list（PreToolUse 安全闸）/ pending-updates（PostToolUse 同步提示）/ stop-reminder（Stop 收尾提醒）（供应链说明见 README）
 - **模板**：根 CLAUDE.md（App / Plugin 二选一）+ checklist + 进阶 5 篇 + memory 8 模板
+
+## 冲突时听谁的（优先级链）
+
+| 优先级 | 裁决方 |
+|---|---|
+| 1 | 需求方当前指令 |
+| 2 | 项目根 `CLAUDE.md`（模板） |
+| 3 | superpowers / dart-flutter skills |
+| 4 | flutter-rules skill |
+| 5 | 模型默认行为 |
+
+> 两件**独立于链外、恒在生效**：deny-list hook（破坏性命令硬闸，无放行机制——确认后也须人工执行）；`analysis_options.yaml` lint（静态层硬拦，不经判断）。规则「时严时松」的观感多半来自高优先级项覆盖了低优先级项——按本表归因，别猜。
+
+## 最小概念五条（新消费者先装进脑子的全部）
+
+1. **双 Gate**：非平凡改动先需求确认、再方案确认，两道 Gate 过了才动手（模板 §三）
+2. **证据 5 级**：声明「完成 / 修复」前必须跑验证贴输出，禁笼统「已验证」（模板 §四）
+3. **只报不改**：reviewer / plan-reviewer 两角色只输出发现与建议，修哪些由需求方裁决、修复由主控执行
+4. **memory 永不覆盖**：`.claude/memory/` 落地后即项目制度资产，升级只对照不强合；知识定稿走 `/crules-flutter:distill` 闸
+5. **上手路径**：5 分钟导览见 README「5 分钟上手路径」节（与本表同源，README 为压缩视图）

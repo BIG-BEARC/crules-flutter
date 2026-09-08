@@ -1,5 +1,16 @@
 # crules-flutter CHANGELOG
 
+## 1.0.2 · 评审后优化批一（速赢）——LICENSE 补缺 + tag 断档修复 + 语义闸 18 断言
+
+> 依据链：[方案 v2](docs/方案-2026-09-08-评审后优化三批.md)（两轮评审 F1-F13 全消解版）→ [评审-plan](docs/评审-plan-评审后优化三批.md)（主会话评审轮 + plan-reviewer 独立上下文轮，2 🔴 双轮同判：版本撞号 / 溯源闸首跑即红，均本批前置消解）。裁决 2026-09-08：**Q1 MIT / Q2 历史 tag 不回补 / Q3 月度 workflow 缓**。
+
+- **D1 LICENSE（评审 N1）**：MIT 全文 + plugin.json `"license": "MIT"`（manifest schema 正式字段）+ README 定位行声明——公库无许可证的法律模糊态收口
+- **D2 tag 断档修复（评审 N2）**：release.sh 新增 `tag` 子命令——HEAD 双 json 版本校验（防 tag 打在 bump 前旧树）→ 打 tag → 推 origin（幂等；不推则消费者 clone 不可见）；发版链路头注更新为「bump → **commit → tag** → plugin update → verify-cache」；[check-imports.sh](scripts/check-imports.sh) 两个静默分支显式报告——SRC 非 git 仓（plugin cache 形态，真实消费者主路径，**先于 tag 判定被走到**）/ 源仓无 tag（改指 CHANGELOG 段人工对照）——此前 `2>/dev/null` 使 0.5.0+ 消费者的 memory 演进比对从未生效；历史 tag v0.5.0-v1.0.0 不回补（Q2 裁决：锚点模糊，错 tag 比无 tag 坏）
+- **D3 distill 发起语义显式化（评审 N5）**：description「用户触发」→「用户触发或 AI 发起，闸内仍人工逐组裁决」+ 正文注记声明**故意不设** `disable-model-invocation`（交付汇报的沉淀候选提示依赖 AI 可发起）——发起 ≠ 落盘，消 frontmatter 与注记的共存矛盾
+- **D4 聚合层铁律例外从句（外审 0.6.2 Y5 收口）**：frontend.md / backend.md「只允许单一」句后加例外——纯 UI 局部状态（选中态 / 输入草稿 / 动画进度）可直接本地组合不强制聚合层，判定线 = **是否引入第二个底层数据源**（非第二个状态）；修订既有条款而非 +bullet（防同节「只允许单一 vs 可本地组合」表面矛盾致 reviewer 误 FAIL）
+- **D5 help.md 两节（外审 Y9 残余收口）**：「冲突时听谁的」优先级链表（需求方指令 > 项目模板 > superpowers/dart-flutter > flutter-rules > 模型默认；deny-list 与 AO lint 独立链外恒在）+「最小概念五条」（双 Gate / 证据 5 级 / 只报不改 / memory 永不覆盖 / 上手路径回链）——冲突时用户此前感知不到优先级链，只见行为「时严时松」
+- **语义闸 17 → 18 断言**：+release tag 版本不匹配报错（`tag 9.9.9` 对 HEAD 实版本 exit≠0）；README 横幅版本与断言计数同步 1.0.2/18（横幅计数同步义务本批先行兑现——0.6.2 D1 同型漂移防线前移）
+
 ## 1.0.1 · docs 过程文档清账——15 篇已吸收文档删除（3408→237 行，−93%）
 
 > 需求方裁决「没有用的文档可以删掉」：结论已进 CHANGELOG 的过程文档全文删除，git 历史可寻回。**保留 3 篇**：复盘-批 2c 双坑（双模板 ：109 活指针）、外审-0.6.2（裁决表 P2-P4 仍活）、archive/fork-coverage（1.0.0 刚归档）。

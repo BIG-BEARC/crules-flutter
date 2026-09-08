@@ -3,7 +3,7 @@
 面向 **Flutter 工程**的独立协作规则 plugin——**完全独立、无母版依赖**（源自 crules v74 fork，2026-09 起 1.0.0 自持演进；fork 史见 CHANGELOG）。
 > 许可：**MIT**（[LICENSE](LICENSE)）——模板 / 脚本 / hooks 全按此分发。
 
-> **当前状态：1.0.2 评审后优化批一（速赢）**——LICENSE 补缺 + tag 断档修复（release.sh tag 子命令 / check-imports 双静默分支显式化）+ 聚合层例外从句 + help 优先级链与最小概念 + 语义闸 18 断言；1.0.1 docs 清账（3408→237 行 −93%）；1.0.0 独立成库（deny-list Vendor 终态）；常驻基线 14.4K（距 15K 线 0.6K，归因口径见维护节）。
+> **当前状态：1.0.3 审查质量落账**——review 裁决 ledger（`.review-ledger` JSONL，采纳/误报终态可量化）+ distill §7 四数聚合（N<30 只列明细）+ reviewer 发现编号化；1.0.2 评审后优化批一（速赢）——LICENSE 补缺 + tag 断档修复 + 聚合层例外从句 + help 优先级链 + 语义闸 18 断言；1.0.1 docs 清账（−93%）；1.0.0 独立成库（deny-list Vendor 终态）；常驻基线 14.4K（距 15K 线 0.6K，归因口径见维护节）。
 
 ---
 

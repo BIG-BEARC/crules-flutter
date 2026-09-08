@@ -1,5 +1,10 @@
 # crules-flutter CHANGELOG
 
+## 0.6.7 · 外审收口小批 + 质量脚本唯一入口
+
+- **checklist 6 代码规范 +「质量脚本唯一入口」**：工程自定义 format / analyze / check 脚本即唯一入口，CLAUDE.md / §十二 写明并禁裸跑默认参数命令；排查插件行为先验 hook 加载路径（`hooks/hooks.json` 是否存在），声明文件 ≠ 已加载行为（实证 saas_pos_smart_edition：dart-flutter skill 引导的裸 `dart format` 默认 80 宽 × 工程 120 宽门禁，一次波及 166 文件；首判误归因插件 Stop hook，实为 agent 手动执行——hook 加载路径核验后证伪）
+- **0.6.7 批（外审收口小批，计划评审两轮 v2 落地）**：① i18n.md easy_localization 裸并列 → 带「不推荐」注记（外审 G4/Y1 同型残留收口）；② 语义闸 +2 独立断言（test-self 15→**17**）——easy_localization 注记闸 + flutter_screenutil 白名单闸（注记词「已停更或维护缓慢」二选一，评审 🔴 消解）；③ README 新增「5 分钟上手路径」节（Y9，四段导览 + 指针防第三份同源口径）；④ 评审 v2 修订全吸收（PASS 计数口径 / 横幅同步）。**缓记**：Y11 守护覆盖矩阵归 P3（与 A1 溯源闸同批）。
+
 ## 0.6.6 · 实战复盘吸收批——报表模块多轮返工 + review 误报 M1/M2 契约定级
 
 > 两份实战复盘（saas-cashier 报表模块，`29f490bae` / `51565c01c`）经 distill 吸收：字段契约靠猜多轮返工与 review 误报 M1/M2 均指向同一本质——**契约只存在于实现行为里，没有被显式化**。

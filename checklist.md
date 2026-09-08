@@ -22,7 +22,7 @@
 
 **5. 国际化**：用户可见文本走 i18n；新增 Key 同步多语言文件；必要时执行 i18n 代码生成。
 
-**6. 代码规范**：文件头注释（如项目要求）；无调试日志（**`avoid_print` lint 已拦**，抽查即可）；无硬编码 URL / 密钥；命名规范；**无新引入 lint 警告（`flutter analyze` 零 warning 是硬门——模板自带 `analysis_options.yaml` 基线）**；import 分组有序；资损线（支付 / 订单 / 打印 / 同步）结构化日志带追溯上下文——orderId 可记，**token / 密钥 / 完整卡号永不入日志**；机械项（analyzer / lint 违规）归 CI 基线，不占人审注意力。
+**6. 代码规范**：文件头注释（如项目要求）；无调试日志（**`avoid_print` lint 已拦**，抽查即可）；无硬编码 URL / 密钥；命名规范；**无新引入 lint 警告（`flutter analyze` 零 warning 是硬门——模板自带 `analysis_options.yaml` 基线）**；import 分组有序；资损线（支付 / 订单 / 打印 / 同步）结构化日志带追溯上下文——orderId 可记，**token / 密钥 / 完整卡号永不入日志**；机械项（analyzer / lint 违规）归 CI 基线，不占人审注意力；**工程自定义质量脚本（format / analyze / check）即唯一入口**——CLAUDE.md / §十二 写明并禁裸跑默认参数命令（实证：裸 `dart format` 默认 80 宽 × 工程 120 宽门禁，一次波及 166 文件；排查此类问题先验插件 hook 加载路径（`hooks/hooks.json` 是否存在），声明文件 ≠ 已加载行为）。
 
 **7. 功能完整性**：spec 功能点均已实现（非 stub）；用户可完成完整流程；关键路径无崩溃；新增入口 / 路由已注册；老行为变更清单（方案 §1）外的行为变化 = 回归 bug。
 

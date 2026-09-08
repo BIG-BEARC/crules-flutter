@@ -2,9 +2,18 @@
 
 面向 **Flutter 工程**的独立协作规则 plugin——通用协作层 fork 自 [crules](https://github.com/BIG-BEARC/crules) 基线 `v74-fork-base`（commit ea4d25c），**此后独立演进、互不依赖**（唯一例外见「与 crules 的关系」）。
 
-> **当前状态：0.6.6 实战复盘吸收**——报表模块两份实战复盘 distill 收口（review 误报 M1/M2 契约定级纪律 / 字段契约追消费端 / 调试期空值不兜底 / push 前 remote -v 核对目标仓 / 共享组件切换数据源 ValueKey 重挂）；此前 0.6.2-0.6.5 两轮审查留池全清 + 语义闸 15 断言 + saas-cashier 生产实证四笔吸收（列表 key 错乱 / SP 白屏 / 图片解码 / Impeller Vulkan）；常驻基线 14.4K 复测落档（距 15K 线 0.6K，增量系消费工程自身增长，归因口径见维护节）；余 POS 垂直拆层一项（开源定位裁决）待方案。
+> **当前状态：0.6.7 外审收口小批**——0.6.2 全面外审存活欠账清零（i18n easy_localization 注记 + 语义闸 17 断言【+el 注记闸/screenutil 白名单闸】+ 5 分钟上手路径节）；此前 0.6.3-0.6.6 留池收口 + saas-cashier/报表实战复盘四批吸收（SP 白屏 / 图片解码 / 列表 key / 契约显式化纪律 / 质量脚本唯一入口）；常驻基线 14.4K 复测落档（距 15K 线 0.6K，归因口径见维护节）；下一步 P0 **独立成库（1.0.0，斩断 crules 联系）**已裁决。
 
 ---
+
+## 5 分钟上手路径
+
+> 本节是导览压缩视图；权威全表见 `/crules-flutter:help` 与下方「场景地图」，两处不一致时以彼为准。
+
+- **装**（一次性）：下面「怎么用」两条命令装 plugin + 工程根跑 `/crules-flutter:init`（落位三态：全新 / 升级 / 老项目无戳中止——memory 永不覆盖）
+- **日常触发**（全自动，零记忆负担）：写 UI/逻辑/平台代码时对应 agent 按职责自动挂载；写审 Flutter 代码时 flutter-rules skill 按需载入（薄索引 ~4.7KB）；hooks 静默守护（deny-list 拦危险命令 / pending-updates 记 memory 漂移）
+- **收尾**：会话结束 Stop hook 提醒你补 memory 索引；交付前 checklist + reviewer 主工位 → `/crules-flutter:distill` 过闸沉淀
+- **出问题看哪**（排查序）：行为不符预期 → `/crules-flutter:help` 查场景归属 → 仍不明 → `memory/MAINTENANCE.md`（库自身维护）→ `CHANGELOG.md` 查该能力哪个版本引入
 
 ## 怎么用
 

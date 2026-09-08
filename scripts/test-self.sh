@@ -92,6 +92,16 @@ bare_hive=$(grep -i 'hive' "${SRC}/app/CLAUDE.md" | grep -v 'hive_ce' | grep -cv
 [ "${bare_hive}" -eq 0 ] || { sem_ok=0; echo "  ↳ app 模板存在未注记裸 hive ×${bare_hive}（原版停更 2022-06，须 hive_ce 或停更注记）"; }
 [ "${sem_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  孪生语义闸（横幅/help/hooks 版本口径 + 停更栈 screenutil·hive 禁推）"; } || { FAIL=$((FAIL+1)); echo "FAIL  语义闸（见上——对外口径与停更栈表述漂移）"; }
 
+# 0.6.7 断言①：easy_localization 注记闸——agents 命中行须带「不推荐/维护缓慢」注记
+# （外审 G4 残留：并列示例裸点名已被 §七 预设 A 判不推荐；沿用 :89 停更排除先例）
+el_bad=$(grep -ih 'easy_localization' "${SRC}"/agents/*.md 2>/dev/null | grep -cv '不推荐\|维护缓慢\|停更' || true)
+[ "${el_bad}" -eq 0 ] && { PASS=$((PASS+1)); echo "PASS  easy_localization 注记闸（agents 无裸并列点名）"; } || { FAIL=$((FAIL+1)); echo "FAIL  agents 含未注记 easy_localization ×${el_bad}（§七 预设 A 已判不推荐，须带注记）"; }
+
+# 0.6.7 断言②：screenutil 白名单闸——全分发面 flutter_screenutil 命中行须带停更类注记
+# （注记词「已停更 或 维护缓慢」二选一——app:185 前者 / §七 A2 档后者，实测措辞不同）
+su_bad=$(grep -h 'flutter_screenutil' "${SRC}"/agents/*.md "${SRC}"/app/CLAUDE.md "${SRC}"/plugin/CLAUDE.md "${SRC}"/checklist.md 2>/dev/null | grep -cv '已停更\|停更\|维护缓慢' || true)
+[ "${su_bad}" -eq 0 ] && { PASS=$((PASS+1)); echo "PASS  flutter_screenutil 白名单闸（命中仅停更/维护缓慢注记行）"; } || { FAIL=$((FAIL+1)); echo "FAIL  存在未注记 flutter_screenutil 正面表述 ×${su_bad}（A2 已判停更）"; }
+
 
 # 幂等断言：同输入两次运行结论一致且均 block（双 plugin 共存的可测背书）
 BADCMD="git push --fo""rce origin main"   # 分段拼接，避免源码含完整字面串

@@ -7,7 +7,7 @@
 # 说明：**bump 最后跑**——cache 是全仓库快照（含 README/docs/scripts），务必全部改动收尾后再
 #       release.sh <ver>，中途再改文件则同版本不刷新（v31 W2：update 按版本号刷 cache），须再 bump；
 #       plugin update 本脚本不代跑（完整形态实测为 `claude plugin update crules-flutter@crules-flutter-market`，
-#       纯名 "crules" 会报 not found）；完整链路 = 全部改动收尾 → release.sh <ver> → plugin update → release.sh verify-cache '<本轮改动特征串>'
+#       纯名 "crules-flutter" 会报 not found）；完整链路 = 全部改动收尾 → release.sh <ver> → plugin update → release.sh verify-cache '<本轮改动特征串>'
 # draft 口径（W2③②）：跨年边界——以当前年拼顶部段日期，12-31 跨年跑会空输出（低危已知）；只列 commit subject 供人工编辑——CHANGELOG 记能力不记笔误、零分发文件轮不记
 #       （v58/v59 先例），机械初稿不替人做过滤决定
 set -euo pipefail

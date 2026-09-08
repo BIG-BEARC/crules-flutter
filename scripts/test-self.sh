@@ -88,7 +88,7 @@ if [ -n "${help_n}" ] && [ "${help_n}" = "${hook_n}" ]; then :; else sem_ok=0; e
 # ③ 停更栈禁推：agents 无 screenutil 正面示例；app 模板无未注记的裸 hive
 su_hit=$(grep -ih screenutil "${SRC}"/agents/*.md 2>/dev/null | grep -cv '停更' || true)
 [ "${su_hit}" -eq 0 ] || { sem_ok=0; echo "  ↳ agents 含 screenutil ×${su_hit}（A2 已判停更，勿作示例）"; }
-bare_hive=$(grep -i 'hive' "${SRC}/app/CLAUDE.md" | grep -v 'hive_ce' | grep -cv '停更' || true)
+bare_hive=$(grep -iw 'hive' "${SRC}/app/CLAUDE.md" | grep -cv '停更' || true)
 [ "${bare_hive}" -eq 0 ] || { sem_ok=0; echo "  ↳ app 模板存在未注记裸 hive ×${bare_hive}（原版停更 2022-06，须 hive_ce 或停更注记）"; }
 [ "${sem_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  孪生语义闸（横幅/help/hooks 版本口径 + 停更栈 screenutil·hive 禁推）"; } || { FAIL=$((FAIL+1)); echo "FAIL  语义闸（见上——对外口径与停更栈表述漂移）"; }
 

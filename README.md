@@ -1,8 +1,8 @@
 # crules-flutter
 
-面向 **Flutter 工程**的独立协作规则 plugin——通用协作层 fork 自 [crules](https://github.com/BIG-BEARC/crules) 基线 `v74-fork-base`（commit ea4d25c），**此后独立演进、互不依赖**（唯一例外见「与 crules 的关系」）。
+面向 **Flutter 工程**的独立协作规则 plugin——**完全独立、无母版依赖**（源自 crules v74 fork，2026-09 起 1.0.0 自持演进；fork 史见 CHANGELOG）。
 
-> **当前状态：0.6.7 外审收口小批**——0.6.2 全面外审存活欠账清零（i18n easy_localization 注记 + 语义闸 17 断言【+el 注记闸/screenutil 白名单闸】+ 5 分钟上手路径节）；此前 0.6.3-0.6.6 留池收口 + saas-cashier/报表实战复盘四批吸收（SP 白屏 / 图片解码 / 列表 key / 契约显式化纪律 / 质量脚本唯一入口）；常驻基线 14.4K 复测落档（距 15K 线 0.6K，归因口径见维护节）；下一步 P0 **独立成库（1.0.0，斩断 crules 联系）**已裁决。
+> **当前状态：1.0.0 独立成库**——斩断与母版 crules 的联系（deny-list Vendor 终态自持 + CI 同步比对步移除 + README 供应链重写 + 双模板 v77 承先例化 + fork-coverage 归档），史实出处引用保留为溯源资产；此前 0.6.3-0.6.7 留池收口 + 实战复盘四批吸收 + 语义闸 17 断言；常驻基线 14.4K（距 15K 线 0.6K，归因口径见维护节）。
 
 ---
 
@@ -115,24 +115,15 @@ bash "$SRC/scripts/install.sh" <项目根> --app --force
 | 恢复 | `claude plugin enable crules-flutter@crules-flutter-market`（**完整形态**，纯名会 not found；**新会话生效**——当前会话不装载 hooks，别在旧会话验证） |
 | 彻底卸 | `claude plugin uninstall crules-flutter@crules-flutter-market` + `claude plugin marketplace remove crules-flutter-market` |
 
-## 与 crules 的关系（种子库模式）
+## 与其他规则 plugin 共存
 
-```text
-crules（母版，保持活跃）──fork──► crules-flutter（本包，独立演进）
-              ▲ deny-list 安全修复单向同步（CI 比对，见下）
-```
-
-- **fork 基线**：`v74-fork-base`（crules 的 CLAUDE.md / 进阶 / hooks / 机制件于此点复制，此后本包自持）
-- **边界判据**：与 Dart/Flutter 无关的协作改进 → 在 crules 改，本包自行决定是否跟随；技术栈相关 → 只进本包
-- **跟/不跟查表**：crules 的 **deny-list 安全修复必跟**（同步义务机械化，见下）；其余规则演进**默认不跟**；跟则 bump 本包 minor
-- **deny-list 同步义务（唯一例外）**：`hooks/deny-list.py` 与 `hooks/test_deny_list.py` 以 crules 为单一权威（红队补丁只发生在母版）——文件头 `SYNCED-FROM: crules@<hash>` 戳 + CI 同步比对步（拉 crules 主分支两文件 diff，不一致 exit 1）。批 2c 落地。
-- **双 plugin 共存**（同机器既维护 crules 又开发 Flutter 工程是常态）：**同一项目二选一**（crules 或 crules-flutter，勿双装）；同机器不同项目各装各的无冲突——万一两套 hooks 同项目双跑：deny-list 并集拦截（任一 block 即 block，保守无害）、pending-updates 写同一队列文件经 flock 幂等。
+**同一项目二选一**（勿与其他全量规则包双装）；同机器不同项目各装各的无冲突——万一两套 hooks 同项目双跑：deny-list 并集拦截（任一 block 即 block，保守无害）、pending-updates 写同一队列文件经 flock 幂等。
 
 ## 维护
 
-- 本仓独立演进：bump 双 json → `plugin update` → cache 特征串验证（纪律继承 crules v31）
-- 治理从简：README + CHANGELOG + 最简检查（crules 的五维雷达/评审轮次体系**不复制**——治理成本延后到真有痛感再付）
-- 定期外审选项保留（crules 的独立 subagent 复审模式可复用，防规则滑向单项目特有）
+- 本仓独立演进：bump 双 json → `plugin update` → cache 特征串验证（纪律承本仓 v31 先例）
+- 治理从简：README + CHANGELOG + 最简检查（五维雷达/评审轮次体系**不引入**——治理成本延后到真有痛感再付）
+- 定期外审选项保留（独立 subagent 复审模式可复用，防规则滑向单项目特有）
 - **skill 平台坑节维护义务**（0.4.0 起）：Flutter / 平台大版本出现 → 扫 skill 坑节标【待重验】→ 核验刷新（每次 minor 例行）
 - **预设栈审视义务**（0.5.1 起）：app 模板 §七 预设的包维护态与争议项按「最后核验」日期例行刷新，与坑节维护义务并列（每次 minor）
 - **常驻基线实测**（2026-09-08 双测落档，真实消费工程 saas-suite `/context` 快照）：上午 **11.5k** → 复测 **14.4k**（CLAUDE.md 11.1→14.0k）——**距 15K 触发线仅 0.6k**，但增量**全部来自消费工程自身 CLAUDE.md 增长**（本包侧 Skills 8.1→8.0k 持平、agents 151→294 微增；0.6.3 新增两份 references 确认未占常驻——按需 Read 生效）。**口径区分（触发线裁决时必看）**：§4.8 的 15K 线度量的是**本包模板常驻负担**，`/context` 的 Memory files 混入项目自身内容——破线时先分离归因（模板贡献 vs 项目自身 CLAUDE.md 膨胀），项目侧膨胀应裁项目 CLAUDE.md / 走记忆库下沉，而非触发 B2 模板瘦身；后续每次 minor 复测一次

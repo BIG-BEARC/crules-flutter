@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# crules 记忆库漂移提醒队列（PostToolUse，随 plugin 分发）
+# crules-flutter 记忆库漂移提醒队列（PostToolUse，随 plugin 分发）
 # 机制：Edit/Write 成功后，若项目启用了记忆库（.claude/memory/NAVIGATION.md 存在）且被改文件
 #   是包外源文件，则把其路径追加进 .claude/memory/.pending-updates（去重）。
 # 边界（v18 复盘）：不判意图、不阻止任何操作——只是把「记得更新索引」从记忆问题变成看得见的待办；

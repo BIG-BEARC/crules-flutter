@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# SYNCED-FROM: crules@ea4d25c（deny-list.py——deny-list 安全修复以 crules 为单一权威，CI 同步比对步看守；变更须从 crules 同步后再动此文件）
-# crules 破坏性命令 deny-list（PreToolUse 硬闸，随 plugin 分发）
+# crules-flutter 破坏性命令 deny-list（PreToolUse 硬闸，随 plugin 分发）
+# 溯源：源自 crules v74 fork；1.0.0（2026-09）起 Vendor 终态自持演进——安全修复经本地 fixture 对抗样本库（test_deny_list.py）回归，不再从母版同步
 # 原则：只 deny 无歧义的破坏性命令，**不做任何意图判断**；被拦即请需求方人工执行
 # 名单（git + rm）：
 #   git push --force（独立词匹配：--force-with-lease 单用放行；lease 在前 -f/--force 在后仍拦）/

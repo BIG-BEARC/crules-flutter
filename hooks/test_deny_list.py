@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SYNCED-FROM: crules@ea4d25c（test_deny_list.py——deny-list 安全修复以 crules 为单一权威，CI 同步比对步看守；变更须从 crules 同步后再动此文件）
+# 溯源：源自 crules v74 fork；1.0.0（2026-09）起随 deny-list.py Vendor 终态自持演进（fixture 库本地为权威）
 """deny-list 回归测试（v37 沉淀——修正 v35「单测 15/15 跑完即弃、无文件无痕」）。
 
 跑法：python3 hooks/test_deny_list.py（scripts/check-consistency.sh 的 H 查调用）

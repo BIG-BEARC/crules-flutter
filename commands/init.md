@@ -64,7 +64,7 @@ bash <源>/scripts/install.sh <项目根> --app | --plugin [--dry-run]
 ## 依据
 
 - 机械/交互分工：install.sh 管确定性 cp（幂等可测），本命令管问答引导（外审 #5：消灭手动步骤 + agents plugin-only 后安装面更小）
-- 禁静默覆盖：老项目分支不自动装（crules 老项目纪律同款）
+- 禁静默覆盖：老项目分支不自动装（本仓老项目纪律）
 
 ## 注意
 

@@ -1,4 +1,4 @@
-# crules-flutter CI —— deny-list fixture + 语法编译 + 脚本自测 + deny-list 同步比对（crules 单一权威看守）
+# crules-flutter CI —— deny-list fixture + 语法编译 + 脚本自测 + 坑卡链接检查
 name: ci
 on:
   push:
@@ -21,7 +21,7 @@ jobs:
           OUT=$(dart analyze . 2>&1 || true); echo "$OUT"
           if ! printf '%s' "$OUT" | grep -q 'Analyzing'; then echo "❌ dart analyze 未跑起（create/pub 失败）"; exit 1; fi
           if printf '%s' "$OUT" | grep -qiE 'warning|error'; then echo "❌ 模板 AO 含 warning/error（死配置或规则名失效）"; exit 1; else echo "✅ 零 warning"; fi
-      - name: deny-list 回归（对抗样本库，fork 自 crules）
+      - name: deny-list 回归（对抗样本库，源自 crules fork）
         if: always()
         run: python3 hooks/test_deny_list.py
       - name: 语法编译
@@ -56,11 +56,3 @@ jobs:
           print(f"链接检查：{len(urls)} 条，坏 {len(bad)} 条")
           sys.exit(1 if bad else 0)
           PY
-      - name: deny-list 同步比对（crules 单一权威——不一致即红，须从 crules 同步后再合并）
-        if: always()
-        run: |
-          curl -sfL https://raw.githubusercontent.com/BIG-BEARC/crules/main/hooks/deny-list.py -o /tmp/up.py
-          curl -sfL https://raw.githubusercontent.com/BIG-BEARC/crules/main/hooks/test_deny_list.py -o /tmp/upt.py
-          diff <(sed '2d' hooks/deny-list.py) /tmp/up.py || { echo "deny-list 与 crules 主分支不一致——SYNCED-FROM 义务：先同步再合并"; exit 1; }
-          diff <(sed '2d' hooks/test_deny_list.py) /tmp/upt.py || { echo "test_deny_list 与 crules 主分支不一致"; exit 1; }
-          echo "deny-list 与 crules 主分支一致（SYNCED-FROM: $(sed -n 2p hooks/deny-list.py | grep -o 'crules@[a-f0-9]*')）"

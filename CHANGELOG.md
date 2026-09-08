@@ -1,5 +1,18 @@
 # crules-flutter CHANGELOG
 
+## 1.0.0 · 独立成库——斩断与母版 crules 的联系（deny-list Vendor 终态）
+
+> 外审 2026-09-08 P0 裁决落地：fork（v74-fork-base，2026-08）后两包事实自持、母版同步义务收益衰减至拐点以下，正式独立。**斩依赖不斩历史**——史实出处引用保留为溯源资产。
+
+- **deny-list Vendor 终态（方案 a）**：`hooks/deny-list.py` / `test_deny_list.py` 删 `SYNCED-FROM` 戳改自持演进声明——本地 75 fixture 对抗样本库为权威，安全修复本地回归；CI 删「同步比对」步（原拉 crules 主分支 diff 步整体移除，ci.yml 六步→五步）
+- **README 供应链节重写**：定位句改「完全独立、无母版依赖」；整删「与 crules 的关系」节（fork 基线/边界判据/跟不跟查表/同步义务）——「同项目二选一勿双装」改写为通用「与其他规则 plugin 共存」纪律保留；维护节「继承 crules v31」→「承本仓 v31 先例」、五维雷达决策改「不引入」措辞（决策本身仍有效）
+- **规范性引用改自持措辞**：双模板六条「（跟随 crules v77）」→「（承 v77 先例）」——独立后母版不再是活纪律权威；`进阶/记忆库体系.md`「crules 源仓库中 memory/ 为模板」事实修正（本仓已是源）
+- **fork-coverage 归档**：`docs/fork-coverage.md` → `docs/archive/`（Y10 分层归档首件——活文档转历史，install.sh 不复制 docs/ 零安装影响）；app 模板 ：262 断链指针改指 archive/ 路径
+- **hooks 头注释去母版名**：pending-updates / stop-reminder「crules 记忆库…」→「crules-flutter …」；init.md / release.sh 措辞清理
+- **史实保留清单（永不改写）**：`install.sh:2`、双模板 `:3` 与进阶各篇 `:3` 的「fork 自 crules v74」出处声明、`checklist.md:3`、`进阶/工程化流程.md:160`「crules 基线属根 CLAUDE.md §三」——出处史实与历史 CHANGELOG 条目（0.3.0 跟随 v77 等）均保留
+- **随批修**：语义闸③裸 hive 检查 `grep -i 'hive'` 收窄为整词 `grep -iw`——B4 归档引入 `docs/archive/` 后 "archive" 含 "hive" 词级误配暴露既有闸盲点（装闸即抓，同 D1 先例）
+- **验收**：test-self 17 PASS（无 SYNCED-FROM 相关断言）；全仓复扫 crules 引用命中集 == 史实保留清单（白名单式零清单外命中）
+
 ## 0.6.7 · 外审收口小批 + 质量脚本唯一入口
 
 - **checklist 6 代码规范 +「质量脚本唯一入口」**：工程自定义 format / analyze / check 脚本即唯一入口，CLAUDE.md / §十二 写明并禁裸跑默认参数命令；排查插件行为先验 hook 加载路径（`hooks/hooks.json` 是否存在），声明文件 ≠ 已加载行为（实证 saas_pos_smart_edition：dart-flutter skill 引导的裸 `dart format` 默认 80 宽 × 工程 120 宽门禁，一次波及 166 文件；首判误归因插件 Stop hook，实为 agent 手动执行——hook 加载路径核验后证伪）

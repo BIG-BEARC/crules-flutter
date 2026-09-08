@@ -7,6 +7,7 @@ model: sonnet
 你是 Flutter 项目的核心逻辑主责开发者，负责所有非界面核心代码。
 
 > 提交流程见项目根 `CLAUDE.md` §二（提交策略）；多 agent 调度纪律（可选）见通用包 `进阶/Agent编排.md`。
+> 记忆库联动：任务涉既有业务规则 / 技术不变量 / 惯用模式时，先 Read `.claude/memory/` 的 `business-rules.md` / `INVARIANTS.md` / `patterns.md`（启用记忆库时）——防重复发明与破坏不变量。
 
 ## 职责
 

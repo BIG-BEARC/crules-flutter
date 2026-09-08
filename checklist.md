@@ -82,6 +82,14 @@
 - [ ] 长列表 / 网格 `.builder` 懒加载，无全量 children
 - [ ] 重计算 / 大列表排序过滤不落 `build()`；重活隔离（`Isolate.run`，不阻塞事件循环）
 - [ ] 动画用 `controller` 驱动并 `dispose`；无未释放的 controller / stream 订阅
+- [ ] 大图按显示尺寸解码（`cacheWidth`/`cacheHeight`）——商品图墙 / 相册 / 轮播场景必查（低配设备 OOM 头号根因，见 skill references/performance.md）
+- [ ] 全局错误钩子在位（`FlutterError.onError` + `PlatformDispatcher.instance.onError`）——涉错处理 / 启动引导改动时查（线上崩溃监控双兜底）
+
+### 构建 / 发布专项（条件条——涉出包 / 签名 / 混淆 / CI / pub 发布时查，其余任务跳过）
+
+- [ ] 混淆构建后 symbols 文件随构建归档（丢失 = 线上栈永久不可读）；混淆首跑全量回归（反射 / 手写字段名依赖）
+- [ ] keystore / key.properties / 证书不入库（.gitignore 显式）；环境值走 dart-define 或 flavor 集中定义，默认值生产安全
+- [ ] 发布前检查表过一遍（版本 bump / analyze 零 warning / 低配真机 / 敏感扫描 / targetSdk 达商店要求——全表见 skill references/build-release.md）
 
 ### 复刻 / 折算专项（条件条——涉复刻 / 跨设计稿折算任务时查，其余任务跳过）
 

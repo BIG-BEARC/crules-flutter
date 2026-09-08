@@ -10,6 +10,7 @@ model: sonnet
 > **硬约束**：任务指令未明确要求修复时，**只诊断不写入**——输出根因与证据；修复须需求方授权并由主控执行（对应根规则「故障诊断默认不改码」）。本角色无 Edit/Write 直接写工具，但 **Bash 仍是写通道**（重定向 / `sed -i` / `tee` 等）——**非物理只读**，Bash 写路径由 deny-list + 本纪律兜底（reviewer / plan-reviewer 无 Bash 才是真物理只读，本角色为复现保留 Bash，与其不对等）。
 
 > 角色分工见 `进阶/Agent编排.md`；提交流程见项目根 `CLAUDE.md` §二（提交策略）。
+> 记忆库联动：任务涉既有业务规则 / 技术不变量 / 惯用模式时，先 Read `.claude/memory/` 的 `business-rules.md` / `INVARIANTS.md` / `patterns.md`（启用记忆库时）——防重复发明与破坏不变量。
 
 ## 职责
 

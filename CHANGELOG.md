@@ -1,5 +1,14 @@
 # crules-flutter CHANGELOG
 
+## 0.6.3 · 留池四项收口批——性能·CI·监控三空白补域 + 记忆库钩子推广 + plugin §八 实体化
+
+> 0.6.2 留池四项按序收口三项；第四项（POS 垂直拆层 core+pos-vertical）系开源定位裁决项，另行方案。
+
+- **skill 新增两域文件**（`references/performance.md`）：DevTools 双线程归因（UI/Raster 列说话，不凭感觉）/ 图片按显示尺寸解码（`cacheWidth`——低配收银机 OOM 头号常见根因，大图场景必传）/ 低配设备实操序 / `FlutterError.onError` + `PlatformDispatcher.onError` 双钩子与 sentry·crashlytics·自建选型 / 符号化与上报纪律；（`references/build-release.md`）：flavor 与 dart-define 选型（共存多包才上 flavor）/ keystore 与 iOS 证书纪律 / `--obfuscate --split-debug-info` 与 symbols 归档 / App 发布前检查 + pub 发布检查全表。SKILL.md 按域取用表 +2 行
+- **checklist**：性能节 +2 条（大图按显示尺寸解码 / 全局错误钩子在位）；新增「构建 / 发布专项」条件条 3 项（symbols 归档+混淆首跑回归 / 密钥不入库+环境值集中 / 发布前检查表）
+- **记忆库钩子推广（软约定显式化）**：frontend/backend/platform/i18n/error/reviewer 六 agents 统一 +「记忆库联动」行（涉业务规则 / 不变量 / 惯用模式先 Read `business-rules` / `INVARIANTS` / `patterns`——防重复发明与破坏不变量）；plan-reviewer 原有对读保留
+- **plugin 模板 §八 实体化**：平台通道选型（结构化多端对等优先 **Pigeon**——两侧签名漂移的机械化方案）+ pub 发布检查 4 项（dry-run 零警告 / semver 与 CHANGELOG 一致 / Kotlin↔Swift 对等与 federated 同步 / example 可跑 + 净工程拉取实测）——原为纯占位
+
 ## 0.6.2 · 🟢 轻微项清池批 + 外部复核必修批——审查留池全清 + 语义闸上闸
 
 > [审查 §四](docs/审查-2026-09-05-时效性与合适性.md) 🟢 9 条：2 条已随 0.5.0 瘦身消化，7 条本批清；随后外部复核（AI-coding 侧）抓出必修 3 + 漂移 2，同批修并上闸。**两轮审查留池至此全空。**

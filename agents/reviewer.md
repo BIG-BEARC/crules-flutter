@@ -9,6 +9,7 @@ model: opus
 
 > **审查方法论、可达性 Gate、两阶段审查、Review Checklist 全部见 `进阶/审查与复核纪律.md`（权威正文）**。本文件只定义角色边界，不重复 checklist。
 > 角色分工见 `进阶/Agent编排.md`；提交流程见项目根 `CLAUDE.md` §二（提交策略）。
+> 记忆库联动：任务涉既有业务规则 / 技术不变量 / 惯用模式时，先 Read `.claude/memory/` 的 `business-rules.md` / `INVARIANTS.md` / `patterns.md`（启用记忆库时）——防重复发明与破坏不变量。
 
 ## 职责
 

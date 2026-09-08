@@ -19,6 +19,8 @@ description: Flutter/Dart 技术最佳实践参考——写/审 Flutter 代码�
 | 主题 / 颜色 / 字体 / 暗黑 / Material 3 / A11Y | [references/theming.md](references/theming.md) | ThemeExtension 设计令牌（copyWith/lerp 全例）/ ColorScheme.fromSeed / WidgetStateProperty / WCAG 对比度 / Semantics / google_fonts |
 | 布局 / Overflow / 叠层 / 浮层 | [references/layout.md](references/layout.md) | Expanded-Flexible-Wrap 边界 / 滚动容器选型 / Stack 定位 / OverlayPortal 浮层全例 |
 | 接入 / 调试外设、多屏、设备类排障 | [references/iot-devices.md](references/iot-devices.md) | IoT / 外设通信（通用铁律 / 蓝牙·串口·USB·网口分节 / 打印·扫码专项 / 副屏 / KDS 指针） |
+| 卡顿 / 内存 / 低配设备 / 线上崩溃 | [references/performance.md](references/performance.md) | DevTools 双线程归因（UI/Raster 列说话）/ 图片按显示尺寸解码（低配 OOM 头号根因）/ FlutterError + PlatformDispatcher 双钩子 / 符号化依赖 |
+| 配 CI / 出包 / 签名 / 混淆 / 发 pub 包 | [references/build-release.md](references/build-release.md) | flavor 与 dart-define 选型 / keystore 与 iOS 证书纪律 / symbols 归档 / App 发布前检查与 pub 发布检查 |
 
 ## 索引级速记（跨场景高频、一行可答的留这里）
 

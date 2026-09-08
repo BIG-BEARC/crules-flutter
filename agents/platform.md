@@ -7,6 +7,7 @@ model: sonnet
 你是 Flutter 项目的原生 / 平台代码开发者。
 
 > 提交流程见项目根 `CLAUDE.md` §二（提交策略）。
+> 记忆库联动：任务涉既有业务规则 / 技术不变量 / 惯用模式时，先 Read `.claude/memory/` 的 `business-rules.md` / `INVARIANTS.md` / `patterns.md`（启用记忆库时）——防重复发明与破坏不变量。
 
 ## 职责
 

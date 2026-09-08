@@ -206,6 +206,15 @@
 > 【按需手填占位】——当前无 plugin 形态消费工程的上移源（本包实战输入来自 App 工程）；项目特有规范沉淀于此。
 > 屏幕适配与字体策略（App 形态课题）不入本模板——plugin 无 UI 适配语境；若 plugin 含 example App，按 app 模板 §七对号。
 
+**平台通道选型**：简单参数传递用 `MethodChannel`；**结构化数据 / 多端对等接口优先 Pigeon**（类型化生成 Dart + Kotlin + Swift 三侧，消灭手写序列化与两侧签名漂移——原生侧对等纪律的机械化方案）；事件流用 `EventChannel`。
+
+**pub 发布检查**（发版前逐项过，全表见 skill flutter-rules `references/build-release.md`「pub 包发布」节）：
+
+- [ ] `flutter pub dev publish --dry-run` 零警告（CHANGELOG / 版本号 / description 一致）
+- [ ] 破坏性 API 变更升 major；CHANGELOG 顶部版本与 pubspec 一致
+- [ ] Kotlin ↔ Swift 平台能力清单逐条对等；federated 插件 endorsed 平台包版本同步
+- [ ] example 工程可跑；发布后净工程 `flutter pub deps` 实测拉取
+
 ---
 
 ## 九、superpowers + dart-flutter 协作

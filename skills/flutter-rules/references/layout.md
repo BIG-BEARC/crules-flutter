@@ -6,6 +6,7 @@
 
 - **`Expanded`**：占满剩余空间（刚性）
 - **`Flexible`**：可收缩不强制占满（柔性）——同一 Row/Column **不要混用** Expanded 与 Flexible
+- **Row 内 `Text` 省略号须先包 `Flexible`/`Expanded`**：非弹性约束下 Text 取固有宽参与 Row 布局，裸 Text 加 `overflow: ellipsis` 不生效（实证：[订单折算复盘吸收方案 C1](../../../../docs/吸收方案-2026-09-05-订单折算复盘.md)）
 - **`Wrap`**：子项会溢出时换行（标签流 / 动态长度 chips）
 
 ## 滚动与溢出
@@ -16,6 +17,8 @@
 | 长列表 / 网格 | `ListView.builder` / `GridView.builder`（懒加载，禁全量 children） |
 | 单子项缩放适配 | `FittedBox` |
 | 按可用空间分支的响应式 | `LayoutBuilder`（配合 `MediaQuery`） |
+
+- **无断词点长串不自动换行**：UAX#14 断词规则下纯数字/字母串（订单号 / URL / UUID）整串无断词点，`softWrap` 照样横向溢出——解法逐字符 `Wrap` 或手动零宽断点（实证：同上复盘 C2）
 
 ## Stack 叠层
 

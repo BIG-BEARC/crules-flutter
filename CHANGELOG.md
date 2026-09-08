@@ -1,5 +1,17 @@
 # crules-flutter CHANGELOG
 
+## 0.6.0 · 吸收与模板演进批——适配三选一 + 字体策略 + IoT 抽层 + 订单折算吸收
+
+> minor 口径：模板**交互环节**变更（§七新增必选环节、文件头规则语义反转），非纯内容增补——沿 0.5.0「模板交互变化升 minor」先例。依据链：[适配方案](docs/方案-2026-09-08-适配三选一与字体策略.md)（评审终裁：仅 app 落正文 / 三档断点）· [IoT 抽层方案](docs/方案-2026-09-08-IoT外设知识抽层.md) · [订单折算吸收方案](docs/吸收方案-2026-09-05-订单折算复盘.md)（落点按 0.5.2 基线修订）· [实施计划](docs/实施计划-2026-09-08-0.6.0批.md)（评审两意见轮全采纳）
+
+- **模板（app）**：§七 新增「屏幕适配方案【复制后三选一】」——A1 弹性优先+断点（三档 Compact<600/Medium<840/Expanded≥840，默认推荐）/ A2 设计稿缩放（screenutil ~28 个月无稳定版注记）/ A3 自定义；8.1 新增「字体策略（公共·必选）」四要素（字体打包 / 统一注入点禁内联 TextStyle / fontFamilyFallback / 设备字形转图兜底）——实证源 saas-cashier 三笔（bbf976e42 Android Roboto 全字重 / 0508ac9b5 Windows 普惠体 / 656558508 内联绕过复发）+ flutter#154166/#145069
+- **模板（plugin）**：§八 +1 行指针（适配/字体属 App 形态课题，example 按模板 §七对号）——不落正文，防孪生守护（`###` 子节不入节序号集，C4 实证）
+- **文件头 S13 渗漏修正（双模板）**：@Author 五件套从模板正文撤下 →「默认跟随项目现状」——存量带头循既有格式（不含 @Email，作者权威在 git）、无头不加、惯例不一致问一次落附录；plugin:254 @Author 文档头同步改写
+- **checklist（5 处）**：:47 改「按 §七 所选方案对号审查」（解 screenutil 点名与模板 A1 默认的 🔴 矛盾）；:80 「暗黑 / 按所选方案适配」；组件/视图节 +2 字体条（统一注入点 / 打包字体+fallback）；**R1-R3 半句并入**（金额展示铁律→9 ｜ 窄屏极值→4 ｜ iOS 生成文件 pathspec→8）+ **R4 新增「复刻 / 折算专项」条件条**（一个控件查两遍 + 像素对齐对象界定 + 6.2 复跑）+ 0.6.0 差集标注
+- **skill（订单折算吸收 C1-C4）**：layout.md +2 bullet（Row 内 Text ellipsis 须先包 Flexible/Expanded；UAX#14 无断词点长串逐字符 Wrap）；platform-pitfalls.md +2 卡（三方依赖 Riverpod defunct 三板斧——区间如实标未查证；Flutter SDK 系统字体回退不可信）——坑库 5→7 卡仍 ≤10 配额
+- **skill（IoT 抽层 S14）**：新建 `references/iot-devices.md`——backend 角色卡「设备通信铁律」7 条迁入升格 + 8 类设备分节框架（外设按通信方式 / 多屏 / 独立 App 指针节），实证 3 处（173e731c1 网口漏打连发间隔 / aaa9995fd 文字转图 / db82458e5 全半角）；backend.md 铁律节 → 一行指针；error.md:26 通用表述保留 + 指针半句；theming.md google_fonts 分场景（**离线/内网设备禁运行时拉取**，字体打包 assets）；SKILL.md 按域取用表 +1 行
+- **fork-coverage**：§六节题改「边界记账」通用名 + 追加 0.6.0 行（S13 公司制度渗漏修正 / S14 IoT 抽层 / 本批通用机制不反哺 crules）
+
 ## 0.5.2 · 清池批——A3 Stop 读侧闭环 + D3 hooks 降级链 + D2 + E 组打磨
 
 - **A3 漂移队列读侧闭环**（复核之复核 §5 自守卫版）：新 Stop hook [stop-reminder.py](hooks/stop-reminder.py)——队列非空经 `additionalContext` 注入事实提醒（模型可据此补索引），`stop_hook_active` 自守卫防连环续轮（官方：与 decision:block 共享同一套 8 次上限——勘A 修正落地），文案事实陈述 <10k 字符；fixture 五态全绿（无队列/空队列/连环轮抑制/非空出提醒/坏输入）入 test-self；hooks.json +Stop 事件——pending-updates 写侧（PostToolUse）与读侧（Stop）闭环合龙，**新会话生效**

@@ -16,6 +16,14 @@
 - 状态：未修复（Closed as not planned） ｜ 最后核验：2026-09-04
 - 出处：实证复盘（升格自原模板样例卡）+ [issue #1322](https://github.com/Baseflow/flutter-permission-handler/issues/1322)（Win7 无法启动，v11.3.1）、[issue #1388](https://github.com/Baseflow/flutter-permission-handler/issues/1388)（旧版 Windows 崩溃）、[PR #1389](https://github.com/Baseflow/flutter-permission-handler/pull/1389)（早期 Win10 崩溃修复：动态加载 API）、[flutter#129716](https://github.com/flutter/flutter/issues/129716)（Flutter 本体在 Win7 崩溃）、[pub.dev](https://pub.dev/packages/permission_handler)
 
+### [全平台] Riverpod Notifier dispose 后 defunct 崩溃三板斧
+
+- 归属：三方依赖（riverpod）× Flutter 框架层（Element 生命周期）
+- 触发场景：`Notifier`/`AsyncNotifier` 页面级状态，dispose 后仍有在途异步回调 / postFrame 回调触发 `ref` 写入或 setState ｜ 症状：`setState() called after dispose()` / 「cannot use 'ref' after the widget was disposed」断言崩溃（实证：delivery_order_notifier.dart:189） ｜ 根因：finalizeTree 先于 postFrameCallbacks；在途异步写入落在已 defunct 的 Element 上 ｜ 规避三板斧：①dispose 首行落存活闸门（bool）+ try-catch ②`postFrameCallback` 内 `if (!mounted) return` ③在途异步写入统一被闸门拦截（写前判活）
+- 区间：框架断言机制全区间；riverpod 特定版本区间**未查证**（无单一 canonical issue——[flutter#73000](https://github.com/flutter/flutter/issues/73000) 为框架层同类断言、[riverpod discussion #3043](https://github.com/rrousselGit/riverpod/discussions/3043) 为最接近的官方讨论；按入预置门槛①实证预置，区间字段如实标）
+- 状态：现行框架行为 ｜ 最后核验：2026-09-08
+- 出处：实证复盘（[订单折算复盘吸收方案 C3](../../../../docs/吸收方案-2026-09-05-订单折算复盘.md)）+ flutter#73000 + riverpod discussion #3043
+
 ## Flutter SDK
 
 ### [iOS 26.x] tabbar / draw 渲染异常
@@ -33,6 +41,14 @@
 - 区间：iOS 全区间（唯一引擎）；Android API 29+ 默认（起默认的引擎版本号未逐字核验，官方 availability 节只给现状）；desktop 自 3.47；Web 全区间 Skia
 - 状态：现行官方口径 ｜ 最后核验：2026-09-05
 - 出处：[Impeller 官方文档 availability 节（3.47 快照逐字核验）](https://docs.flutter.dev/perf/impeller)
+
+### [Android/Windows/macOS] 系统字体回退不可信——跨端字重/字形异常
+
+- 归属：Flutter SDK（引擎字体回退机制）× OS 平台（OEM ROM 字体裁剪 / 桌面缺中文字体）
+- 触发场景：未显式打包字体、依赖系统字体回退的跨端 App；OEM 机型（ColorOS 等）/ Windows POS 设备 ｜ 症状：部分 Android 机型字重只剩两档（实证 Flutter 3.24.3）；Windows 中文渲染异常（实证 2022 起） ｜ 根因：Android 端未指定 fontFamily 时走系统回退，OEM ROM 裁剪/替换 Roboto 与中文字体（#154166：3.22.x 起 ColorOS 非英文字体仅两档字重）；Windows 默认中文字体不可用 ｜ 规避四要素：①关键字体打包进 app（Android：Roboto 全字重；桌面：指定中文字体，pubspec 显式声明 family 与字重映射）②统一注入点（平台条件 fontFamily 走统一 TextStyle 工厂/getter，**禁内联 TextStyle**——内联即绕过注入）③`fontFamilyFallback` 显式声明兜底链 ④打印等设备无法渲染的字形（维语/阿拉伯语等）文字转图兜底
+- 区间：Android 自 Flutter 3.22.x（#154166 报告口径，实证 3.24.3）；桌面长期
+- 状态：引擎回退机制现行，未变 ｜ 最后核验：2026-09-08
+- 出处：实证三笔（saas-cashier `bbf976e42` Android Roboto 全字重打包 / `0508ac9b5` Windows 普惠体打包 / `656558508` 内联绕过复发修复）+ [flutter#154166](https://github.com/flutter/flutter/issues/154166)（ColorOS 字重裁剪）、[flutter#145069](https://github.com/flutter/flutter/issues/145069)（跨平台渲染不一致）、[官方自定义字体 Cookbook](https://docs.flutter.dev/cookbook/design/fonts)
 
 ## OS 平台
 

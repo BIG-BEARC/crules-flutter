@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# crules-flutter 记忆库漂移队列收尾提醒（Stop hook 读侧闭环——A3，2026-09-05 复核之复核 §5 自守卫版）
+# crules-flutter 记忆库漂移队列收尾提醒（Stop hook 读侧闭环——A3，2026-09-05 三审复核 §5 自守卫版）
 # 机制：会话收尾时 .pending-updates 非空 → hookSpecificOutput.additionalContext 注入事实提醒，
 #   模型可据此补索引（pending-updates.py 写侧的读侧对位；此前读侧仅 MAINTENANCE 自检清单软约定）
 # 自守卫（防连环续轮——官方：additionalContext 与 decision:block 共享 stop_hook_active + 连续 8 次上限）：

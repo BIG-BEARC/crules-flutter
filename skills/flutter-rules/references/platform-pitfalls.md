@@ -22,7 +22,7 @@
 - 触发场景：`Notifier`/`AsyncNotifier` 页面级状态，dispose 后仍有在途异步回调 / postFrame 回调触发 `ref` 写入或 setState ｜ 症状：`setState() called after dispose()` / 「cannot use 'ref' after the widget was disposed」断言崩溃（实证：delivery_order_notifier.dart:189） ｜ 根因：finalizeTree 先于 postFrameCallbacks；在途异步写入落在已 defunct 的 Element 上 ｜ 规避三板斧：①dispose 首行落存活闸门（bool）+ try-catch ②`postFrameCallback` 内 `if (!mounted) return` ③在途异步写入统一被闸门拦截（写前判活）
 - 区间：框架断言机制全区间；riverpod 特定版本区间**未查证**（无单一 canonical issue——[flutter#73000](https://github.com/flutter/flutter/issues/73000) 为框架层同类断言、[riverpod discussion #3043](https://github.com/rrousselGit/riverpod/discussions/3043) 为最接近的官方讨论；按入预置门槛①实证预置，区间字段如实标）
 - 状态：现行框架行为 ｜ 最后核验：2026-09-08
-- 出处：实证复盘（[订单折算复盘吸收方案 C3](../../../../docs/吸收方案-2026-09-05-订单折算复盘.md)）+ flutter#73000 + riverpod discussion #3043
+- 出处：实证复盘（订单折算复盘吸收 C3，见 CHANGELOG 0.6.0 条）+ flutter#73000 + riverpod discussion #3043
 
 ### [Android/Windows] shared_preferences 初始化时序与文件损坏——启动白屏 / 数据漂移
 

@@ -1,5 +1,15 @@
 # crules-flutter CHANGELOG
 
+## 0.6.4 · saas-cashier 生产实证吸收批——列表 key 错乱 / SP 启动白屏 / 图片解码异常 / Impeller Vulkan 崩溃
+
+> 用户指认三笔生产问题（列表错乱加 key / Windows SP 白屏 / 图片异常），经 saas-cashier 全史 git 检索钉出实证后吸收；点单页库存角标错乱未钉到单笔 commit，按同型多笔实证吸收并如实标注。
+
+- **坑库 +1 卡（8/≤10）**：[三方依赖] shared_preferences 初始化时序与文件损坏——**启动白屏**（SP init 挂起 / 抛错阻塞首帧）/ Android `channel-error`（pigeon channel 窗口期）/ deviceId 种子漂移「升级换号」；规避四条：init 失败降级默认配置继续启动 / 种子数据冻结文件化 / 备份恢复机制 / Android 重试 ×3。实证 `af24988e3` / `4017e21c1` / `4df1c2702` / `f890669f2`
+- **Impeller 卡 +实证追加**：saas-cashier `d1a86dc1d`——Android POS 定制设备 Vulkan GPU SIGSEGV，`EnableImpeller=false` 回退 Skia 修复；定制设备 GPU 驱动是回退开关的现实主战场
+- **layout.md 新增「列表项 key」节**：库存 / 选中态串行显示的防（key 绑业务 id 禁下标）与治（配置驱动子组件挂 `ValueKey(配置值)` 强制重建）——实证 `31302e77d` / `0111c1d7d` / 点单页库存角标同型
+- **checklist 组件节 +1 条**：列表项 key 绑业务 id（涉增删重排时查）
+- **performance.md 崩溃钩子 +扩展点实证**：`7d1573584`（生产问题）——Windows 图片解码 `Codec failed` 异常经 `FlutterError.onError` 静默捕获记录，不拖垮 App
+
 ## 0.6.3 · 留池四项收口批——性能·CI·监控三空白补域 + 记忆库钩子推广 + plugin §八 实体化
 
 > 0.6.2 留池四项按序收口三项；第四项（POS 垂直拆层 core+pos-vertical）系开源定位裁决项，另行方案。

@@ -27,6 +27,7 @@
 - **全局错误钩子双兜底**（未接 SDK 也先立住，日志至少落本地 / 上报通道）：
   - `FlutterError.onError`（Flutter 框架异常）→ 转发 `FlutterError.presentError` + 自行上报
   - `PlatformDispatcher.instance.onError`（Dart 2.15+，捕获未被 zone 捕的孤立错误——**`runZonedGuarded` 旧写法在此之后可省**）
+  - 扩展点实证（saas-cashier `7d1573584`，生产问题）：Windows 图片解码抛 `Codec failed to produce an image`（损坏 / 不完整 / 不支持格式 / 缓存图问题）——`FlutterError.onError` 内静默捕获该类并记日志，图片加载失败不拖垮整个 App
 - **SDK 选型**：`sentry_flutter`（跨端 / 自托管可用 / 上报上下文丰富）或 `crashlytics`（Firebase 系 / Google 系标配）；离线 / 内网设备无第三方通道时——自建上报（ dio 上报到自有日志端）或至少本地环形日志（排障时导出）
 - **符号化**：release 混淆构建（`--obfuscate --split-debug-info=...`）后崩溃栈须用构建时产出的 symbols 文件符号化——**符号文件随构建产物归档**（见 references/build-release.md），丢了就无法还原线上栈
 - 上报内容纪律：堆栈 + 版本号 + 机型必带；token / 密钥 / 完整卡号**永不入上报**（checklist 条目 6 资损线同源）

@@ -24,6 +24,14 @@
 - 状态：现行框架行为 ｜ 最后核验：2026-09-08
 - 出处：实证复盘（[订单折算复盘吸收方案 C3](../../../../docs/吸收方案-2026-09-05-订单折算复盘.md)）+ flutter#73000 + riverpod discussion #3043
 
+### [Android/Windows] shared_preferences 初始化时序与文件损坏——启动白屏 / 数据漂移
+
+- 归属：三方依赖（shared_preferences 及其平台实现）
+- 触发场景：`main()` 里 `await` SP 初始化后 `runApp`；SP 文件损坏 / 被旧版本改写；Android 冷启动 pigeon channel 未就绪即访问 ｜ 症状：**启动白屏**（SP init 挂起或抛错 → 首帧永不出——Windows 实证）；`channel-error: Unable to establish connection on channel`（Android 实证）；deviceId 等种子数据漂移、升级后「换号」（Windows 实证） ｜ 根因：SP 是启动路径上的单点阻塞且 Windows 实现文件易损；Android 侧 `shared_preferences_android` pigeon channel 初始化有窗口期 ｜ 规避四条：①**SP init 失败降级默认配置继续启动**（try-catch + 默认值，不阻塞首帧——`Global.init()` 同样包 try-catch 兜底）②SP 关键种子数据（deviceId 类）**冻结文件化**：文件 > SP 一次性迁移 > 现场采集，文件存在且非空永不覆盖 ③SP 读写封装带**备份恢复机制** ④Android 冷启动访问 SP 加**重试**（3 次 × 100ms 实证值）
+- 区间：实证于 saas-cashier（Windows / Android POS 双端，2025-11~2026-08）；插件官方版本区间**未查证**（按入预置门槛①实证预置）
+- 状态：现行 ｜ 最后核验：2026-09-08
+- 出处：实证 saas-cashier `af24988e3`（SPUtil 备份恢复 + init 失败降级启动）/ `4017e21c1`（Android channel 重试）/ `4df1c2702`（deviceId 种子冻结文件化）/ `f890669f2`
+
 ## Flutter SDK
 
 ### [iOS 26.x] tabbar / draw 渲染异常
@@ -40,7 +48,7 @@
 - 触发场景：渲染异常 / 性能问题排查时套用 Skia 时代老绕法与性能 hack ｜ 症状：老绕法不生效或行为反转、渲染结果与 Skia 时期不一致 ｜ 根因：Impeller 已成默认引擎——**iOS 唯一支持引擎、无切回 Skia 能力**；Android API 29+ 默认（低版本或无 Vulkan 设备回退 legacy OpenGL；`--no-enable-impeller` 仅调试用）；macOS/Linux/Windows 自 **3.47** 默认（官方预告未来移除 opt-out）；Web 仍 Skia ｜ 规避：渲染问题按 Impeller 语境排查不套 Skia 经验；关注官方 migration 指南与 issue；Android 低端机注意 OpenGL 回退路径的行为差异
 - 区间：iOS 全区间（唯一引擎）；Android API 29+ 默认（起默认的引擎版本号未逐字核验，官方 availability 节只给现状）；desktop 自 3.47；Web 全区间 Skia
 - 状态：现行官方口径 ｜ 最后核验：2026-09-05
-- 出处：[Impeller 官方文档 availability 节（3.47 快照逐字核验）](https://docs.flutter.dev/perf/impeller)
+- 出处：[Impeller 官方文档 availability 节（3.47 快照逐字核验）](https://docs.flutter.dev/perf/impeller)｜**实证追加（2026-09-08）**：saas-cashier `d1a86dc1d`——Android POS 定制设备 Vulkan GPU native crash（SIGSEGV），`AndroidManifest` `EnableImpeller=false` 回退 Skia 修复——无 Vulkan / 驱动残缺的定制设备是回退开关的现实主战场（白屏 / 崩溃排障时先核设备 GPU 驱动）
 
 ### [Android/Windows/macOS] 系统字体回退不可信——跨端字重/字形异常
 

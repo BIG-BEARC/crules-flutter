@@ -1,6 +1,6 @@
 {
   "name": "crules-flutter",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "license": "MIT",
   "description": "crules-flutter——面向 Flutter 工程的独立协作规则 plugin（fork 自 crules v74-fork-base，独立演进）",
   "author": {

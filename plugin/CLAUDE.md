@@ -144,7 +144,7 @@
 
 ## 五、完成定义
 
-任务**同时满足**以下全部条件才算完成：已交付确认的目标产物；实际改动未超出确认范围；已按风险执行对应验证（§四）并按证据等级准确报告；未验证项、已知风险和范围外问题已明确说明；没有覆盖或提交无关改动；没有未经授权的提交、推送或外部写入。交付汇报必含 **review 结论**与**沉淀候选提示**（一行候选计数；直写类已随手落，闸类待 `/crules-flutter:distill`——可显式跳过并记 Gate 例外）。需求方对 review 发现逐条裁决后，主控**裁决回填**：每条一行 JSONL 追加到 `.claude/memory/.review-ledger`（append-only、不进 git；字段与聚合口径见 `/crules-flutter:distill` §7 收尾）。
+任务**同时满足**以下全部条件才算完成：已交付确认的目标产物；实际改动未超出确认范围；已按风险执行对应验证（§四）并按证据等级准确报告；未验证项、已知风险和范围外问题已明确说明；没有覆盖或提交无关改动；没有未经授权的提交、推送或外部写入。交付汇报必含 **review 结论**与**沉淀候选提示**（一行候选计数；直写类已随手落，闸类待 `/crules-flutter:distill`——可显式跳过并记 Gate 例外）。需求方对 review 发现逐条裁决后，主控**裁决回填**：每条一行 JSONL 追加到 `.claude/memory/.review-ledger`（append-only、不进 git——`.gitignore` 加一行 `.claude/memory/.review-ledger`；字段与聚合口径见 `/crules-flutter:distill` §7 收尾）。
 
 ---
 

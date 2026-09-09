@@ -1,5 +1,14 @@
 # crules-flutter CHANGELOG
 
+## 1.0.4 · ledger 外审三发现收口——「不进 git」从意图变机制
+
+> 依据链：1.0.3 落地后外审三发现（🟡×2 + 🟢×1，主会话逐条核验均成立——其中 🟡1 核出加码证据：MAINTENANCE.md 不进 git 清单本有 `.pending-updates` 机制先例，同域 `.review-ledger` 却只写意图）。
+
+- **🟡1 gitignore 机制化**：双模板 §五 裁决回填句补「`.gitignore` 加一行 `.claude/memory/.review-ledger`」；MAINTENANCE.md「不进 git」清单加 `.review-ledger`（含防误报率考核理由）——消费工程 `git add .` 不再静默收走台账，§8「不入 git 双保险」名副其实
+- **🟡2 note 转义约束 + 坏行容错**：distill §7 字段说明加「note 禁英文引号与换行（引号坏 JSON 行），中文引号「」表述」；读侧「缺字段**或坏行**一律跳过并计数报告」——6.2 原只覆盖缺字段未覆盖坏 JSON
+- **🟢3 fid 语义入 ledger 侧**：字段说明补「fid 仅单报告内唯一、跨会话不唯一——勿按 fid 追踪裁决变迁」（producer 侧 reviewer.md 已有，ledger 字段说明同步）
+- test-self 18/18（§五 双侧同源改，D1 孪生绿；横幅同步 1.0.4）
+
 ## 1.0.3 · 审查质量落账——review 裁决终态可量化（ledger + 四数聚合）
 
 > 依据链：[方案](docs/方案-2026-09-08-审查质量落账与聚合.md)（主会话核验：四处现状锚点属实；C1 flock / §5「常驻 0」/ A1 字段计数三处按核验修正后执行）。背景：1.0.2 评审「方法论强在防错与沉淀、弱在主动提质——reviewer 采纳率/误报率只靠主观复盘」。

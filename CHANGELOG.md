@@ -1,5 +1,14 @@
 # crules-flutter CHANGELOG
 
+## 1.0.5 · 二轮评审三发现收口——gitignore 全程机制化 + §五 细则下沉 + docs 轮次化成文
+
+> 依据链：1.0.4 后二轮全面评审三发现（🟡×2 + 🟢×1，依赖核验零断言冲突）。**🟡1 取代 1.0.4 🟡1 的模板侧文字方案**（后人对照 1.0.4 找不到 §五 gitignore 字样即为此因）。
+
+- **🟡1 gitignore 半程收口**：install.sh 幂等追加 `.gitignore` 三行（`indexes/` / `.pending-updates` / `.review-ledger`——缺失才加、已有跳过、dry-run 只报告）；MAINTENANCE「git 分层」从「消费项目手动加」改「安装器自动落位，想反着来装后删行」——MAINTENANCE 政策 → 安装器默认，手动义务归零
+- **🟡2 §五 细则下沉**：双模板 §五 裁决回填句删与 MAINTENANCE 逐字重复的 append-only/不进 git/gitignore 细则（gitignore 义务已由 🟡1 机制接管），压回「口径见 distill §7」指针——模板常驻不留细则（B1 瘦身同款原则）
+- **🟢3 docs 轮次化义务成文**：README 维护节与「skill 坑节重验」「预设栈审视」并列补第三条——每次 minor 清点 docs/，已落地且批齐的归档或删，裁决中途保留至批落地（防第三轮堆积）
+- test-self 新增 gitignore 幂等断言（首装 3 行 / force 重装仍 3 行），19/19
+
 ## 1.0.4 · ledger 外审三发现收口——「不进 git」从意图变机制
 
 > 依据链：1.0.3 落地后外审三发现（🟡×2 + 🟢×1，主会话逐条核验均成立——其中 🟡1 核出加码证据：MAINTENANCE.md 不进 git 清单本有 `.pending-updates` 机制先例，同域 `.review-ledger` 却只写意图）。

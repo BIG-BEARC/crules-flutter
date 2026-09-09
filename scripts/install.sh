@@ -71,6 +71,20 @@ fi
 
 for f in "$SRC"/进阶/*.md; do do_write "进阶/$(basename "$f")" "$TARGET/进阶/$(basename "$f")" "" "$f"; done
 for f in "$SRC"/memory/*.md; do do_write ".claude/memory/$(basename "$f")" "$TARGET/.claude/memory/$(basename "$f")" "" "$f" "never"; done
+
+# 本机生成物 gitignore 幂等落位（1.0.5——取代 1.0.4 的模板侧文字指引：MAINTENANCE git 分层政策由安装器落成默认）
+# 三行缺失才追加，已有跳过；与 --force 无关（重复追加无意义）；dry-run 只报告
+GI="$TARGET/.gitignore"
+GI_ADD=0
+for entry in ".claude/memory/indexes/" ".claude/memory/.pending-updates" ".claude/memory/.review-ledger"; do
+  if [ -f "$GI" ] && grep -qxF "$entry" "$GI"; then continue; fi
+  if [ "$DRYRUN" != "1" ]; then
+    [ -f "$GI" ] || printf '# crules-flutter：memory 本机生成物（政策与反悔方式见 .claude/memory/MAINTENANCE.md「git 分层」）\n' > "$GI"
+    printf '%s\n' "$entry" >> "$GI"
+  fi
+  GI_ADD=$((GI_ADD+1))
+done
+[ "$GI_ADD" -gt 0 ] && echo "  GITIGNORE（幂等追加 ${GI_ADD} 行本机生成物）  $GI"
 echo "== 汇总：写入 ${W}，跳过/保留 ${S}，.new 待合并 ${N}，失败 ${E} =="
 
 # D3：hooks 环境显式降级警告（不阻塞安装——静默降级改显式，2026-09-05）

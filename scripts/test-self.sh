@@ -104,6 +104,15 @@ su_bad=$(grep -h 'flutter_screenutil' "${SRC}"/agents/*.md "${SRC}"/app/CLAUDE.m
 [ "${su_bad}" -eq 0 ] && { PASS=$((PASS+1)); echo "PASS  flutter_screenutil 白名单闸（命中仅停更/维护缓慢注记行）"; } || { FAIL=$((FAIL+1)); echo "FAIL  存在未注记 flutter_screenutil 正面表述 ×${su_bad}（A2 已判停更）"; }
 
 
+# 1.0.5 断言：gitignore 幂等落位——首装补三行，重装不重复（取代 1.0.4 模板侧文字指引）
+T5=/tmp/cf-gi; rm -rf "$T5"; mkdir -p "$T5"
+bash $SRC/scripts/install.sh "$T5" --app >/dev/null 2>&1
+gi1=$(grep -c '^\.claude/memory' "$T5/.gitignore" 2>/dev/null || echo 0)
+bash $SRC/scripts/install.sh "$T5" --app --force >/dev/null 2>&1
+gi2=$(grep -c '^\.claude/memory' "$T5/.gitignore" 2>/dev/null || echo 0)
+[ "${gi1}" = "3" ] && [ "${gi2}" = "3" ] && { PASS=$((PASS+1)); echo "PASS  gitignore 幂等落位（首装 3 行，force 重装仍 3 行）"; } || { FAIL=$((FAIL+1)); echo "FAIL  gitignore 落位（首装 ${gi1} 行 / 重装 ${gi2} 行，期望 3/3）"; }
+rm -rf "$T5"
+
 # 幂等断言：同输入两次运行结论一致且均 block（双 plugin 共存的可测背书）
 BADCMD="git push --fo""rce origin main"   # 分段拼接，避免源码含完整字面串
 j1=$(printf '{"tool_input":{"command":"%s"}}' "$BADCMD")

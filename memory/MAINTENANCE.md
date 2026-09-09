@@ -53,7 +53,7 @@
 ## git 分层（团队共享 vs 本机生成，v18-C）
 
 - **进 git（制度资产，团队共享）**：本文件 / `patterns.md` / `business-rules.md` / `INVARIANTS.md` / `decisions/`——规则与决策是团队资产
-- **不进 git（本机生成物，可重建）**：`indexes/`（代码索引）与 `.pending-updates`（漂移队列）及 `.review-ledger`（review 裁决台账——本机私域，防误报率被拿作考核）——消费项目 `.gitignore` 加：`.claude/memory/indexes/`、`.claude/memory/.pending-updates`、`.claude/memory/.review-ledger`
+- **不进 git（本机生成物，可重建）**：`indexes/`（代码索引）与 `.pending-updates`（漂移队列）及 `.review-ledger`（review 裁决台账——本机私域，防误报率被拿作考核）——三行由 install.sh **幂等自动落位**到 `.gitignore`（已存在不重复）；想反着来（如 indexes 进 git）装后自行删行即可
 - 同理：`.claude/settings.json`（团队共享的权限 / hooks 配置）**进 git**；`settings.local.json` **永不进**（本机私有）
 
 ## 规模演进触发（v11-②）

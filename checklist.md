@@ -22,11 +22,11 @@
 
 **5. 国际化**：用户可见文本走 i18n；新增 Key 同步多语言文件；必要时执行 i18n 代码生成。
 
-**6. 代码规范**：文件头注释（如项目要求）；无调试日志（**`avoid_print` lint 已拦**，抽查即可）；无硬编码 URL / 密钥；命名规范；**无新引入 lint 警告（`flutter analyze` 零 warning 是硬门——模板自带 `analysis_options.yaml` 基线）**；import 分组有序；资损线（支付 / 订单 / 打印 / 同步）结构化日志带追溯上下文——orderId 可记，**token / 密钥 / 完整卡号永不入日志**；机械项（analyzer / lint 违规）归 CI 基线，不占人审注意力；**工程自定义质量脚本（format / analyze / check）即唯一入口**——CLAUDE.md / §十二 写明并禁裸跑默认参数命令（实证：裸 `dart format` 一次波及 166 文件，见 `docs/复盘-2026-09-09-质量脚本与裸push双坑.md` 坑一）。
+**6. 代码规范**：文件头注释（如项目要求）；无调试日志（**`avoid_print` lint 已拦**，抽查即可）；无硬编码 URL / 密钥；命名规范；**无新引入 lint 警告（`flutter analyze` 零 warning 是硬门——模板自带 `analysis_options.yaml` 基线）**；import 分组有序；资损线（支付 / 订单 / 打印 / 同步）结构化日志带追溯上下文——orderId 可记，**token / 密钥 / 完整卡号永不入日志**；机械项（analyzer / lint 违规）归 CI 基线，不占人审注意力；**工程自定义质量脚本（format / analyze / check）即唯一入口**——CLAUDE.md / §十二 写明并禁裸跑默认参数命令（实证：裸 `dart format` 一次波及 166 文件——叙事见 crules-flutter 仓 git 历史）。
 
 **7. 功能完整性**：spec 功能点均已实现（非 stub）；用户可完成完整流程；关键路径无崩溃；新增入口 / 路由已注册；老行为变更清单（方案 §1）外的行为变化 = 回归 bug。
 
-**8. Git 规范**：commit message 清晰；不提交不该入库的生成文件；不提交调试临时代码；iOS 生成文件（Generated.xcconfig / flutter_export_environment.sh）按机器路径假变更，pathspec 排除后再提交；多仓 / 子模块 git 一律 `git -C <绝对路径>`，push 等外发操作前命令内先 `git remote -v` 核对目标仓再推（实证：cwd 命令间重置，裸 push 把主仓推出了新远端分支——见 `docs/复盘-2026-09-09-质量脚本与裸push双坑.md` 坑二）。
+**8. Git 规范**：commit message 清晰；不提交不该入库的生成文件；不提交调试临时代码；iOS 生成文件（Generated.xcconfig / flutter_export_environment.sh）按机器路径假变更，pathspec 排除后再提交；多仓 / 子模块 git 一律 `git -C <绝对路径>`，push 等外发操作前命令内先 `git remote -v` 核对目标仓再推（实证：cwd 命令间重置，裸 push 把主仓推出了新远端分支——叙事见 crules-flutter 仓 git 历史）。
 
 **9. 资损红线【0.4.0 新增】**：金额计算（精度 / 舍入）、幂等（重复提交 / 重试）、状态机非法迁移、并发扣减——涉钱 diff 强制逐项过；金额展示铁律——主金额固有宽完整显示不可截断（ellipsis 只作用于划线单价等辅助信息）。
 
@@ -91,7 +91,7 @@
 ### 复刻 / 折算专项（条件条——涉复刻 / 跨设计稿折算任务时查，其余任务跳过）
 
 - [ ] 折算/像素复刻自查：一个控件查两遍（尺寸折了吗？字号跟了吗？）；像素对齐对齐的是信息与视觉规格，不是布局机制（滚动区内外、撑底方式按目标屏取舍）；方案 6.2 用例表已含折算对照的直接复跑
-- [ ] 复刻在线版接口消费时追到 **logic / 消费端**确认字段是服务端返回还是**前端加工**（entity 有字段 ≠ 接口会返回；entity 头部样例响应注释优先看）——实证见 `docs/复盘-2026-09-09-质量脚本与裸push双坑.md` 坑三
+- [ ] 复刻在线版接口消费时追到 **logic / 消费端**确认字段是服务端返回还是**前端加工**（entity 有字段 ≠ 接口会返回；entity 头部样例响应注释优先看）——实证叙事见 crules-flutter 仓 git 历史（payName 前端补写）
 
 ---
 

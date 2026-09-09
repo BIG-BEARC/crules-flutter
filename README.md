@@ -87,18 +87,15 @@ agents 不复制——plugin 已自动挂载 7 角色（`crules-flutter:frontend
 
 ## 升级
 
-`plugin update` 只更新 plugin 通道（hooks / agents / skill / 命令）；项目内模板按三步升级：
+`plugin update` 只更新 plugin 通道（hooks / agents / skill / 命令）；项目内模板升级一条命令（定位 plugin cache 最新版脚本，从那运行）：
 
 ```bash
-# ① 定位源（plugin cache 最大版本；本地开发态可换本仓克隆路径）
 SRC=$(ls -d ~/.claude/plugins/cache/*/crules-flutter/*/scripts/install.sh 2>/dev/null | sort -V | tail -1)
 [ -n "$SRC" ] || { echo "❌ 未找到 plugin cache——先装 plugin，或把 SRC 手动指向本仓克隆路径"; exit 1; }
-SRC=$(dirname "$SRC")/..
-# ② 查模板版本差
-bash "$SRC/scripts/check-imports.sh" <项目根>
-# ③ 模板升级：已存在文件出 .new 伴生供对照合并（memory 永不覆盖）
-bash "$SRC/scripts/install.sh" <项目根> --app --force
+bash "$SRC" <项目根> --app --upgrade    # 巡检版本差 → 确认 → --force 升级（.new 伴生，memory 永不覆盖）
 ```
+
+手动等价：`check-imports.sh <项目根>` 查版本差 → `install.sh <项目根> --app --force`。
 
 **合并 `.new` 要点**：memory/ 只对照不强合；项目自改的 §七技术栈 / §十二附录是合并主体，勿被新版冲掉——历史逐版本细节查 [CHANGELOG](CHANGELOG.md)。
 
@@ -128,7 +125,7 @@ bash "$SRC/scripts/install.sh" <项目根> --app --force
 - 定期外审选项保留（独立 subagent 复审模式可复用，防规则滑向单项目特有）
 - **skill 平台坑节维护义务**（0.4.0 起）：Flutter / 平台大版本出现 → 扫 skill 坑节标【待重验】→ 核验刷新（每次 minor 例行）
 - **预设栈审视义务**（0.5.1 起）：app 模板 §七 预设的包维护态与争议项按「最后核验」日期例行刷新，与坑节维护义务并列（每次 minor）
-- **docs 轮次化义务**（每次 minor）：清点 `docs/`——状态戳已「已落地 / 已废弃」且所属批全部落地的方案 / 评审 / 复盘，正文归档或删（结论已被代码与 CHANGELOG 吸收，git 可寻回）；裁决中途的保留至批落地
+- **docs 轮次化义务**（每次 minor）：清点 `docs/`——状态戳已「已落地 / 已废弃」且所属批全部落地的方案 / 评审 / 复盘，正文归档或删（结论已被代码与 CHANGELOG 吸收，git 可寻回；**被分发面引用的 docs 先去引用再删**，防悬空指针）；裁决中途的保留至批落地。**裁决索引即状态戳**：每篇头部 `> 状态：…` 必含下一步动作（如「待需求方逐条裁 §6」），全部等待态一查即得——`grep -n "^> 状态" docs/*.md`（读的是本体，无第二份索引可漂移）
 - **常驻基线**：2026-09-08 双测落档 11.5k → 14.4k（真实消费工程 `/context` 快照），距 15K 触发线 0.6k——增量全部来自消费工程自身 CLAUDE.md 增长，本包侧持平；每次 minor 复测。
   口径细节（触发线裁决必看）：15K 线度量**本包模板常驻负担**，`/context` 的 Memory files 混入项目自身内容——破线先分离归因（模板 vs 项目 CLAUDE.md 膨胀），项目侧膨胀应裁项目侧 / 走记忆库下沉，而非触发模板瘦身（0.4.x 定档，原档已删、口径以本节为准）
 - **沉淀闸蜜月期**（0.4.0 起）：真实试点上前 5 次 `/distill` 建议全闸档校准（人工改写条目多 = AI 判准偏差信号）；观测项：弃用率、`/context` 常驻快照、skill 触发体积

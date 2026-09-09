@@ -16,7 +16,7 @@ set -uo pipefail
 SRC=$(cd "$(dirname "$0")/.." && pwd)
 VER=$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["version"])' "$SRC/.claude-plugin/plugin.json" 2>/dev/null) || VER="unknown"
 STAMP="<!-- crules-flutter: v$VER @ $(date +%Y-%m-%d) -->"
-[ $# -ge 1 ] || { echo "用法: bash scripts/install.sh <目标项目根> --app|--plugin [--dry-run] [--force]"; exit 2; }
+[ $# -ge 1 ] || { echo "用法: bash scripts/install.sh <目标项目根> --app|--plugin [--dry-run] [--force] [--upgrade]"; exit 2; }
 TARGET=$1; KIND=""; DRYRUN=0; FORCE=0; UPGRADE=0
 for a in "$@"; do case "$a" in --app) KIND=app;; --plugin) KIND=plugin;; --dry-run) DRYRUN=1;; --force) FORCE=1;; --upgrade) UPGRADE=1;; esac; done
 [ "$KIND" = "app" ] || [ "$KIND" = "plugin" ] || { echo "❌ 须指定 --app 或 --plugin"; exit 2; }

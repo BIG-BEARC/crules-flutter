@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # crules-flutter 安装器（fork 自 crules install.sh 思路）——模板为「复制后必填」型（含技术栈三选一交互），故只有完整模式（无轻装 @ 导入）
-# 用法：bash scripts/install.sh <目标项目根> --app | --plugin [--dry-run] [--force]
+# 用法：bash scripts/install.sh <目标项目根> --app | --plugin [--dry-run] [--force] [--upgrade]
+#       --upgrade = 升级三步打包：版本差巡检（check-imports.sh）→ 确认 → 自调 --force（.new 伴生，memory 永不覆盖）
 # 行为：模板（app|plugin/CLAUDE.md → 目标 CLAUDE.md + 版本戳）+ checklist/进阶/analysis_options → 项目根 + memory → .claude/memory/
 #       agents 不复制——plugin 自动挂载 7 角色（plugin-only）
 # 三态写入（v0.2.2，外审 N2/N3/N5）：
@@ -16,10 +17,21 @@ SRC=$(cd "$(dirname "$0")/.." && pwd)
 VER=$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["version"])' "$SRC/.claude-plugin/plugin.json" 2>/dev/null) || VER="unknown"
 STAMP="<!-- crules-flutter: v$VER @ $(date +%Y-%m-%d) -->"
 [ $# -ge 1 ] || { echo "用法: bash scripts/install.sh <目标项目根> --app|--plugin [--dry-run] [--force]"; exit 2; }
-TARGET=$1; KIND=""; DRYRUN=0; FORCE=0
-for a in "$@"; do case "$a" in --app) KIND=app;; --plugin) KIND=plugin;; --dry-run) DRYRUN=1;; --force) FORCE=1;; esac; done
+TARGET=$1; KIND=""; DRYRUN=0; FORCE=0; UPGRADE=0
+for a in "$@"; do case "$a" in --app) KIND=app;; --plugin) KIND=plugin;; --dry-run) DRYRUN=1;; --force) FORCE=1;; --upgrade) UPGRADE=1;; esac; done
 [ "$KIND" = "app" ] || [ "$KIND" = "plugin" ] || { echo "❌ 须指定 --app 或 --plugin"; exit 2; }
 [ -d "$TARGET" ] || { echo "❌ 目标目录不存在: $TARGET"; exit 2; }
+
+# --upgrade 模式（1.0.6，D3）：巡检 → 确认 → 自调 --force；.new 合并仍人工（有意边界：合并判断不自动化）
+if [ "$UPGRADE" = "1" ]; then
+  [ -f "$TARGET/CLAUDE.md" ] && grep -qE '<!-- crules-flutter: v[0-9]' "$TARGET/CLAUDE.md" \
+    || { echo "❌ 目标无 crules-flutter 戳——非本包装载工程，升级中止（老项目走人工合并）"; exit 1; }
+  echo "== 升级巡检（源 v$VER → $TARGET）=="
+  bash "$SRC/scripts/check-imports.sh" "$TARGET" || true
+  printf '应用升级？（--force：已存在文件出 .new 伴生供对照合并；memory/ 永不覆盖）[y/N] '
+  read -r REPLY
+  case "$REPLY" in y|Y|yes) exec bash "$0" "$TARGET" "--$KIND" --force ;; *) echo "已取消——未做任何改动"; exit 0 ;; esac
+fi
 W=0; S=0; N=0; E=0
 
 do_write() { # $1=描述 $2=目标 $3=内容(空则源复制 $4) [$5=never_force]
@@ -88,6 +100,12 @@ done
 echo "== 汇总：写入 ${W}，跳过/保留 ${S}，.new 待合并 ${N}，失败 ${E} =="
 
 # D3：hooks 环境显式降级警告（不阻塞安装——静默降级改显式，2026-09-05）
+# D4（1.0.6）：Windows 显式不支持警告（README「环境要求」同口径——模板仍落位，仅 hooks 不生效）
+case "$(uname -s 2>/dev/null)/${OS:-}" in
+  MINGW*|MSYS*|CYGWIN*|*Windows_NT)
+    echo "⚠️ Windows 本机：本包 hooks（deny-list 硬闸 / 漂移队列 / Stop 收尾提醒）**不支持 Windows**——模板与 skill/agents 照常落位生效，hooks 防线缺失，终极防线回到 Claude Code 原生权限确认；建议在 WSL / macOS / Linux 会话中使用" ;;
+  *) : ;;
+esac
 if command -v python3 >/dev/null 2>&1; then
   python3 -c "import fcntl" 2>/dev/null || echo "⚠️ 本机 python3 缺 fcntl（Windows 常见）——deny-list 硬闸与 Stop 收尾提醒可用，pending-updates 漂移队列降级为无锁追加（仍记录）"
 else

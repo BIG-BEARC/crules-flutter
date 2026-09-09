@@ -19,6 +19,12 @@ t 0 "bash $SRC/scripts/release.sh draft"                    "release draft 应�
 t 0 "python3 $SRC/hooks/test_deny_list.py"                 "deny-list fixture 应全绿"
 t 0 "python3 $SRC/hooks/test_stop_reminder.py"            "stop-reminder fixture 应全绿（A3 读侧闭环）"
 t 1 "bash $SRC/scripts/release.sh tag 9.9.9"               "release tag 版本不匹配应报错（1.0.2 D2——防 tag 打在 bump 前旧树）"
+t 1 "bash $SRC/scripts/install.sh $D/old --app --upgrade"  "upgrade 无戳老项目应中止（D3·1.0.6）"
+U=/tmp/cf-upg; rm -rf "$U"; mkdir -p "$U"
+printf '<!-- crules-flutter: v0.0.1 @ 2026-01-01 -->\n' > "$U/CLAUDE.md"
+o=$(printf 'n\n' | bash $SRC/scripts/install.sh $U --app --upgrade 2>&1); rc=$?
+[ "$rc" = "0" ] && ! ls "$U/checklist.md" >/dev/null 2>&1 && echo "$o" | grep -q 已取消 \
+  && { PASS=$((PASS+1)); echo "PASS  upgrade 拒绝确认零改动（D3·1.0.6）"; } || { FAIL=$((FAIL+1)); echo "FAIL  upgrade 取消路径（rc=$rc）"; }
 
 # F2 回归三断言（真机 fixture 固化——2026-08-27 flutter create 28 行注释版产物签入 testdata/）
 T1=/tmp/cf-ao1; T2=/tmp/cf-ao2; mkdir -p "$T1" "$T2"

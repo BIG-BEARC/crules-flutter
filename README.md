@@ -33,7 +33,7 @@ claude plugin install crules-flutter@crules-flutter-market --scope user
 2. `CLAUDE.md` §十二——项目附录（项目名 / 构建·分析·测试命令）
 3. `.claude/memory/platform-pitfalls.md` 头部——**支持矩阵**（目标平台 + 各端实测版本上限；init 出机械读初稿，人核对补实测）
 
-**装完日常零记忆负担**：agent/skill/hooks 全自动触发；只在交付收尾时走「机械验证 → review → 沉淀」时序（下图），会话结束 Stop hook 会提醒补记忆库索引。
+**装完日常零记忆负担**：agent/skill/hooks 全自动触发；只在交付收尾时走「机械验证 → review → 沉淀」时序（下图），会话结束 Stop hook 会提醒补记忆库索引。**第一次用？** 15 分钟走一遍最小闭环见 `进阶/上手教程.md`（init 随模板落位到项目根）。
 
 ### 场景 → 入口（权威全表见 `/crules-flutter:help`）
 
@@ -80,7 +80,7 @@ sequenceDiagram
 | `checklist.md` | 项目根 | 审查清单（通用 10 条编号 0–9 + Flutter 专项） |
 | `analysis_options.yaml` | 项目根 | 三态落位：flutter 脚手架默认 → 升级替换（原文件留 `.scaffold-bak`）；已有自定义 → 落伴生文件待人工合并；无 → 写入 |
 | `.gitignore` 三行 | 项目根 | memory 本机生成物（索引/漂移队列/review 台账）自动排除出 git（幂等） |
-| `进阶/` 5 篇 | 项目根 | 工程化流程 / 审查纪律 / 方案评审闭环 / Agent 编排 / 记忆库体系 |
+| `进阶/` 6 篇 | 项目根 | 上手教程 / 工程化流程 / 审查纪律 / 方案评审闭环 / Agent 编排 / 记忆库体系 |
 | `memory/` 8 模板 | `.claude/memory/` | 制度资产（含 `reference-map.md` 分域参考系 / `platform-pitfalls.md` 平台坑库） |
 
 agents 不复制——plugin 已自动挂载 7 角色（`crules-flutter:frontend` 等）。
@@ -120,12 +120,13 @@ bash "$SRC" <项目根> --app --upgrade    # 巡检版本差 → 确认 → --fo
 
 ## 维护（以下面向本仓维护者）
 
-- 本仓独立演进：bump 双 json → `plugin update` → cache 特征串验证（纪律承本仓 v31 先例）
+- 本仓独立演进：bump 双 json → `plugin update` → cache 特征串验证（步骤细节见 `scripts/release.sh` 头注与 CHANGELOG）
 - 治理从简：README + CHANGELOG + 最简检查（五维雷达/评审轮次体系**不引入**——治理成本延后到真有痛感再付）
 - 定期外审选项保留（独立 subagent 复审模式可复用，防规则滑向单项目特有）
-- **skill 平台坑节维护义务**（0.4.0 起）：Flutter / 平台大版本出现 → 扫 skill 坑节标【待重验】→ 核验刷新（每次 minor 例行）
-- **预设栈审视义务**（0.5.1 起）：app 模板 §七 预设的包维护态与争议项按「最后核验」日期例行刷新，与坑节维护义务并列（每次 minor）
+- **major 版本前外审**（1.x 升版时跑，minor 不跑）：独立 subagent 全文重读本仓；**风险面必答**——上下文经济（常驻基线 vs 15K 线）/ 实效度量（ledger 四数 / distill 弃用率）/ bus factor / 待裁事项清点；通用面兜底——易用性（含信息架构）/ 方法论深度 / 机制化 / 可维护性 / 分发工程。产出发现走 review-ledger，评级仅趋势参考不作门槛
+- **skill 平台坑节维护义务**：Flutter / 平台大版本出现 → 扫 skill 坑节标【待重验】→ 核验刷新（每次 minor 例行）
+- **预设栈审视义务**：app 模板 §七 预设的包维护态与争议项按「最后核验」日期例行刷新，与坑节维护义务并列（每次 minor）
 - **docs 轮次化义务**（每次 minor）：清点 `docs/`——状态戳已「已落地 / 已废弃」且所属批全部落地的方案 / 评审 / 复盘，正文归档或删（结论已被代码与 CHANGELOG 吸收，git 可寻回；**被分发面引用的 docs 先去引用再删**，防悬空指针）；裁决中途的保留至批落地。**裁决索引即状态戳**：每篇头部 `> 状态：…` 必含下一步动作（如「待需求方逐条裁 §6」），全部等待态一查即得——`grep -n "^> 状态" docs/*.md`（读的是本体，无第二份索引可漂移）
-- **常驻基线**：2026-09-08 双测落档 11.5k → 14.4k（真实消费工程 `/context` 快照），距 15K 触发线 0.6k——增量全部来自消费工程自身 CLAUDE.md 增长，本包侧持平；每次 minor 复测。
-  口径细节（触发线裁决必看）：15K 线度量**本包模板常驻负担**，`/context` 的 Memory files 混入项目自身内容——破线先分离归因（模板 vs 项目 CLAUDE.md 膨胀），项目侧膨胀应裁项目侧 / 走记忆库下沉，而非触发模板瘦身（0.4.x 定档，原档已删、口径以本节为准）
-- **沉淀闸蜜月期**（0.4.0 起）：真实试点上前 5 次 `/distill` 建议全闸档校准（人工改写条目多 = AI 判准偏差信号）；观测项：弃用率、`/context` 常驻快照、skill 触发体积
+- **常驻基线**：每次 minor 用真实消费工程 `/context` 快照复测（最新落档 14.4k，距 15K 触发线 0.6k——增量来自消费工程自身 CLAUDE.md 增长，本包侧持平）。
+  口径（触发线裁决必看）：15K 线度量**本包模板常驻负担**，`/context` 的 Memory files 混入项目自身内容——破线先分离归因（模板 vs 项目 CLAUDE.md 膨胀），项目侧膨胀应裁项目侧 / 走记忆库下沉，而非触发模板瘦身（历史测量记录见 CHANGELOG）
+- **沉淀闸蜜月期**：真实试点上前 5 次 `/distill` 建议全闸档校准（人工改写条目多 = AI 判准偏差信号）；观测项：弃用率、`/context` 常驻快照、skill 触发体积

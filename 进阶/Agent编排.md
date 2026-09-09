@@ -1,7 +1,7 @@
 # Agent 编排
 
 > **启用条件**：使用多 agent 协作时复制本篇 + 配套 `agents/` 目录（部署位 `.claude/agents/`）。单人单 agent 工作不需要本篇。
-> 配套根规则：[`../CLAUDE.md`](../app/CLAUDE.md)。本篇不重复根规则（提交、范围、后台 diff 展示等），只定义角色分工与调度。
+> 配套根规则：项目根 `CLAUDE.md`。本篇不重复根规则（提交、范围、后台 diff 展示等），只定义角色分工与调度。
 > 启用 superpowers / spec-kit 时，多 agent 阶段的 skill 映射（如 `subagent-driven-development`）见 项目根 CLAUDE.md §九（superpowers + dart-flutter 协作）。
 >
 > **术语**：本篇「主控」指分发任务的 agent（通常即主对话）；「子代理」指被派发的 agent。模型档位按任务难度选型，不写死——难度越高用越强模型。0.5.2 起各角色卡 frontmatter 已设默认 `model`（i18n=haiku 低档 / frontend·backend·platform·error=sonnet 中档 / reviewer·plan-reviewer=opus 高档）——档位名随当前可用模型演进，升级 Claude Code 后复核一次。
@@ -22,7 +22,7 @@
 
 ### 主控无论如何都要做
 
-- **必须**先与需求方讨论并确认方案（根 [`../CLAUDE.md`](../app/CLAUDE.md) §3 双 Gate），确认后才动手或分发
+- **必须**先与需求方讨论并确认方案（根规则 `CLAUDE.md` §3 双 Gate），确认后才动手或分发
 - 不得在需求方未确认时擅自开始实现
 - 分发后负责汇总：`git status` + `git diff`、agent 摘要与实际 diff 对照、编译校验（见下方「编排执行规范」）
 
@@ -129,7 +129,7 @@ sequenceDiagram
 
 ---
 
-## 编排成本分档（v65——质量有分级，成本也要有）
+## 编排成本分档——质量有分级，成本也要有
 
 > 实战教训：小需求走全量编排（实现 + 双关卡评审 + 复读）时，**评审成本可反超实现成本**（实测 23 次实现配 56+ 次评审）——编排层缺成本档位是「需求小消耗大」的病根。
 
@@ -144,7 +144,7 @@ sequenceDiagram
 3. 测试用例清单（用例名 + 断言要点）
 4. 红线与验收命令（输出裁剪形态）
 
-### 评审包契约化（v66——评审侧同款，治冷启动重复读）
+### 评审包契约化——评审侧同款，治冷启动重复读
 
 评审代理的重复读根源：**「独立性」被实现为全面隔离，但需要隔离的只有判断，不需要隔离事实**（两个审计师看同一套账本，账本可共享、意见各出）。双关卡/单代理双节的评审输入 = **事实切片包 + 抽查权**：
 
@@ -179,4 +179,4 @@ sequenceDiagram
    - `git status` + `git diff`（含 staged / unstaged）把实际改动摆给需求方审阅
    - 把 agent 摘要与真实 diff 逐项对照，标注差异或遗漏
    - 运行编译校验，把结果一并反馈
-6. 需求方确认无误后，等 `commit` / `push` / `提交` 指令才执行完整提交流程（见 [`../CLAUDE.md`](../app/CLAUDE.md) §2）
+6. 需求方确认无误后，等 `commit` / `push` / `提交` 指令才执行完整提交流程（见 项目根 `CLAUDE.md` §2）

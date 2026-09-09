@@ -1,33 +1,19 @@
 #!/usr/bin/env python3
 # crules-flutter 破坏性命令 deny-list（PreToolUse 硬闸，随 plugin 分发）
-# 溯源：源自 crules v74 fork；1.0.0（2026-09）起 Vendor 终态自持演进——安全修复经本地 fixture 对抗样本库（test_deny_list.py）回归，不再从母版同步
 # 原则：只 deny 无歧义的破坏性命令，**不做任何意图判断**；被拦即请需求方人工执行
-# 名单（git + rm）：
-#   git push --force（独立词匹配：--force-with-lease 单用放行；lease 在前 -f/--force 在后仍拦）/
-#   +refspec 强推 / push --delete·:branch /
-#   git reset --hard / git clean -f（-n dry-run 放行）/ git branch -D /
-#   git checkout·restore·switch 丢弃工作区（pathspec：裸 . / ./ / -- . / :/ 全树 / * glob，**剥配对引号**；
-#   -f/--force 强切且非建分支 -b/-c/指定源 -s）/ git stash clear（§2 对齐；drop·pop 不拦——v40 裁决）/ rm 递归+强制
-# 匹配策略（v39 换轴，v40 收边）：
-#   - 分段（; && || | 换行）后，git/rm 签名用**非锚定搜索**——前缀（sudo/env/FOO=1/带参）、
-#     包裹（( )/$( )/反引号）、全局选项（git -C dir）一次吃掉，不枚举前缀词（打地鼠）
-#   - token 判定前剥**配对引号**（一处治两病：引号 pathspec 逃逸 + 引号白名单路径误拦）
-#   - rm 白名单用 **normpath 而非 realpath**（macOS /tmp→/private/tmp 符号链接，realpath 反而
-#     误拦合法白名单；符号链接别名攻击明确不在防线内）
+# 拦截族（git + rm，细则由 fixture 对抗样本库固化）：
+#   git push --force / +refspec / --delete·:branch / reset --hard / clean -f / branch -D /
+#   checkout·restore·switch 丢弃工作区或强切 / stash clear / rm 递归+强制
+# 匹配策略：
+#   - 分段（; && || | 换行）后，git/rm 签名用**非锚定搜索**——前缀（sudo/env）、包裹（$()）、
+#     全局选项（git -C dir）一次吃掉，不枚举前缀词
+#   - token 判定前剥**配对引号**（引号 pathspec 逃逸 + 引号白名单误拦两病同治）
+#   - 捆绑短旗标统一走 parse_flags（-fv ≡ -f -v）；rm 白名单用 normpath 而非 realpath
+#     （macOS /tmp→/private/tmp 符号链接，realpath 反而误拦合法白名单）
 # 边界与局限（诚实声明）：
-#   - 非锚定搜索会把字符串里的破坏命令一并拦下（如 echo '…git reset --hard…'）——按
-#     deny-by-default 哲学接受，误拦走白名单调整
-#   - **黑名单无法穷尽**——本 hook 是安全网而非沙箱，终极防线是 Claude Code 原生权限确认与需求方审阅
-# 覆盖矩阵（C7，v50——哪些风险由谁兜底）：
-#   | 风险类别                                                      | hook | 其余兜底 |
-#   | git 破坏族（强推/硬重置/强删分支/丢弃工作区/clean/stash clear） | ✅拦 | fixture 回归；误拦走白名单 |
-#   | rm 递归+强制（含 xargs 注入的空操作数形态）                    | ✅拦 | /tmp·/var/folders 白名单（normpath） |
-#   | chmod -R / chown -R / find -delete / python -c 删文件         | ❌   | 根规则「风险操作先确认」+ 原生权限确认 |
-#   | 变量拼接 / 嵌套 eval / 写脚本再执行 / stdin 注入路径            | ❌   | 同上（黑名单无法穷尽，归需求方审阅） |
-# v47 收口（红→绿 fixture 先行）：push/branch/force_switch 旗标判定统一走 parse_flags（拆捆绑短旗标，-fv/-qf/-D 等价拼法一次收敛）；
-#   push dry-run×force 组合信号即拦（裁定 B：clean -nd 是正当诊断、push -fn 不是，不对称有理由）；rm 空操作数拦（deny-by-default：
-#   空操作数 rm -rf 为静默 no-op，典型场景即 xargs/stdin 注入）；重定向 token 剥离后再判白名单（修 /tmp/x 2>/dev/null 误拦）
-# 决策边界（v18 复盘）：v18-A 撤销的是「意图判断类」hook；本 hook 不判意图、deny-by-default
+#   - 非锚定搜索会把字符串里的破坏命令一并拦下——按 deny-by-default 哲学接受，误拦走白名单调整
+#   - **黑名单无法穷尽**——本 hook 是安全网而非沙箱，终极防线是 Claude Code 原生权限确认与需求方审阅；
+#     chmod -R / find -delete / 变量拼接 / 嵌套 eval / 写脚本再执行等不拦（覆盖矩阵与决策史见 CHANGELOG）
 import json, os, re, sys
 
 try:

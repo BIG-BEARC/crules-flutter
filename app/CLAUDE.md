@@ -259,7 +259,7 @@ flutter_screenutil（.w/.h 按稿缩放）。注：5.9.3 后 ~28 个月无稳定
 - **ConsumerWidget vs ConsumerStatefulWidget（强制）**：当私有方法需要 `ref` 时，**必须用 `ConsumerStatefulWidget`，禁止把 `WidgetRef` 作为参数传给私有方法**（`ref` 作类属性自动可用）；仅 `build` 用 `ref` → `ConsumerWidget`；需 `initState` / `dispose` / 访问构造参数 → `ConsumerStatefulWidget`
 - **生命周期**：页面级状态用 `autoDispose`（离开页面释放），全局单例显式不 dispose——策略在 Provider 定义处声明，不在调用处补救
 
-> 本小节源自消费工程实战规范上移（批 3a，适用面判定见仓内 `docs/archive/fork-coverage.md` §三）；选 B/C 的项目本小节**不适用**，等价规范由对应预设沉淀。
+> 本小节源自消费工程实战规范上移（批 3a）；选 B/C 的项目本小节**不适用**，等价规范由对应预设沉淀。
 
 ---
 

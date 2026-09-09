@@ -40,11 +40,11 @@ nm=$(ls "$T4/.claude/memory"/*.md 2>/dev/null | wc -l | tr -d ' ')
 [ "$nm" = "8" ] && { PASS=$((PASS+1)); echo "PASS  memory 落位 8 模板"; } || { FAIL=$((FAIL+1)); echo "FAIL  memory 应落位 8 模板（实为 ${nm}）"; }
 rm -rf "$T4"
 grep -q '支持矩阵' "$SRC/commands/init.md" && grep -q '矩阵' "$SRC/scripts/install.sh" && { PASS=$((PASS+1)); echo "PASS  init 必填三处引导（init.md + install.sh 下一步提示均含矩阵）"; } || { FAIL=$((FAIL+1)); echo "FAIL  init 三处缺矩阵引导"; }
-tw1=$(sed -n '/twin:mem-files/,/^$/p' "$SRC/memory/README.md" | grep -c '^| `')
-tw2=$(sed -n '/twin:mem-files/,/^$/p' "$SRC/进阶/记忆库体系.md" | grep -c '^| `')
+# twin:mem-files 单一权威（0.5.1 断言，1.0.4 精简批减一向——进阶侧表已删改指针，
+# 现只看守 memory/README.md 表 == 实际模板数；加载时机细节随表走）
 act=$(ls "$SRC"/memory/*.md | grep -v 'README.md' | wc -l | tr -d ' ')
 lst=$(sed -n '/twin:mem-files/,/^$/p' "$SRC/memory/README.md" | grep -oE '`[A-Za-z-]+\.md`' | sort -u | wc -l | tr -d ' ')
-[ "$tw1" = "$tw2" ] && [ "$act" = "$lst" ] && [ "$tw1" -ge 7 ] && { PASS=$((PASS+1)); echo "PASS  twin:mem-files 一致（双侧 $tw1 行，实际模板 $act = 表列 ${lst}）"; } || { FAIL=$((FAIL+1)); echo "FAIL  twin:mem-files 漂移（tw1=$tw1 tw2=$tw2 act=$act lst=${lst}）"; }
+[ "$act" = "$lst" ] && [ "$act" -ge 7 ] && { PASS=$((PASS+1)); echo "PASS  twin:mem-files 一致（实际模板 $act = 表列 ${lst}）"; } || { FAIL=$((FAIL+1)); echo "FAIL  twin:mem-files 漂移（act=$act lst=${lst}）"; }
 
 # 0.4.1 断言（A1 回归）：模板 AO 内容过真 dart analyzer 零 warning（死配置零容忍——
 # cancelled_token_use / map 形态 disable 两事件；本机无 dart 时 SKIP 不计 FAIL，CI 由 ci.yml setup-dart 步硬拦）

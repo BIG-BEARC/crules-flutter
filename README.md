@@ -37,16 +37,13 @@ claude plugin install crules-flutter@crules-flutter-market --scope user
 | `/crules-flutter:diagram <文件>` | 存量人读文档补 mermaid 图 |
 | `/crules-flutter:update-memory` | 记忆库索引全量刷新（兜底） |
 
-### 场景地图（与 `/crules-flutter:help` 同源；help 为权威全表、此处为压缩视图，语义级同步）
+### 场景地图（压缩视图；权威全表见 `/crules-flutter:help`——本节面向**装前** GitHub 读者，只给名词级入口）
 
-| 场景 | 用什么 |
+| 场景 | 入口 |
 |---|---|
-| 新工程接入 | `/crules-flutter:init` |
-| 日常开发 | 根 CLAUDE.md §三双 Gate（superpowers 可叠加） |
-| 写设计方案 | flutter-rules skill「方案骨架」节 |
-| 引依赖 / 写平台代码 / 升级 | `.claude/memory/platform-pitfalls.md` × skill 平台坑节 |
-| 交付收尾 | checklist + review 主工位（下图）→ `/crules-flutter:distill` |
-| 排障 | `crules-flutter:error` agent + 坑库检索 |
+| 新工程接入 | `/crules-flutter:init`（三处必填） |
+| 日常开发 / 写方案 / 引依赖 / 排障 | 根 `CLAUDE.md` · flutter-rules skill · `platform-pitfalls` 坑库 · `crules-flutter:error` agent |
+| 交付收尾 | `checklist.md` + reviewer → `/crules-flutter:distill` |
 
 ### 收尾时序（review 主工位）
 
@@ -94,14 +91,7 @@ bash "$SRC/scripts/install.sh" <项目根> --app --force
 
 **记忆库兜底**：`/crules-flutter:update-memory`——索引全量刷新（日常仍以「写代码顺手更新」为主，见 `.claude/memory/MAINTENANCE.md`）。
 
-**跨版本迁移要点**（合并 `.new` 时按升级跨度对号；逐版本细节查 [CHANGELOG](CHANGELOG.md)）：
-
-| 升级跨度 | 合并 `.new` 时注意 |
-|---|---|
-| ≤0.3 → 0.4+ | **checklist 直接采新版**（0.4.0 全量重排为编号 0–9，把项目自加条目并入对应节，别在旧结构上打补丁）；CLAUDE.md §十二新增「记忆库接线」`@import` 行——接线后**裁剪 NAVIGATION 占位表**为项目实际目录；memory/ 多出 `reference-map` / `platform-pitfalls` 两模板（缺失文件自动落地，**支持矩阵必填**） |
-| 0.4 → 0.5 | 项目侧无结构变化——skill 瘦身 / 坑卡补强全走 plugin 通道，`plugin update` 即得，模板通常无 `.new` |
-| 0.5 → 0.6 | CLAUDE.md §七新增**适配方案三选一 + 字体策略**两必填环节（合并后补答，老工程按既有适配方式对号）；文件头规则语义反转（@Author 默认要求 → 跟随项目现状——存量带头循既有格式）；checklist 新增无障碍 / 性能 / 折算专项节 + R1-R4 并条（自加条目对号入座） |
-| 任意跨度 | memory/ 永不覆盖——新增模板文件自动补齐，既有八文件**只人工对照不强合**；agents / hooks / skill / 命令不随模板升级走（plugin 通道自动）；项目自改的 §七技术栈 / §十二附录是合并主体，勿被新版冲掉 |
+**跨版本迁移要点**：memory/ 永不覆盖（新增模板自动补齐，既有八文件只人工对照不强合）；agents / hooks / skill / 命令不随模板升级走（plugin 通道自动）；项目自改的 §七技术栈 / §十二附录是合并主体，勿被新版冲掉——历史跨度的逐版本细节查 [CHANGELOG](CHANGELOG.md)。
 
 ### 环境要求与更新信任
 

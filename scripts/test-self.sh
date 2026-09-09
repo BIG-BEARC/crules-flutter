@@ -52,6 +52,12 @@ act=$(ls "$SRC"/memory/*.md | grep -v 'README.md' | wc -l | tr -d ' ')
 lst=$(sed -n '/twin:mem-files/,/^$/p' "$SRC/memory/README.md" | grep -oE '`[A-Za-z-]+\.md`' | sort -u | wc -l | tr -d ' ')
 [ "$act" = "$lst" ] && [ "$act" -ge 7 ] && { PASS=$((PASS+1)); echo "PASS  twin:mem-files 一致（实际模板 $act = 表列 ${lst}）"; } || { FAIL=$((FAIL+1)); echo "FAIL  twin:mem-files 漂移（act=$act lst=${lst}）"; }
 
+# help 全景计数闸（四轮外审①：help.md 自称权威全表却漏改进阶篇数——同型 0.6.2 自嘲带，上闸）
+adv=$(ls "$SRC"/进阶/*.md | wc -l | tr -d ' ')
+mem=$(ls "$SRC"/memory/*.md | wc -l | tr -d ' ')
+said=$(sed -n 's/.*进阶 \([0-9][0-9]*\) 篇 + memory \([0-9][0-9]*\) 模板.*/\1 \2/p' "$SRC/commands/help.md" | head -1)
+[ "$said" = "$adv $mem" ] && { PASS=$((PASS+1)); echo "PASS  help 全景计数一致（进阶 $adv + memory $mem）"; } || { FAIL=$((FAIL+1)); echo "FAIL  help 计数漂移（help 说「${said:-未匹配}」，实际 进阶 $adv + memory $mem）"; }
+
 # 0.4.1 断言（A1 回归）：模板 AO 内容过真 dart analyzer 零 warning（死配置零容忍——
 # cancelled_token_use / map 形态 disable 两事件；本机无 dart 时 SKIP 不计 FAIL，CI 由 ci.yml setup-dart 步硬拦）
 if command -v dart >/dev/null 2>&1; then

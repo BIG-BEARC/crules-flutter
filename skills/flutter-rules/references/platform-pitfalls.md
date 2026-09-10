@@ -8,6 +8,22 @@
 
 ## 三方依赖
 
+### [Windows 7] Flutter SDK 版本上限——3.19 为最后支持线（升 SDK 前判死线）
+
+- 归属：OS 平台（Windows 7/8）× Flutter SDK 桌面支持策略
+- 触发场景：目标机含 Win7/8 却把 Flutter SDK 升过 3.19 ｜ 症状：3.22+ 构建产物在 Win7 上无法运行（引擎依赖提升至 Win10 API 线）｜ 根因：官方将 Win7/8 移入 unsupported tier、最低要求提至 Windows 10 ｜ 规避：目标含 Win7 → SDK 钉 **3.19.x 末位 patch（3.19.6）**；或接受自维护成本走社区 fork（RustDesk 自改 engine 续命先例，有持续维护负担）；新项目直接放弃 Win7 目标
+- 区间：**3.19（2024-02，Dart 3.3）= 最后一个支持 Win7/8 的 stable**；3.22 起最低 Windows 10（3.19→3.22 间无其他 stable，3.19.6 即事实上限）；3.20/3.21 beta 线未查证
+- 状态：官方既定政策（不可逆） ｜ 最后核验：2026-09-10
+- 出处：[flutter#140830](https://github.com/flutter/flutter/issues/140830)（官方 tracking issue：Move Windows 7 and 8 to unsupported tier）+ [Flutter 3.19 release blog](https://flutter.dev/blog/whats-new-in-flutter-3-19)（ending support for Windows 7/8）+ [RustDesk fork 实录](https://rustdesk.com/blog/how-to-make-flutter-3-24-run-on-windows-7)；关联坑卡：permission_handler Win7 闪退（同根因——引擎层 Win10+ 依赖）
+
+### [Android 4.x] Flutter SDK 版本上限——3.22 起最低 API 21（KitKat 4.4 及更早同线阵亡）
+
+- 归属：OS 平台（Android KitKat 4.4 / API 19 及更早）× Flutter SDK 支持策略
+- 触发场景：目标机含 Android 4.x / 5.x / 6.x（收银 / 门店平板存量设备常见）却把 Flutter SDK 升过对应死线 ｜ 症状：构建产物在低版本设备上**无法安装**（实证：saas-cashier master_new 以 3.38.10 构建，生产 Android <7.0 全部装不上——minSdkVersion 随 `flutter.minSdkVersion` 解析为 24）｜ 根因：官方分两步提下限：3.22 弃 4.x（→API 21）、**3.38 弃 5.x/6.x（→API 24）** ｜ 规避按目标钉版本：含 Android 6.x 及以下 → **3.35.x**；含 4.x → **3.19.6**（与 Win7 同钉法，混合存量可合并决策）；纯 7.0+ 目标 → 无约束。**注意**：`minSdkVersion = flutter.minSdkVersion` 会随构建机 SDK 漂移——多机 / CI 构建时下限不锁就会静默跳线，存量设备装不上往往到分发才发现
+- 区间（三段死线）：3.22 起最低 **API 21**（弃 KitKat 4.4 及更早）；**3.38 起最低 API 24**（弃 Android 5.0/5.1/6.x——3.35.x = 最后可跑 5/6 的 stable）；本机 SDK 源码实证：3.19.6=19、3.27.4=21、3.38.10=24。插件下限可高于本体（如部分一方插件随 3.38 对齐 API 24+，flutter_local_notifications 提至 26）——引依赖前查其 minSdk
+- 状态：官方既定政策（3.22 与 3.38 两段均已落地） ｜ 最后核验：2026-09-10
+- 出处：[官方 breaking change 文档](https://docs.flutter.dev/release/breaking-changes/android-kitkat-deprecation)（KitKat 弃用）+ [Flutter 3.38 release blog](https://flutter.dev/blog/whats-new-in-flutter-3-38)（minSdkVersion → API 24+）+ [#170807](https://github.com/flutter/flutter/issues/170807)（API 24 计划 tracking，经 PR #179795 收口）+ **生产实证**（saas-cashier master_new · 3.38.10 构建 · Android <7.0 无法安装，2026-09）；关联坑卡：Win7 SDK 上限（同 3.19.6 钉法）
+
 ### [Windows 7] permission_handler 初始化导致启动闪退
 
 - 归属：三方依赖（插件层 permission_handler Windows 实现 + Flutter 引擎层 Windows 桌面支持）

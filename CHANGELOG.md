@@ -11,6 +11,7 @@
 - **major 版本前外审协议固化**（README 维护节）：独立 subagent 全文重读；风险面必答——上下文经济 / 实效度量 / bus factor / 待裁清点；通用面兜底五项。产出走 review-ledger，评级仅趋势参考
 - **观测带数（首次，如实）**：常驻基线快照 **14.4k**（2026-09-08 消费工程实测落档，本次未复测——下次 minor 复测）；distill 四数——**首期无数**（消费工程 ledger 尚无累计样本，机制 1.0.3 落地后未到首个 distill 周期）
 - test-self 19→**22**（+upgrade 无戳中止 / 拒绝确认零改动 / help 计数闸）
+- **发布后追加（2026-09-10）**：平台坑库 +2 卡——[Win7] Flutter SDK 上限 3.19.6 死线 + [Android] SDK 上限三段死线（3.22→API 21 弃 4.x；**3.38→API 24 弃 5.x/6.x**，最后可跑 5/6 = 3.35.x）。Android 卡实证于 saas-cashier master_new（3.38.10 构建，生产 Android <7.0 无法安装——`minSdkVersion = flutter.minSdkVersion` 随构建机 SDK 静默跳线的传导路径入卡）。勘误：本仓早前口径「API 24 未落 stable」系过期网页快照误判，经本地 SDK 源码（FlutterExtension.kt）+ 生产实证双重核正
 
 ## 1.0.5 · 二轮评审三发现收口——gitignore 全程机制化 + §五 细则下沉 + docs 轮次化成文
 

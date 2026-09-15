@@ -3,7 +3,7 @@
 面向 **Flutter 工程**的 AI 协作规则 plugin：把「AI 怎么跟你安全地干活」固化成机制——危险命令硬拦、改动先过方案确认、交付必过审查、经验自动沉淀。
 独立自持（源自 crules fork，2026-09 起 1.0.0 独立演进，史见 [CHANGELOG](CHANGELOG.md)）；许可 **MIT**（[LICENSE](LICENSE)）。
 
-> 当前状态：1.0.7（版本编年史见 CHANGELOG）· 消费工程实测常驻基线 14.4K（治理口径见维护节）
+> 当前状态：1.0.8（版本编年史见 CHANGELOG）· 消费工程实测常驻基线 14.4K（治理口径见维护节）
 
 ---
 
@@ -111,7 +111,7 @@ bash "$SRC" <项目根> --app --upgrade    # 巡检版本差 → 确认 → --fo
 
 ## 环境要求与更新信任
 
-- **环境要求：macOS / Linux**（hooks 依赖 `python3`；Windows 上 deny-list 硬闸与 Stop 收尾提醒不可用、漂移队列降级为无锁追加——install 时显式警告，终极防线回到原生权限确认）
+- **环境要求：macOS / Linux**（hooks 依赖 `python3`，无 python3 时自动回退 `python`；Windows 上 deny-list 硬闸与 Stop 收尾提醒不可用、漂移队列降级为无锁追加——install 时显式警告，终极防线回到原生权限确认）
 - **更新信任（供应链）**：本 plugin 的 hooks 在每次 Bash 调用前执行——`plugin update` 后新 hook 代码静默生效，被污染的更新 = 任意代码执行。建议 update 前先看 hooks 变更（`git -C <本仓> diff <旧tag>..<新tag> -- hooks/`）或锁定 commit。
 
 ## 停用 / 恢复 / 共存
@@ -130,6 +130,7 @@ bash "$SRC" <项目根> --app --upgrade    # 巡检版本差 → 确认 → --fo
 
 - 本仓独立演进：bump 双 json → `plugin update` → cache 特征串验证（步骤细节见 `scripts/release.sh` 头注与 CHANGELOG）
 - 治理从简：README + CHANGELOG + 最简检查（五维雷达/评审轮次体系**不引入**——治理成本延后到真有痛感再付）
+- **单项开关治理**：模板内单项开关上限 6；既有协作偏好 4 字段（固定语言 / 提交触发词覆写 / 提速档 / 沉淀闸档位）与档位预设并列、不计入上限；开关数超 6 触发「收敛成新档位」复核——治理口径属维护者面，1.0.8 自双模板 §十二 外迁至此（消费面只留行为结果，不留治理规则）
 - 定期外审选项保留（独立 subagent 复审模式可复用，防规则滑向单项目特有）
 - **major 版本前外审**（1.x 升版时跑，minor 不跑）：独立 subagent 全文重读本仓；**风险面必答**——上下文经济（常驻基线 vs 15K 线）/ 实效度量（ledger 四数 / distill 弃用率）/ bus factor / 待裁事项清点；通用面兜底——易用性（含信息架构）/ 方法论深度 / 机制化 / 可维护性 / 分发工程。产出发现走 review-ledger，评级仅趋势参考不作门槛
 - **skill 平台坑节维护义务**：Flutter / 平台大版本出现 → 扫 skill 坑节标【待重验】→ 核验刷新（每次 minor 例行）

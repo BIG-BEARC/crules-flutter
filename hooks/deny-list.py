@@ -5,13 +5,16 @@
 #   git push --force / +refspec / --delete·:branch / reset --hard / clean -f / branch -D /
 #   checkout·restore·switch 丢弃工作区或强切 / stash clear / rm 递归+强制
 # 匹配策略：
+#   - 分段前先**拼合归一**（1.0.8）：bash 续行（\+换行）/ 转义拼接（\x→x，限 \w）/
+#     引号删除（词内 pu"sh"、整词 'rm'、ANSI-C $'rm'）——归一方向一律拼合，只增拦截面
 #   - 分段（; && || | 换行）后，git/rm 签名用**非锚定搜索**——前缀（sudo/env）、包裹（$()）、
 #     全局选项（git -C dir）一次吃掉，不枚举前缀词
 #   - token 判定前剥**配对引号**（引号 pathspec 逃逸 + 引号白名单误拦两病同治）
 #   - 捆绑短旗标统一走 parse_flags（-fv ≡ -f -v）；rm 白名单用 normpath 而非 realpath
 #     （macOS /tmp→/private/tmp 符号链接，realpath 反而误拦合法白名单）
 # 边界与局限（诚实声明）：
-#   - 非锚定搜索会把字符串里的破坏命令一并拦下——按 deny-by-default 哲学接受，误拦走白名单调整
+#   - 非锚定搜索会把字符串里的破坏命令（含引号内原文——1.0.8 归一后成立）一并拦下——
+#     按 deny-by-default 哲学接受，误拦走白名单调整
 #   - **黑名单无法穷尽**——本 hook 是安全网而非沙箱，终极防线是 Claude Code 原生权限确认与需求方审阅；
 #     chmod -R / find -delete / 变量拼接 / 嵌套 eval / 写脚本再执行等不拦（覆盖矩阵与决策史见 CHANGELOG）
 import json, os, re, sys
@@ -23,6 +26,15 @@ except Exception:
 cmd = (data.get("tool_input") or {}).get("command") or ""
 if not cmd.strip():
     sys.exit(0)
+
+# 拼合归一（1.0.8 外审处置）：bash 把一个词拆开写的三类写法先拼回——①续行（\+换行）
+# ②转义拼接（\x→x，限 \w——\ 与 \$ 等 shell 转义保留）③引号删除（词内 pu"sh"、
+# 整词 'rm'、ANSI-C $'rm'）。归一方向一律「拼合」= 只增拦截面不开放行面（黑名单
+# 保守方向）；代价：引号串内破坏命令原文（commit message / echo）将误拦——与
+# heredoc 误拦同类，deny-by-default 既定取舍
+cmd = re.sub(r"\\\r?\n", "", cmd)
+cmd = re.sub(r"\\(\w)", r"\1", cmd)
+cmd = re.sub(r"['\"]", "", cmd)
 
 def blocked(reason):
     reason += "；请需求方人工执行，不要尝试绕过（如需展示命令，直接在回复中写文本）"

@@ -116,11 +116,12 @@ su_bad=$(grep -h 'flutter_screenutil' "${SRC}"/agents/*.md "${SRC}"/app/CLAUDE.m
 [ "${su_bad}" -eq 0 ] && { PASS=$((PASS+1)); echo "PASS  flutter_screenutil 白名单闸（命中仅停更/维护缓慢注记行）"; } || { FAIL=$((FAIL+1)); echo "FAIL  存在未注记 flutter_screenutil 正面表述 ×${su_bad}（A2 已判停更）"; }
 
 
-# P1b 断言①：档位四方同源闸——§十二预设块 canonical 串双模板全查（20 串×2，1.0.7 增校验层指针串），三档标记/默认
+# P1b 断言①：档位四方同源闸——§十二预设块 canonical 串双模板全查（19 串×2；1.0.7 增校验层指针串、
+# 1.0.8 「不计入」随治理句外迁 README 维护节而移除），三档标记/默认
 # help·README·init 各 4 串，收尾三档词 help·README 各 8 串，init 结构 2 串（方案 §7 P1b·A4：
 # 四方 = 附录块 ↔ help ↔ README ↔ §三收尾行；逐条打印漂移，整块计 1 个 PASS/FAIL）
 gear_ok=1
-ga=('轻量〔light〕' '标准〔normal〕' '完整〔full〕' '默认标准' '按任务规模三档' '单点修复' '跨域大改' '公开 API' '资损面' 'review 豁免' 'Gate 例外台账' '校验层' '记忆库：关' '记忆库：开' '可单关' '编排：开' 'plan-reviewer：默认启用' '不计入' '不可配置' '进阶/审查与复核纪律')
+ga=('轻量〔light〕' '标准〔normal〕' '完整〔full〕' '默认标准' '按任务规模三档' '单点修复' '跨域大改' '公开 API' '资损面' 'review 豁免' 'Gate 例外台账' '校验层' '记忆库：关' '记忆库：开' '可单关' '编排：开' 'plan-reviewer：默认启用' '不可配置' '进阶/审查与复核纪律')
 gb=('轻量〔light〕' '标准〔normal〕' '完整〔full〕' '默认标准')
 gc=('按任务规模三档' '单点修复' '跨域大改' '公开 API' '资损面' 'review 豁免' 'Gate 例外台账' '校验层')
 gd=('档位预设' '不可配置')

@@ -3,8 +3,9 @@
 """deny-list 回归测试（v37 沉淀——修正 v35「单测 15/15 跑完即弃、无文件无痕」）。
 
 跑法：python3 hooks/test_deny_list.py（scripts/check-consistency.sh 的 H 查调用）
-fixture 原则：该拦全拦（含 v37 外审 5 绕过）、该放全放（含 --force-with-lease / /tmp 白名单）；
-新增绕过形态时**先加 fixture（红）→ 修 deny-list（绿）**，测试即对抗样本库。
+fixture 原则：该拦全拦（含 v37 外审 5 绕过、1.0.8 拼合绕过 10 形态）、该放全放
+（含 --force-with-lease / /tmp 白名单）；新增绕过形态时**先加 fixture（红）→ 修 deny-list（绿）**，
+测试即对抗样本库；计数以本文件实跑输出为准（历史条目转抄数不作权威——1.0.0「75」实点为 77）。
 探测纪律（v41，第三轮红队假证据教训）：对 deny-list 做人工/脚本探测时，输入 JSON
 必须用 json.dumps 构造（如本文件 :97），**禁止 shell 手拼**——手拼含引号命令会产生
 非法 JSON，脚本 json.load 失败即 exit(0)，探测结果恒为「放行」的假证据。
@@ -13,7 +14,8 @@ import json, os, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-# 应拦：v35 原 10 例 + v37 外审绕过 5 例 + 加固新增 4 例
+# 应拦：v35 起 8 批外审/红队对抗样本累计（v35 原 10 + v37 绕过 6 + 加固 4 + v39 红队 13 +
+# v40 10 + v47 10 + 1.0.8 拼合绕过 10）= 63 例
 BLOCK_CASES = [
     # --- v35 原有 ---
     "git push --force origin main",
@@ -75,6 +77,17 @@ BLOCK_CASES = [
     "git push -n origin +main",                # 裁定 B：dry-run + refspec 强推（当前已拦，锁定）
     "git push --delete -n origin old-branch",  # 裁定 B：dry-run + 删远端分支（当前已拦，锁定）
     "rm -rf build 2>&1",                       # 重定向 token 兼查：非白名单路径 + 重定向 → 仍拦
+    # --- 1.0.8 外审拼合绕过（三类形态归一前全部实测漏拦）---
+    "git push \\\n--force origin main",         # 续行拆旗标（push）
+    "git reset \\\n--hard HEAD~1",              # 续行拆旗标（reset）
+    "rm \\\n-rf ~/proj",                        # 续行拆旗标（rm）
+    'git pu"sh" --force origin main',           # 词内引号拼接
+    'git push --fo"rce" origin main',           # 旗标词内引号
+    "'rm' -rf ~/proj",                          # 整词引号（' 不在 RM_SIG 边界类，归一前漏拦）
+    "git pu\\sh --force origin main",           # 转义拼接命令词
+    "g\\it push --force origin main",           # 转义拼接（git 词本身）
+    "$'rm' -rf ~/proj",                         # ANSI-C 引号
+    'echo "git push --force"',                  # 引号串含签名（归一③后拦——头注 deny-by-default 承诺兑现，行为锁定）
 ]
 
 # 应放：正常命令 / 白名单 / 安全变体
@@ -106,6 +119,12 @@ ALLOW_CASES = [
     "git checkout -f -b hotfix",             # -f 搭配 -b 建分支：例外放行
     # --- v47 重定向 FP 修复（重定向 token 不作 path 参与白名单判定）---
     "rm -rf /tmp/x 2>/dev/null",               # 白名单路径 + 重定向 → 放（当前误拦，修复后放行）
+    # --- 1.0.8 归一回归（良性续行/引号/转义不误拦）---
+    "echo a \\\n  b",                           # 良性续行
+    'echo "hello world"',                       # 引号串无签名
+    "find . -name '*.dart' -exec stat {} \\;",  # 转义分号（find -exec 惯用形态）
+    "grep 'push' pubspec.yaml",                 # 引号裸词
+    "rm -rf '/tmp/x'",                          # 整词引号白名单路径
 ]
 
 def should_block(case: str) -> bool:

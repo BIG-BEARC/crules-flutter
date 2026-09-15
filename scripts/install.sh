@@ -84,11 +84,11 @@ fi
 for f in "$SRC"/进阶/*.md; do do_write "进阶/$(basename "$f")" "$TARGET/进阶/$(basename "$f")" "" "$f"; done
 for f in "$SRC"/memory/*.md; do do_write ".claude/memory/$(basename "$f")" "$TARGET/.claude/memory/$(basename "$f")" "" "$f" "never"; done
 
-# 本机生成物 gitignore 幂等落位（1.0.5——取代 1.0.4 的模板侧文字指引：MAINTENANCE git 分层政策由安装器落成默认）
-# 三行缺失才追加，已有跳过；与 --force 无关（重复追加无意义）；dry-run 只报告
+# 本机生成物 gitignore 幂等落位（1.0.5——取代 1.0.4 的模板侧文字指引：MAINTENANCE git 分层政策由安装器落成默认；1.0.7 增 .gate-exceptions）
+# 四行缺失才追加，已有跳过；与 --force 无关（重复追加无意义）；dry-run 只报告
 GI="$TARGET/.gitignore"
 GI_ADD=0
-for entry in ".claude/memory/indexes/" ".claude/memory/.pending-updates" ".claude/memory/.review-ledger"; do
+for entry in ".claude/memory/indexes/" ".claude/memory/.pending-updates" ".claude/memory/.review-ledger" ".claude/memory/.gate-exceptions"; do
   if [ -f "$GI" ] && grep -qxF "$entry" "$GI"; then continue; fi
   if [ "$DRYRUN" != "1" ]; then
     [ -f "$GI" ] || printf '# crules-flutter：memory 本机生成物（政策与反悔方式见 .claude/memory/MAINTENANCE.md「git 分层」）\n' > "$GI"

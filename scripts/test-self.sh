@@ -116,11 +116,11 @@ su_bad=$(grep -h 'flutter_screenutil' "${SRC}"/agents/*.md "${SRC}"/app/CLAUDE.m
 [ "${su_bad}" -eq 0 ] && { PASS=$((PASS+1)); echo "PASS  flutter_screenutil 白名单闸（命中仅停更/维护缓慢注记行）"; } || { FAIL=$((FAIL+1)); echo "FAIL  存在未注记 flutter_screenutil 正面表述 ×${su_bad}（A2 已判停更）"; }
 
 
-# P1b 断言①：档位四方同源闸——§十二预设块 canonical 串双模板全查（19 串×2），三档标记/默认
+# P1b 断言①：档位四方同源闸——§十二预设块 canonical 串双模板全查（20 串×2，1.0.7 增校验层指针串），三档标记/默认
 # help·README·init 各 4 串，收尾三档词 help·README 各 8 串，init 结构 2 串（方案 §7 P1b·A4：
 # 四方 = 附录块 ↔ help ↔ README ↔ §三收尾行；逐条打印漂移，整块计 1 个 PASS/FAIL）
 gear_ok=1
-ga=('轻量〔light〕' '标准〔normal〕' '完整〔full〕' '默认标准' '按任务规模三档' '单点修复' '跨域大改' '公开 API' '资损面' 'review 豁免' 'Gate 例外台账' '校验层' '记忆库：关' '记忆库：开' '可单关' '编排：开' 'plan-reviewer：默认启用' '不计入' '不可配置')
+ga=('轻量〔light〕' '标准〔normal〕' '完整〔full〕' '默认标准' '按任务规模三档' '单点修复' '跨域大改' '公开 API' '资损面' 'review 豁免' 'Gate 例外台账' '校验层' '记忆库：关' '记忆库：开' '可单关' '编排：开' 'plan-reviewer：默认启用' '不计入' '不可配置' '进阶/审查与复核纪律')
 gb=('轻量〔light〕' '标准〔normal〕' '完整〔full〕' '默认标准')
 gc=('按任务规模三档' '单点修复' '跨域大改' '公开 API' '资损面' 'review 豁免' 'Gate 例外台账' '校验层')
 gd=('档位预设' '不可配置')
@@ -140,26 +140,45 @@ for s in "${gd[@]}"; do grep -qF -- "${s}" "${SRC}/commands/init.md" || { gear_o
 # §三「> 收尾时序」行双模板逐字同文——与 tt 结构闸同哲学，锚点机械守护替代人肉同源对照（方案 §2 决策 7）
 tp_sect() { awk -v q='### 档位预设' 'index($0, q)==1 {f=1; next} f && (/^### / || /^## /) {f=0} f' "${1}"; }
 tp_tail() { grep '^> 收尾时序' "${1}"; }
+tp_gate() { awk '/^例外一律落/{f=1} f && /^$/ {if (n++ > 0) exit} f' "${1}"; }
 tw_g_ok=1
-for fn in tp_sect tp_tail; do
+for fn in tp_sect tp_tail tp_gate; do
   va=$("${fn}" "${SRC}/app/CLAUDE.md")
   vb=$("${fn}" "${SRC}/plugin/CLAUDE.md")
-  [ "${fn}" = "tp_sect" ] && lbl='档位预设节' || lbl='收尾时序行'
+  case "${fn}" in tp_sect) lbl='档位预设节';; tp_tail) lbl='收尾时序行';; tp_gate) lbl='Gate 例外台账段';; esac
   if [ -z "${va}" ] || [ "${va}" != "${vb}" ]; then
     tw_g_ok=0
     echo "  ↳ twin ${lbl} 漂移（app ↔ plugin 首差异，- app + plugin）："
     diff <(printf '%s\n' "${va}") <(printf '%s\n' "${vb}") | head -6 | sed 's/^/    /'
   fi
 done
-[ "${tw_g_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  twin 档位预设块 + 收尾时序行双模板逐字同文"; } || { FAIL=$((FAIL+1)); echo "FAIL  twin 档位块/收尾行漂移（双模板须同源对照改）"; }
+[ "${tw_g_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  twin 档位预设块 + 收尾时序行 + Gate 例外台账段双模板逐字同文"; } || { FAIL=$((FAIL+1)); echo "FAIL  twin 档位块/收尾行/台账段漂移（双模板须同源对照改）"; }
 
-# 1.0.5 断言：gitignore 幂等落位——首装补三行，重装不重复（取代 1.0.4 模板侧文字指引）
+# 1.0.7 断言①：Gate 例外台账同源闸——.gate-exceptions 定义四点同源（双模板 Gate 例外节 ↔ MAINTENANCE ↔ install.sh）
+# （外审 🟡2 处置：台账被四处引用、零定义——定义落四处 + 上闸，防「意图先于机制」复发）
+ge_ok=1
+for f in app/CLAUDE.md plugin/CLAUDE.md memory/MAINTENANCE.md scripts/install.sh; do
+  grep -qF -- ".gate-exceptions" "${SRC}/${f}" || { ge_ok=0; echo "  ↳ ${f} 缺「.gate-exceptions」"; }
+done
+[ "${ge_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  Gate 例外台账同源闸（双模板 Gate 例外节↔MAINTENANCE↔install.sh）"; } || { FAIL=$((FAIL+1)); echo "FAIL  Gate 例外台账同源闸（见上漂移清单）"; }
+
+# 1.0.7 断言②：help↔README 档位说明段逐字同文——守串升级守文（外审 🟡3：canonical 串只守存在性，
+# 同段解说仍可各自演化；本段两处现状即逐字复制，上 byte 级互锁钉死——此后改此段须双文件同改）
+hp1=$(grep -m1 '收尾档按任务规模三档判定' "${SRC}/commands/help.md" || true)
+hp2=$(grep -m1 '收尾档按任务规模三档判定' "${SRC}/README.md" || true)
+if [ -n "${hp1}" ] && [ "${hp1}" = "${hp2}" ]; then
+  PASS=$((PASS+1)); echo "PASS  help↔README 档位说明段逐字同文"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  help↔README 档位说明段漂移（须同源对照改）"; diff <(printf '%s\n' "${hp1}") <(printf '%s\n' "${hp2}") | head -4 | sed 's/^/    /'
+fi
+
+# 1.0.5 断言：gitignore 幂等落位——首装补四行（1.0.7 增 .gate-exceptions），重装不重复（取代 1.0.4 模板侧文字指引）
 T5=/tmp/cf-gi; rm -rf "$T5"; mkdir -p "$T5"
 bash $SRC/scripts/install.sh "$T5" --app >/dev/null 2>&1
-gi1=$(grep -c '^\.claude/memory' "$T5/.gitignore" 2>/dev/null || echo 0)
+gi1=$(grep -c '^\.claude/memory' "$T5/.gitignore" 2>/dev/null) || gi1=0
 bash $SRC/scripts/install.sh "$T5" --app --force >/dev/null 2>&1
-gi2=$(grep -c '^\.claude/memory' "$T5/.gitignore" 2>/dev/null || echo 0)
-[ "${gi1}" = "3" ] && [ "${gi2}" = "3" ] && { PASS=$((PASS+1)); echo "PASS  gitignore 幂等落位（首装 3 行，force 重装仍 3 行）"; } || { FAIL=$((FAIL+1)); echo "FAIL  gitignore 落位（首装 ${gi1} 行 / 重装 ${gi2} 行，期望 3/3）"; }
+gi2=$(grep -c '^\.claude/memory' "$T5/.gitignore" 2>/dev/null) || gi2=0
+[ "${gi1}" = "4" ] && [ "${gi2}" = "4" ] && { PASS=$((PASS+1)); echo "PASS  gitignore 幂等落位（首装 4 行，force 重装仍 4 行）"; } || { FAIL=$((FAIL+1)); echo "FAIL  gitignore 落位（首装 ${gi1} 行 / 重装 ${gi2} 行，期望 4/4）"; }
 rm -rf "$T5"
 
 # 幂等断言：同输入两次运行结论一致且均 block（双 plugin 共存的可测背书）

@@ -73,7 +73,7 @@
 ```
 
 > superpowers 叠加时：需求 Gate 用 `brainstorming`（HARD-GATE：未获设计批准禁写码）、方案 Gate 用 `writing-plans`、实施用 TDD、评审用 `requesting-code-review`——skill 是增强，Gate 不被绕过。skill 不可用的环境降级为文本确认（编号选项列表 / 方案七要素列全后停下等回复）。
-> 收尾时序**三档**——按任务规模三档判定，与项目档位无关（档位预设见 §十二）：**极简**（单点修复 / 文案 / 注释，无行为面变化）＝机械验证贴输出 + 一行汇报，review 豁免记 Gate 例外台账、无沉淀件头；**标准**（常规功能 / 修复 / 重构）＝现行时序——机械验证 → **review**（`checklist.md`，diff 为圆心、引用链为半径）→ 自测 → 交付汇报（含 review 结论 + 沉淀候选提示）→ 授权提交（feat + docs 两笔）；**重型**（跨域大改 / 公开 API / 资损面）＝标准 + **校验层**——review 发现先经隔离子代理逐条独立校验（CONFIRMED / REJECTED / 更优方案），低危列单默认修、语义类 / L1+ 列单等需求方裁决，再修复复验。交付汇报一律注明本任务收尾档。
+> 收尾时序**三档**——按任务规模三档判定，与项目档位无关（档位预设见 §十二）：**极简**（单点修复 / 文案 / 注释，无行为面变化）＝机械验证贴输出 + 一行汇报，review 豁免记 Gate 例外台账、无沉淀件头；**标准**（常规功能 / 修复 / 重构）＝现行时序——机械验证 → **review**（`checklist.md`，diff 为圆心、引用链为半径）→ 自测 → 交付汇报（含 review 结论 + 沉淀候选提示）→ 授权提交（feat + docs 两笔）；**重型**（跨域大改 / 公开 API / 资损面）＝标准 + **校验层**——review 发现先经隔离子代理逐条独立校验（CONFIRMED / REJECTED / 更优方案），低危列单默认修、语义类 / L1+ 列单等需求方裁决，再修复复验（校验层全规格见 `进阶/审查与复核纪律.md`）。交付汇报一律注明本任务收尾档。
 
 ### 任务分类（默认处理）
 
@@ -121,6 +121,8 @@
 ### Gate 例外
 
 需求方明确说"直接改"、"直接执行"时，可在其明确指定范围内跳过对应 Gate。以下**不得**被模糊授权跳过：范围边界 / 无关改动保护 / 破坏性操作确认 / 证据真实性 / 提交和推送授权。
+
+例外一律落 **Gate 例外台账**（`.claude/memory/.gate-exceptions`，JSONL 一行一条：日期 / 任务 / 豁免 Gate / 理由 / 范围）——AI 只追加不改写，需求方事后审计；不进 git（install.sh 已幂等落 `.gitignore`）。极简收尾 review 豁免、提速档治理、跳过方案独立评审均走此账（单一通道）。
 
 ---
 
@@ -343,7 +345,7 @@ flutter_screenutil（.w/.h 按稿缩放）。注：5.9.3 后 ~28 个月无稳定
 
 @.claude/memory/NAVIGATION.md
 
-> 找东西的第一站，启动即内联载入（约 +3KB 常驻）；`MAINTENANCE.md` / `patterns.md` / `business-rules.md` / `INVARIANTS.md` 等经 NAVIGATION 指针**涉域前 Read**，不整库 @import（按需加载设计）。小项目不用记忆库时：删本行与 `.claude/memory/`（启用条件见 `进阶/记忆库体系.md`）。
+> 找东西的第一站，启动即内联载入（约 +0.7k token 常驻）；`MAINTENANCE.md` / `patterns.md` / `business-rules.md` / `INVARIANTS.md` 等经 NAVIGATION 指针**涉域前 Read**，不整库 @import（按需加载设计）。小项目不用记忆库时：删本行与 `.claude/memory/`（启用条件见 `进阶/记忆库体系.md`）。
 
 ### 项目附录（复制后填写）
 

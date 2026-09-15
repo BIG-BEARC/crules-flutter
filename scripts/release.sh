@@ -55,7 +55,10 @@ case "$1" in
     feat="$2"
     cache_root="$HOME/.claude/plugins/cache/crules-flutter-market/crules-flutter"
     [ -d "$cache_root" ] || { echo "❌ cache 不存在: $cache_root"; exit 1; }
-    latest=$(ls -v "$cache_root" | tail -1)
+    # 版本序用 sort -V（1.0.10 发布后追加：BSD ls -v 非 GNU 版本序——字典序 1.0.9 > 1.0.10，
+    # tail -1 取到旧版目录，verify 验旧不验新且特征串撞旧内容可假绿；v59 BSD grep 坑同款环境假设，
+    # 与 commands/init.md 源定位同 idiom 对齐）
+    latest=$(ls "$cache_root" | sort -V | tail -1)
     if grep -rl --include='*.md' --include='*.py' --include='*.json' --include='*.sh' --include='*.yml' -F "$feat" "$cache_root/$latest" 2>/dev/null | head -3 | grep -q .; then
       echo "✅ cache $latest 含特征串（新版本已生效）"
     else

@@ -116,6 +116,43 @@ su_bad=$(grep -h 'flutter_screenutil' "${SRC}"/agents/*.md "${SRC}"/app/CLAUDE.m
 [ "${su_bad}" -eq 0 ] && { PASS=$((PASS+1)); echo "PASS  flutter_screenutil 白名单闸（命中仅停更/维护缓慢注记行）"; } || { FAIL=$((FAIL+1)); echo "FAIL  存在未注记 flutter_screenutil 正面表述 ×${su_bad}（A2 已判停更）"; }
 
 
+# P1b 断言①：档位四方同源闸——§十二预设块 canonical 串双模板全查（19 串×2），三档标记/默认
+# help·README·init 各 4 串，收尾三档词 help·README 各 8 串，init 结构 2 串（方案 §7 P1b·A4：
+# 四方 = 附录块 ↔ help ↔ README ↔ §三收尾行；逐条打印漂移，整块计 1 个 PASS/FAIL）
+gear_ok=1
+ga=('轻量〔light〕' '标准〔normal〕' '完整〔full〕' '默认标准' '按任务规模三档' '单点修复' '跨域大改' '公开 API' '资损面' 'review 豁免' 'Gate 例外台账' '校验层' '记忆库：关' '记忆库：开' '可单关' '编排：开' 'plan-reviewer：默认启用' '不计入' '不可配置')
+gb=('轻量〔light〕' '标准〔normal〕' '完整〔full〕' '默认标准')
+gc=('按任务规模三档' '单点修复' '跨域大改' '公开 API' '资损面' 'review 豁免' 'Gate 例外台账' '校验层')
+gd=('档位预设' '不可配置')
+for f in app/CLAUDE.md plugin/CLAUDE.md; do
+  for s in "${ga[@]}"; do grep -qF -- "${s}" "${SRC}/${f}" || { gear_ok=0; echo "  ↳ ${f} 缺「${s}」"; }; done
+done
+for f in commands/help.md README.md commands/init.md; do
+  for s in "${gb[@]}"; do grep -qF -- "${s}" "${SRC}/${f}" || { gear_ok=0; echo "  ↳ ${f} 缺「${s}」"; }; done
+done
+for f in commands/help.md README.md; do
+  for s in "${gc[@]}"; do grep -qF -- "${s}" "${SRC}/${f}" || { gear_ok=0; echo "  ↳ ${f} 缺「${s}」"; }; done
+done
+for s in "${gd[@]}"; do grep -qF -- "${s}" "${SRC}/commands/init.md" || { gear_ok=0; echo "  ↳ commands/init.md 缺「${s}」"; }; done
+[ "${gear_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  档位四方同源闸（附录块↔help↔README↔§三收尾行，三档标记/默认/收尾三档/校验层）"; } || { FAIL=$((FAIL+1)); echo "FAIL  档位四方同源闸（见上漂移清单）"; }
+
+# P1b 断言②：twin 档位预设节（### 档位预设 匹配行后至下一个 ^### / ^## / 文件尾正文）+
+# §三「> 收尾时序」行双模板逐字同文——与 tt 结构闸同哲学，锚点机械守护替代人肉同源对照（方案 §2 决策 7）
+tp_sect() { awk -v q='### 档位预设' 'index($0, q)==1 {f=1; next} f && (/^### / || /^## /) {f=0} f' "${1}"; }
+tp_tail() { grep '^> 收尾时序' "${1}"; }
+tw_g_ok=1
+for fn in tp_sect tp_tail; do
+  va=$("${fn}" "${SRC}/app/CLAUDE.md")
+  vb=$("${fn}" "${SRC}/plugin/CLAUDE.md")
+  [ "${fn}" = "tp_sect" ] && lbl='档位预设节' || lbl='收尾时序行'
+  if [ -z "${va}" ] || [ "${va}" != "${vb}" ]; then
+    tw_g_ok=0
+    echo "  ↳ twin ${lbl} 漂移（app ↔ plugin 首差异，- app + plugin）："
+    diff <(printf '%s\n' "${va}") <(printf '%s\n' "${vb}") | head -6 | sed 's/^/    /'
+  fi
+done
+[ "${tw_g_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  twin 档位预设块 + 收尾时序行双模板逐字同文"; } || { FAIL=$((FAIL+1)); echo "FAIL  twin 档位块/收尾行漂移（双模板须同源对照改）"; }
+
 # 1.0.5 断言：gitignore 幂等落位——首装补三行，重装不重复（取代 1.0.4 模板侧文字指引）
 T5=/tmp/cf-gi; rm -rf "$T5"; mkdir -p "$T5"
 bash $SRC/scripts/install.sh "$T5" --app >/dev/null 2>&1

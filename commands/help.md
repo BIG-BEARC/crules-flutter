@@ -1,5 +1,5 @@
 ---
-description: crules-flutter 使用地图——什么场景用什么（命令 / agents / skill / hooks / 模板全景 + 收尾时序）
+description: crules-flutter 使用地图——什么场景用什么（命令 / agents / skill / hooks / 模板全景 + 收尾时序三档）
 ---
 
 # /crules-flutter:help
@@ -10,29 +10,37 @@ description: crules-flutter 使用地图——什么场景用什么（命令 / a
 
 | 场景 | 动作 | 用什么 |
 |---|---|---|
-| 新工程接入 | 装规则 + 必填引导 | `/crules-flutter:init`（三处必填：§七 / §十二 / 支持矩阵） |
+| 新工程接入 | 装规则 + 必填引导 | `/crules-flutter:init`（三处必填：§七 / §十二〔含档位预设三选一〕/ 支持矩阵） |
 | 日常开发 | 双 Gate 走流程 | 根 `CLAUDE.md` §三；superpowers 可叠加（brainstorming / writing-plans / TDD） |
 | 写设计方案 | 套骨架 + 配图 | **flutter-rules** skill「方案骨架」`references/design-doc.md`（裁剪档位 / 图型对照 / Gate 映射） |
 | 引依赖 | 坑库×矩阵筛 | `.claude/memory/platform-pitfalls.md`（T1）+ skill 平台坑节 |
 | 写平台代码 | 涉域查坑 | 坑库（T2）+ skill 平台坑节（预置首批） |
-| 交付收尾 | review + 自测 + 沉淀 | `checklist.md` + 收尾时序（下图）；沉淀候选 `/crules-flutter:distill` |
+| 交付收尾 | review + 自测 + 沉淀 | `checklist.md` + 收尾三档（下图）；沉淀候选 `/crules-flutter:distill` |
 | 升级（SDK / 依赖） | 区间穿越 | 坑库筛「归属=Flutter SDK」（T3）+ 重跑相关自测用例 |
 | 知识维护 | 蒸馏 / 刷新 | `/crules-flutter:distill --scope <需求>`；`/crules-flutter:update-memory` |
 | 排障 | 错误排查 | `crules-flutter:error` agent + 坑库检索 |
 | 存量文档补图 | 图型对照补 mermaid | `/crules-flutter:diagram <文件>` |
 
-## 收尾时序（review 主工位）
+## 收尾时序三档（review 主工位）
+
+**收尾档按任务规模三档判定，与项目档位无关**：极简（单点修复 / 文案 / 注释，无行为面变化）＝机械验证贴输出 + 一行汇报，review 豁免记 Gate 例外台账、无沉淀件头；标准＝下图主体（现行时序）；重型（跨域大改 / 公开 API / 资损面）＝标准 + 校验层（下图 alt 块）。**项目档位**（init 一问定，写 §十二 附录预设块，无块 = 默认标准）：轻量〔light〕＝记忆库关·编排关·极简收尾占比高；标准〔normal〕＝日常工程默认；完整〔full〕＝编排开·plan-reviewer 默认启用。两轴独立——轻量档大需求仍走 plan-reviewer、大改仍走重型收尾；档位只改行为件头，不减常驻 token。
 
 ```mermaid
 sequenceDiagram
     participant AI as AI(主控)
     participant R as reviewer
+    participant V as 校验层(重型档)
     participant U as 需求方
     AI->>AI: 机械验证(build/test/lint)
     AI->>R: review(diff+引用链, checklist)
     R-->>AI: 发现与建议(只报告)
+    alt 重型收尾(跨域大改/公开 API/资损面)
+        AI->>V: 逐条独立校验(隔离子代理)
+        V-->>AI: CONFIRMED/REJECTED/更优方案(附证据)
+        AI->>AI: 分流:低危列单默认修·语义类/L1+列单裁决
+    end
     AI->>AI: 修复→复验(重跑构建+重审受影响部分)
-    AI->>U: 交付汇报(review结论+证据+沉淀候选计数)
+    AI->>U: 交付汇报(注明收尾档+review结论+证据+沉淀候选计数)
     U-->>AI: 确认+授权提交(feat+docs 两笔)
 ```
 

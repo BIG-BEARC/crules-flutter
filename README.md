@@ -30,10 +30,10 @@ claude plugin install crules-flutter@crules-flutter-market --scope user
 **init 之后必填三处**（init 会逐处引导）：
 
 1. `CLAUDE.md` §七——技术栈三选一（Riverpod / Bloc / Provider 预设，选定删其余；App 形态另含适配方案与字体策略两选）
-2. `CLAUDE.md` §十二——项目附录（项目名 / 构建·分析·测试命令）
+2. `CLAUDE.md` §十二——项目附录（项目名 / 构建·分析·测试命令）＋档位预设三选一（默认标准）
 3. `.claude/memory/platform-pitfalls.md` 头部——**支持矩阵**（目标平台 + 各端实测版本上限；init 出机械读初稿，人核对补实测）
 
-**装完日常零记忆负担**：agent/skill/hooks 全自动触发；只在交付收尾时走「机械验证 → review → 沉淀」时序（下图），会话结束 Stop hook 会提醒补记忆库索引。**第一次用？** 15 分钟走一遍最小闭环见 `进阶/上手教程.md`（init 随模板落位到项目根）。
+**装完日常零记忆负担**：agent/skill/hooks 全自动触发；只在交付收尾时走「机械验证 → review → 沉淀」三档化时序（下图，随任务规模裁剪件头），会话结束 Stop hook 会提醒补记忆库索引。**第一次用？** 15 分钟走一遍最小闭环见 `进阶/上手教程.md`（init 随模板落位到项目根）。
 
 ### 场景 → 入口（权威全表见 `/crules-flutter:help`）
 
@@ -55,18 +55,26 @@ claude plugin install crules-flutter@crules-flutter-market --scope user
 | `/crules-flutter:diagram <文件>` | 存量人读文档补 mermaid 图 |
 | `/crules-flutter:update-memory` | 记忆库索引全量刷新（兜底） |
 
-### 收尾时序（review 主工位）
+### 收尾时序三档（review 主工位）
+
+**收尾档按任务规模三档判定，与项目档位无关**：极简（单点修复 / 文案 / 注释，无行为面变化）＝机械验证贴输出 + 一行汇报，review 豁免记 Gate 例外台账、无沉淀件头；标准＝下图主体（现行时序）；重型（跨域大改 / 公开 API / 资损面）＝标准 + 校验层（下图 alt 块）。**项目档位**（init 一问定，写 §十二 附录预设块，无块 = 默认标准）：轻量〔light〕＝记忆库关·编排关·极简收尾占比高；标准〔normal〕＝日常工程默认；完整〔full〕＝编排开·plan-reviewer 默认启用。两轴独立——轻量档大需求仍走 plan-reviewer、大改仍走重型收尾；档位只改行为件头，不减常驻 token。
 
 ```mermaid
 sequenceDiagram
     participant AI as AI(主控)
     participant R as reviewer
+    participant V as 校验层(重型档)
     participant U as 需求方
     AI->>AI: 机械验证(build/test/lint)
     AI->>R: review(diff+引用链, checklist)
     R-->>AI: 发现与建议(只报告)
+    alt 重型收尾(跨域大改/公开 API/资损面)
+        AI->>V: 逐条独立校验(隔离子代理)
+        V-->>AI: CONFIRMED/REJECTED/更优方案(附证据)
+        AI->>AI: 分流:低危列单默认修·语义类/L1+列单裁决
+    end
     AI->>AI: 修复→复验(重跑构建+重审受影响部分)
-    AI->>U: 交付汇报(review结论+证据+沉淀候选计数)
+    AI->>U: 交付汇报(注明收尾档+review结论+证据+沉淀候选计数)
     U-->>AI: 确认+授权提交(feat+docs 两笔)
 ```
 

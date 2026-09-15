@@ -1,5 +1,19 @@
 # crules-flutter CHANGELOG
 
+## 1.0.9 · 外审余项处置——warn 层（高危形态弹窗确认）+ 度量防空转 + VSCode 扩展环境节
+
+> 依据链：1.0.8 后第五轮外审复验余项 🟡3（度量零数据——「无任何提醒与绑定」措辞经机检修正为「R<n> 编号已供 ledger、缺的是动作绑定」）+ 🟢12（VSCode 扩展环境无独立 CLI）+ 🟢7（先确认类操作散文化、无机制）。机制选型经 claude-code-guide 对官方文档核证后钉死：PreToolUse `permissionDecision: ask` 强制弹用户确认（自动批准模式亦然、分类器不得静默放行）、多决策优先级 deny > ask——additionalContext 伴随工具结果注入（事后），对「先确认」无效故不采。
+
+- **🟢7 warn 层（高危形态「先确认」机制化）**：deny-list.py 增 warn 分支——全部未命中 deny 后，高危四形态（curl/wget | sh 下载执行、chmod -R、sudo 命令位、git filter-branch）改发 `permissionDecision: ask` 弹窗由需求方裁夺（不拦执行，人放行/否决）；deny 优先天然成立（命中 deny 已 exit）。sudo 判命令位（行首 / `; && || & |` 换行后）防 echo 谈论误弹；filter-branch 例自证词内 branch 过 GIT_SIG 分支判定不误拦
+- **输出契约现代化（随批存量修正）**：`blocked()` 由官方已废弃顶层 `{"decision":"block"}` 迁至现行 `hookSpecificOutput`（旧形态仅靠映射兼容；ask 在旧形态无对应值，deny/ask 统一走现行契约）——test_deny_list 判定与 test-self 幂等断言 grep 口径随迁
+- **fixture 92→99（+7 WARN_CASES）**：四形态 + 管道右侧 sudo + `&&` 后命令位 sudo + filter-branch；测试判定重构为三值（deny / ask / allow）；deny 优先由既有 BLOCK「sudo git reset --hard」「sudo -u root git clean -fd」背书
+- **warn 边界（头注如实声明）**：bypassPermissions 下 ask 行为官方文档未覆盖；两步法（下载落盘再执行）无管道形态不覆盖；echo 内嵌形态词误弹（ask 误弹方向无害）；curl 多级管道只看首段——形态匹配非语义分析
+- **🟡3 度量防空转三件**：distill §7 空态输出显式异常行（ledger 不存在或零新增不静默「无数」）+ reviewer 复核结论尾固定提醒主控回填 ledger（落账动作归主控）+ README 观测带数补四数止损线（2.0 前仍零样本 → 砍四数只留原始账）
+- **🟢12 VSCode 扩展环境节**：README 新增「VSCode 扩展环境（无独立 claude CLI）」——扩展内嵌 claude 二进制代跑同款命令、路径随升级漂移不写死现查、装后等价（命令 / hooks / plugin update）；项目内模板升级与 init 走 cache glob 不依赖独立 CLI
+- 双模板 hook 边界句各补 warn 层半句（deny 无放行承诺不变，warn 弹窗放行面显式化）；README 守护行 / 共存节、help.md hooks 行与链外恒在注同步
+- test-self 26/26 复跑绿（README 维护节四组重构〔发布操作 / 每次 minor / major 前 / 原则与观测〕系本批配套整理，按触发时机归组防清单平铺回潮）
+- **观测带数**：常驻基线——模板面净增约 80 字（两模板边界句半句 + 无新常驻件头），未复测（下次 minor 装机一并）；distill 四数——仍无数（未到首个周期；止损线已挂）
+
 ## 1.0.8 · 安全面收口——deny-list 三类拼合绕过堵死 + hooks python3 回退 + 治理句外迁
 
 > 依据链：1.0.7 后第五轮外审（全面评审复验，探针实测取证）🔴×2 + 🟡×2——🔴1 deny-list 拼合绕过（bash 续行 / 转义拼接 / 引号拼接三类，10 实例现行全漏拦）、🔴2 hooks 命令 python3 单点依赖；🟡3 度量零数据（未到首个周期，无处置）、🟡5 维护者治理条文入消费面 + checklist 死指针。修复全部先探针验证后落地（json.dumps 构造 payload，循 v41 探测纪律）。

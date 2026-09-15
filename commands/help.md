@@ -49,7 +49,7 @@ sequenceDiagram
 - **命令 ×5**：init / update-memory / help / distill / diagram
 - **agents ×7**：frontend / backend / i18n / platform / error / reviewer / plan-reviewer（出场时机见 `进阶/Agent编排.md`）
 - **skill**：flutter-rules（技术规范参考 + 方案骨架 + 平台坑节）
-- **hooks ×3**：deny-list（PreToolUse 安全闸）/ pending-updates（PostToolUse 同步提示）/ stop-reminder（Stop 收尾提醒）（供应链说明见 README）
+- **hooks ×3**：deny-list（PreToolUse 安全闸：破坏命令硬拦 deny + 高危形态弹窗确认 ask）/ pending-updates（PostToolUse 同步提示）/ stop-reminder（Stop 收尾提醒）（供应链说明见 README）
 - **模板**：根 CLAUDE.md（App / Plugin 二选一）+ checklist + 进阶 6 篇 + memory 8 模板
 
 ## 冲突时听谁的（优先级链）
@@ -62,7 +62,7 @@ sequenceDiagram
 | 4 | flutter-rules skill |
 | 5 | 模型默认行为 |
 
-> 两件**独立于链外、恒在生效**：deny-list hook（破坏性命令硬闸，无放行机制——确认后也须人工执行）；`analysis_options.yaml` lint（静态层硬拦，不经判断）。规则「时严时松」的观感多半来自高优先级项覆盖了低优先级项——按本表归因，别猜。
+> 两件**独立于链外、恒在生效**：deny-list hook（破坏性命令硬闸，无放行机制——确认后也须人工执行；高危形态〔下载执行 / sudo / chmod -R / filter-branch〕另走 warn 层弹窗，由需求方裁夺放行，1.0.9）；`analysis_options.yaml` lint（静态层硬拦，不经判断）。规则「时严时松」的观感多半来自高优先级项覆盖了低优先级项——按本表归因，别猜。
 
 ## 最小概念五条（新消费者先装进脑子的全部）
 

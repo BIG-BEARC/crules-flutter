@@ -182,12 +182,13 @@ gi2=$(grep -c '^\.claude/memory' "$T5/.gitignore" 2>/dev/null) || gi2=0
 [ "${gi1}" = "4" ] && [ "${gi2}" = "4" ] && { PASS=$((PASS+1)); echo "PASS  gitignore 幂等落位（首装 4 行，force 重装仍 4 行）"; } || { FAIL=$((FAIL+1)); echo "FAIL  gitignore 落位（首装 ${gi1} 行 / 重装 ${gi2} 行，期望 4/4）"; }
 rm -rf "$T5"
 
-# 幂等断言：同输入两次运行结论一致且均 block（双 plugin 共存的可测背书）
+# 幂等断言：同输入两次运行结论一致且均 deny（双 plugin 共存的可测背书；1.0.9 输出契约
+# 现代化 block→permissionDecision deny，grep 口径随迁）
 BADCMD="git push --fo""rce origin main"   # 分段拼接，避免源码含完整字面串
 j1=$(printf '{"tool_input":{"command":"%s"}}' "$BADCMD")
-r1=$(printf '%s' "$j1" | python3 "$SRC/hooks/deny-list.py" | grep -c block || true)
-r2=$(printf '%s' "$j1" | python3 "$SRC/hooks/deny-list.py" | grep -c block || true)
-if [ "$r1" = "$r2" ] && [ "$r1" -ge 1 ]; then PASS=$((PASS+1)); echo "PASS  deny-list 重复调用幂等（两次均 block）"; else FAIL=$((FAIL+1)); echo "FAIL  幂等断言（r1=${r1} r2=${r2}）"; fi
+r1=$(printf '%s' "$j1" | python3 "$SRC/hooks/deny-list.py" | grep -c '"deny"' || true)
+r2=$(printf '%s' "$j1" | python3 "$SRC/hooks/deny-list.py" | grep -c '"deny"' || true)
+if [ "$r1" = "$r2" ] && [ "$r1" -ge 1 ]; then PASS=$((PASS+1)); echo "PASS  deny-list 重复调用幂等（两次均 deny）"; else FAIL=$((FAIL+1)); echo "FAIL  幂等断言（r1=${r1} r2=${r2}）"; fi
 
 rm -rf /tmp/cf-selftest
 echo "== 脚本自测：PASS=$PASS FAIL=$FAIL =="

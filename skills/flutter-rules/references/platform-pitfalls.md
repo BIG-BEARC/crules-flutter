@@ -50,6 +50,14 @@
 
 ## Flutter SDK
 
+### [Windows] 中文输入法吞 character 通道 × numpad 键 keyLabel 空串——扫码枪/按键监听纯数字全灭
+
+- 归属：Flutter SDK（框架层 keyLabel 表 + 引擎 Windows 键盘管线）× OS 平台（Windows IME）
+- 触发场景：Windows 中文输入法激活时监听 HardwareKeyboard/KeyEvent 做扫码枪（HID 键盘模式）或按键采集 ｜ 症状：`KeyDownEvent.character` 为 null（IME 吞掉 WM_CHAR——不只字母，数字候选选词同样被吞）；字母靠 `logicalKey.keyLabel` 存活（大写单字符），**numpad0-9 的 keyLabel 为空串**（keyboard_key.g.dart 无条目）→ 纯数字条码（69码）两层提取全空、缓冲为空，日志只余「扫码结果为空」+ 偶发字母残骸 ｜ 根因：引擎 scancode 通道（WM_KEYDOWN lParam 位 16-23 → HID usage）与 IME 掐断的 WM_CHAR 字符通道是两条独立管线；采集层只做 character/keyLabel 两层提取时小键盘数字必死 ｜ 规避：提取链加第三层 **physicalKey 映射兜底**（USB HID usage，官方文档明示「ignores any modifiers, modes, or keyboard layouts」，与 IME 无关；52 字母 + 主行数字 + numpad 全覆盖映射表——实例 saas-cashier keyboard_util.dart）；边界：VK_PACKET（SendInput 文本注入）不走按键管线需过滤；NumLock 关闭时小键盘发导航键非数字
+- 区间：numpad keyLabel 空串为现行框架行为（3.x 全系核对至本地 SDK）；IME 吞 character 为 Windows 输入链现行行为（引擎 WM_IME_COMPOSITION return TRUE 反向印证双管线分离），无修复版本
+- 状态：现行框架行为（非 bug，设计如此） ｜ 最后核验：2026-09-11
+- 出处：实证复盘（saas-cashier 双商户日志取证 + 三轮评审修复，doc/search_bar_69code_no_search_fix_design.md §3.4）+ [PhysicalKeyboardKey 官方文档](https://api.flutter.dev/flutter/services/PhysicalKeyboardKey-class.html) + 引擎源码 [flutter_window.cc](https://github.com/flutter/engine/blob/main/shell/platform/windows/flutter_window.cc) / [keyboard_manager.cc](https://github.com/flutter/engine/blob/main/shell/platform/windows/keyboard_manager.cc) + [BoxHero 工程实录](https://www.boxhero.io/engineering/external-barcode-scanners-flutter)（韩文 IME 同场景用 physicalKey 绕过）+ [StackOverflow 63685366](https://stackoverflow.com/questions/63685366/flutter-rawkeyboardlistener-not-working-with-barcode-scanner-device)
+
 ### [iOS 26.x] tabbar / draw 渲染异常
 
 - 归属：Flutter SDK（引擎 / 框架层——iOS 26 Liquid Glass 新 UI 与 Flutter 渲染不匹配）

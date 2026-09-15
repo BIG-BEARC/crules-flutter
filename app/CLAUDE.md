@@ -19,7 +19,7 @@
 - **必须不虚构事实和证据**：不得虚构文件、接口、参数、命令结果、测试结果或完成状态；无法读取/搜索/验证时，明确说"当前无法确认"或"未查到"；**测试代码存在 ≠ 已运行，构建通过 ≠ 功能可用**
 - **必须守住范围边界**：只处理本次已确认的需求；发现范围外问题只记录和报告，不自行修复、重构、清理、优化或扩展；出现新范围须说明原因、影响、可选方案，等重新确认
 - **禁止自动提交**：不自动 `git commit` / `git push`；只有需求方发 `commit` / `push` / `提交` 指令才开始提交流程（详见 §二）
-- **风险操作先确认**：`rm -rf`、`git reset --hard`、`git push -force`、删分支、改 CI 等破坏性或不可逆操作，先明确提醒再执行
+- **风险操作先确认**：破坏性 / 不可逆操作先明确提醒再执行（操作清单与四步确认流程见 §二）
 - **方案先确认再实现**：非平凡（non-trivial）改动先讨论方案、获明确确认，再写码
 - **多方案走选项卡**：需在可枚举方案中取舍时，用 `AskUserQuestion` 呈现，只列业务选项
 - **敏感数据安全兜底**：涉及密钥 / 凭据 / 生产数据时，默认不写日志、不入 git、不外发，除非需求方明确授权
@@ -40,7 +40,6 @@
 > 与 superpowers 的自动提交行为冲突时，**以本节为准**。这是与 superpowers 的**唯一硬冲突**：其 `test-driven-development` 要求「绿灯后 commit」、`brainstorming` 要求「设计通过后 commit」——本项目一律不执行，TDD 流程中的「commit」改为「标记任务完成、保留变更等需求方审阅」。
 > 依据优先级链：需求方指令（本文件）> skill > 默认行为。
 
-- **禁止自动提交**：不自动 `git commit` / `git push`
 - **触发关键词与语义**：`commit` / `提交` = 暂存 + **本地提交**（不推送）；`push` / `推送` = **推送远端**；「提交并推送」/ `commit and push` = 完整流程。只 commit 不 push 的中间态须显式告知「已本地提交、待 push」。项目可在 §十二覆写（如个人项目「单发 commit 即完整流程」——覆写优先）
 - **提交授权的边界**：授权仅覆盖普通的暂存 + 提交 + 推送，**不覆盖**强制推送、`reset --hard`、删分支、改 CI 等破坏性操作（仍需独立二次确认）
 - **完整流程定义**：`git add` → `git commit` → `git push`，推送到远端才算完整完成
@@ -256,17 +255,14 @@ flutter_screenutil（.w/.h 按稿缩放）。注：5.9.3 后 ~28 个月无稳定
 
 ### 8.1 全栈通用（任何预设生效）
 
-- **多 package 工程 assets 加载**：子工程被主工程引用时，加载子工程自己的 assets 用项目统一的加载入口（内部默认带 `package` 参数），**不要**用裸 `load()`——跨 package 资源不加 package 名必空；新增 assets 后需**完全重启**应用（热重载不加载新资源）
+- **多 package 工程 assets 加载**：子工程被主工程引用时，加载子工程自己的 assets 用项目统一的加载入口（内部默认带 `package` 参数），**不要**用裸 `load()`——跨 package 资源不加 package 名必空（新增 assets 须完全重启，见 §四）
 - **文件头注释（默认跟随项目现状，可覆写）**：注释放在 import 语句**之后**（不是文件开头）。默认——新建文件的作者头沿用项目主流惯例：存量普遍带 @Author 头 → 循既有格式（不含 @Email——作者与时间以 git 记录为准，头注不双写）；存量普遍无头 → 不加。惯例不一致时问一次需求方，答复记入 §十二附录（覆写为「强制开/强制关」）
 - **Import 排序**：Dart SDK → Flutter SDK → 外部包（字母序）→ 内部包（绝对路径 `package:<项目>/...`）→ 相对路径
 - 代码风格细则不双份维护：通用风格（const 构造 / 命名 / 行宽）模型已知 + lint 基线硬拦；项目特有风格（头注释 / 适配 / import 分组）见本节各条；主题与布局细节按需查 **flutter-rules** skill `references/theming.md` / `layout.md`
 
 ### 8.2 预设 A（Riverpod）特有——**选 A 时生效**
 
-- **Notifier 模式**：不可变 `State` 类（含 `copyWith`）+ `Notifier<T>`（`build()` 里 `ref.read` 注入依赖，不用过时 `StateNotifier`）
-- **Provider 组织（就近原则）**：模块专用 Provider 放模块自己的 `presentation/` 或 `data/`；全局 DAO / API / 用户态等放全局 providers 目录——禁止把模块专用状态挂到全局
-- **ConsumerWidget vs ConsumerStatefulWidget（强制）**：当私有方法需要 `ref` 时，**必须用 `ConsumerStatefulWidget`，禁止把 `WidgetRef` 作为参数传给私有方法**（`ref` 作类属性自动可用）；仅 `build` 用 `ref` → `ConsumerWidget`；需 `initState` / `dispose` / 访问构造参数 → `ConsumerStatefulWidget`
-- **生命周期**：页面级状态用 `autoDispose`（离开页面释放），全局单例显式不 dispose——策略在 Provider 定义处声明，不在调用处补救
+四条纪律（Notifier 模式 / Provider 就近组织 / ConsumerWidget vs ConsumerStatefulWidget 强制 / autoDispose 生命周期）已下沉至 **flutter-rules** skill `references/state-management.md`——涉状态管理任务时按需加载，不常驻。
 
 > 本小节源自消费工程实战规范上移；选 B/C 的项目本小节**不适用**，等价规范由对应预设沉淀。
 
@@ -284,17 +280,9 @@ flutter_screenutil（.w/.h 按稿缩放）。注：5.9.3 后 ~28 个月无稳定
 
 **核心心智模型**：superpowers 说「做什么」（先写失败测试→看它失败→写最小实现），dart-flutter 说「Flutter 里怎么做」。两者分层，**不冲突**。
 
-### TDD 适用范围（按层分档）
+### TDD 适用范围
 
-| 代码类型 | TDD 要求 | 「测试」的形式 |
-|---|---|---|
-| 纯逻辑/工具/数据层（ViewModel、Repository、Service、utils） | **强制 red-green-refactor** | `package:test` 单测 |
-| 数据模型/序列化 | 强制 | 单测覆盖 `fromJson`/`toJson` 边界 |
-| UI 渲染（widget） | 用 widget test 充当 TDD 的「测试」 | `flutter-add-widget-test`（`WidgetTester`） |
-| 完整用户流程 | 不强制每步，关键路径要覆盖 | `flutter-add-integration-test` |
-| 既有代码无测试时 | 改动前先补「表征测试」锁住现状，再重构 | — |
-
-> 同构用例集（数据类 / 参数化 / 纯映射）允许批量红绿：全部用例写完 → 一轮 RED → 实现 → 一轮 GREEN（抽 1-2 个断言故意错值确认会红，防恒真断言）；设计驱动型用例保持逐用例。
+按层分档表与同构批量红绿细则已下沉至 **flutter-rules** skill `references/testing.md`——涉测试选型 / 补测时按需加载，不常驻。
 
 ---
 
@@ -312,23 +300,7 @@ flutter_screenutil（.w/.h 按稿缩放）。注：5.9.3 后 ~28 个月无稳定
 
 ## 十一、App 向 dart-flutter skill 速查
 
-| 场景 | 调用 skill |
-|---|---|
-| 新项目/重构做分层 | `flutter-apply-architecture-best-practices` |
-| 配置 go_router 声明式路由 | `flutter-setup-declarative-routing` |
-| 初始化国际化 | `flutter-setup-localization` |
-| REST 请求 | `flutter-use-http-package`（轻量）或按技术栈用 Dio |
-| 模型序列化 | `flutter-implement-json-serialization` |
-| 适配手机/平板 | `flutter-build-responsive-layout` |
-| 修 overflow/unbounded 等布局错 | `flutter-fix-layout-issues` |
-| 组件级测试 | `flutter-add-widget-test` |
-| 端到端测试 | `flutter-add-integration-test` |
-| 组件可视化预览 | `flutter-add-widget-preview` |
-| 跑静态分析 | `dart-run-static-analysis` |
-| 写单测 | `dart-add-unit-test` |
-| 包版本冲突 | `dart-resolve-package-conflicts` |
-| switch 表达式/模式匹配 | `dart-use-pattern-matching` |
-| 主构造函数 | `dart-use-primary-constructors` |
+场景→skill 映射表（14 项）已随 1.0.10 下沉至 **flutter-rules** skill「dart-flutter skill 速查」节（App 向表）——调用 dart-flutter 前按需查，不常驻。
 
 ---
 

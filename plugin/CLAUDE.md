@@ -19,7 +19,7 @@
 - **必须不虚构事实和证据**：不得虚构文件、接口、参数、命令结果、测试结果或完成状态；无法读取/搜索/验证时，明确说"当前无法确认"或"未查到"；**测试代码存在 ≠ 已运行，构建通过 ≠ 功能可用**
 - **必须守住范围边界**：只处理本次已确认的需求；发现范围外问题只记录和报告，不自行修复、重构、清理、优化或扩展；出现新范围须说明原因、影响、可选方案，等重新确认
 - **禁止自动提交**：不自动 `git commit` / `git push`；只有需求方发 `commit` / `push` / `提交` 指令才开始提交流程（详见 §二）
-- **风险操作先确认**：`rm -rf`、`git reset --hard`、`git push -force`、删分支、改 CI 等破坏性或不可逆操作，先明确提醒再执行
+- **风险操作先确认**：破坏性 / 不可逆操作先明确提醒再执行（操作清单与四步确认流程见 §二）
 - **方案先确认再实现**：非平凡（non-trivial）改动先讨论方案、获明确确认，再写码
 - **多方案走选项卡**：需在可枚举方案中取舍时，用 `AskUserQuestion` 呈现，只列业务选项
 - **敏感数据安全兜底**：涉及密钥 / 凭据 / 生产数据时，默认不写日志、不入 git、不外发，除非需求方明确授权
@@ -40,7 +40,6 @@
 > 与 superpowers 的自动提交行为冲突时，**以本节为准**。这是与 superpowers 的**唯一硬冲突**：其 TDD 要求「绿灯后 commit」、`brainstorming` 要求「设计通过后 commit」——本项目一律不执行，TDD 流程中的「commit」改为「标记任务完成、保留变更等需求方审阅」。
 > 依据优先级链：需求方指令（本文件）> skill > 默认行为。
 
-- **禁止自动提交**：不自动 `git commit` / `git push`
 - **触发关键词与语义**：`commit` / `提交` = 暂存 + **本地提交**（不推送）；`push` / `推送` = **推送远端**；「提交并推送」= 完整流程。中间态须显式告知「已本地提交、待 push」。项目可在 §十二覆写（覆写优先）
 - **提交授权的边界**：授权仅覆盖普通的暂存 + 提交 + 推送，**不覆盖**强制推送、`reset --hard`、删分支、改 CI 等破坏性操作（仍需独立二次确认）
 - **完整流程定义**：`git add` → `git commit` → `git push`，推送到远端才算完整完成
@@ -238,19 +237,9 @@
 
 **核心心智模型**：superpowers 说「做什么」，dart-flutter 说「Dart 里怎么做」。两者分层，**不冲突**。**触发规则**：每个任务开始前先检查是否有 skill 适用（superpowers 的 1% 规则）。
 
-### TDD 适用范围（plugin 导向）
+### TDD 适用范围
 
-plugin 极契合 TDD——大量纯函数和明确的公开 API。**public API 默认全覆盖**：
-
-| 代码类型 | TDD 要求 | 「测试」形式 |
-|---|---|---|
-| 纯 Dart 工具/算法/格式化 | **强制 red-green-refactor** | `package:test` 单测，边界值全覆盖 |
-| 公开 API（public 类/方法/顶层函数） | **强制**，视为回归安全网 | 单测，固定输入→固定输出 |
-| 数据模型/序列化 | 强制 | 覆盖 `fromJson`/`toJson` 边界 |
-| 平台通道/原生桥接（类型 A） | Dart 侧 mock 测；原生侧在 `example/` 手测 | `setMockMethodCallHandler` mock 通道 |
-| 既有无测试代码 | 改动前先补「表征测试」锁现状，再改 | — |
-
-> 同构用例集允许批量红绿（全部用例→一轮 RED→实现→一轮 GREEN，抽查断言有效性防恒真）；superpowers 会**删掉先于测试写的代码**——公开 API 尤其要先用测试钉死行为。
+plugin 极契合 TDD——大量纯函数和明确的公开 API，**public API 默认全覆盖**；分档表与批量红绿细则已下沉至 **flutter-rules** skill `references/testing.md`——涉测试选型 / 补测时按需加载，不常驻。
 
 ---
 
@@ -290,22 +279,7 @@ plugin 极契合 TDD——大量纯函数和明确的公开 API。**public API �
 
 ## 十一、plugin 向 dart-flutter skill 速查
 
-| 场景 | 调用 skill |
-|---|---|
-| 写/补单测 | `dart-add-unit-test` |
-| 跑静态分析（零 warning） | `dart-run-static-analysis` |
-| 机械性 lint 自动修 | 配合 `dart fix --apply` |
-| 收集测试覆盖率 | `dart-collect-coverage` |
-| 包版本冲突 | `dart-resolve-package-conflicts` |
-| switch 表达式/模式匹配 | `dart-use-pattern-matching` |
-| 主构造函数 | `dart-use-primary-constructors` |
-| 迁移到 `package:checks` | `dart-migrate-to-checks-package` |
-| 模型序列化 | `flutter-implement-json-serialization` |
-| 生成 mock（unit test） | `dart-generate-test-mocks` |
-| FFI 绑定生成（类型 A 原生） | `dart-use-ffigen` |
-| 打包 C/C++ 为代码资产（类型 A） | `dart-setup-ffi-assets` |
-| 修运行时错误（配合 LSP/热重载） | `dart-fix-runtime-errors` |
-| 构建命令行工具（若 plugin 含 CLI） | `dart-build-cli-app` |
+场景→skill 映射表（14 项，FFI / CLI / checks 迁移等 plugin 特有行在内）已随 1.0.10 下沉至 **flutter-rules** skill「dart-flutter skill 速查」节（plugin 向表）——调用 dart-flutter 前按需查，不常驻。
 
 ---
 

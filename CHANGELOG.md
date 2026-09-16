@@ -1,5 +1,10 @@
 # crules-flutter CHANGELOG
 
+## 1.0.18 · 批F2 收口小笔——deny-list.ps1 Normalize Replace 重载炸点（本机便携 pwsh 复现 CI 首红）
+
+> 依据链：1.0.17 CI 首跑即红（steps exit 1），本机便携 pwsh 7.4.6（GitHub release tarball 解包即用、不入库）当场复现：`$c.Replace($bt, '')` 被重载解析绑到 `Replace(char,char)`、空串转 char 抛，`$ErrorActionPreference=Stop` 放大为整脚本中止 → 改 `[regex]::Replace([regex]::Escape($bt),'')` 并加注释锁。修复后本机 pwsh 路径复验：ps 驱动全绿 + test-self 28/28；push 后 CI 回绿（徽章 passing）。
+> **教训入册**：mac「无 pwsh」验证缺口可自建——brew 本 tap 装不下（cask 名冲突走 linux-only 渠道），GitHub release tarball 30 秒便携得 pwsh；**「CI pwsh 首跑前先本机跑」从被动等红变主动步骤**。1.0.17 验证条已含全程，本笔纯收口（双 json + 横幅 + cache 快照须含修复）。5.1 差异面（R2/R3/BOM）终验仍待用户实机。
+
 ## 1.0.17 · 批F2——deny-list PowerShell 原生实现 + Windows 接线 + 夹具单源双驱（Windows 防线落地）
 
 > 依据链：[裁决单-2026-09-15](docs/裁决单-2026-09-15-1.0.10全面外审与四批处置.md) §7/§8 落账（2026-09-16 需求方裁：F2 恢复排期、本人在 Windows 原生开发并**实机验证**——§7「验证手段」之争由实机闸替代，CI pwsh 降为可选加固）。官方事实底座（claude-code-guide 六问查证，code.claude.com/docs/en/hooks·tools-reference·setup）：Windows 无 Git Bash 时注册的是 **PowerShell 工具**，`matcher:"Bash"` 永不触发（= 原防线在 Windows 原生静默归零的根因）；装了则两工具并存、模型可换 shell 绕过 → **两 matcher 双 handler**；exec form（command+args）不经 shell、占位符纯字符串注入（空格/反斜杠安全，官方含路径占位符明确「Prefer exec form」）；PreToolUse deny 含 bypass 全模式生效；JSON 契约平台无关。

@@ -6,7 +6,7 @@
 # 拦截族（git + rm，细则由 fixture 对抗样本库固化）：
 #   git push --force / +refspec / --delete·:branch / reset --hard / clean -f / branch -D /
 #   checkout·restore·switch 丢弃工作区或强切 / stash clear / rm 递归+强制
-# warn 形态族（ask 层）：curl/wget|sh 下载执行、chmod -R、sudo 前缀、git filter-branch
+# warn 形态族（ask 层）：curl/wget|sh·python3·ruby·perl 下载执行、chmod -R、sudo 前缀、git filter-branch·filter-repo
 # 匹配策略：
 #   - 分段前先**拼合归一**（1.0.8）：bash 续行（\+换行）/ 转义拼接（\x→x，限 \w）/
 #     引号删除（词内 pu"sh"、整词 'rm'、ANSI-C $'rm'）——归一方向一律拼合，只增拦截面
@@ -17,6 +17,16 @@
 #     （macOS /tmp→/private/tmp 符号链接，realpath 反而误拦合法白名单）
 #   - warn 层在分段全部未命中 deny 后于**整条归一 cmd** 上匹配（管道形态横跨分段，须整条看）；
 #     deny 优先天然成立——命中 deny 已在 blocked() exit，走到 warn 的必非 deny
+#   - 长旗标剥 =value（批A F11，1.0.11）：--force=true 按 --force 判——git 自身拒绝该语法
+#     （option takes no value，无远端草稿仓实证）故今日不可利用，剥值系防御纵深一致化
+#     （reset 的子串判定与 push/clean/branch 的集合判定对齐）。**连带面**：剥值亦使
+#     force_switch 的豁免集合对 --branch=/--create=/--source= 长形态生效（checkout -f
+#     --source=other main 等四例 deny→allow）——git 现拒该语法故不可达；未来 git 若为
+#     checkout/switch 补 --source=<tree> 时该豁免属语义正确。**注**：checkout_discards
+#     自解析 token 不调 parse_flags，--source=stash@{1} 长形态与 -s 短形态判定仍不一致
+#     （既存，本批未触及；全表无 --source= 样本故无闸）
+#   - 输入契约 fail-open（批A F10①）：stdin 非法 JSON → exit 0 静默放行——输入由宿主构造
+#     风险低，fail-closed 恐误伤非 JSON 探活/心跳；如改须先核宿主行为再动
 # 边界与局限（诚实声明）：
 #   - 非锚定搜索会把字符串里的破坏命令（含引号内原文——1.0.8 归一后成立）一并拦下——
 #     按 deny-by-default 哲学接受，误拦走白名单调整
@@ -25,7 +35,9 @@
 #     （覆盖矩阵与决策史见 CHANGELOG）
 #   - warn 层边界：bypassPermissions 模式下 ask 行为官方文档未覆盖；两步法（下载落盘再执行）
 #     无管道形态、warn 不覆盖；echo 内嵌形态词会误弹（ask 误弹方向无害）；curl 多级管道
-#     （| tee | bash）只看首段——形态匹配非语义分析
+#     （| tee | bash）只看首段——形态匹配非语义分析。解释器族（1.0.11 扩）：须紧贴管道符
+#     （路径 /usr/bin/python3、env python3、sudo -u root python3 带参前缀均不盖）；
+#     python3? 不匹配 python2（EOL 不再扩）；`| python3 -m json.tool` 格式化惯用法误弹（ask 无害）
 import json, os, re, sys
 
 try:
@@ -72,11 +84,11 @@ def strip_quotes(tok):
     return tok
 
 def parse_flags(tokens):
-    """返回 (短旗标串, 长旗标集)：-nfd→'nfd'，--force→'force'"""
+    """返回 (短旗标串, 长旗标集)：-nfd→'nfd'，--force→'force'，--force=x 剥值取 'force'（F11）"""
     short, longs = "", set()
     for t in tokens:
         if t.startswith("--") and len(t) > 2:
-            longs.add(t[2:])
+            longs.add(t[2:].split("=", 1)[0])
         elif t.startswith("-") and len(t) > 1:
             short += t[1:]
     return short, longs
@@ -161,10 +173,10 @@ for part in re.split(r";|&&|\|\||\||\r?\n", cmd):
 # sudo 判「命令位」（行首 / ; && || & | 换行之后）而非词中出现——防 echo 谈论 sudo 误弹；
 # curl|sh、chmod -R、filter-branch 限段内（[^;|]* 不跨段）
 WARN_SIGS = [
-    (re.compile(r"\b(curl|wget)\b[^;|]*\|\s*(?:sudo\s+)?(?:ba|z|da)?sh\b"), "网络内容直接进 shell（curl/wget | sh）"),
+    (re.compile(r"\b(curl|wget)\b[^;|]*\|\s*(?:sudo\s+)?(?:(?:ba|z|da)?sh|python3?|ruby|perl)\b"), "网络内容直接进解释器（curl/wget | sh/python/ruby/perl）"),
     (re.compile(r"\bchmod\b[^;|]*\s-R"), "递归改权限（chmod -R）"),
     (re.compile(r"(?:^\s*|[;&|\n]\s*)sudo\b"), "提权执行（sudo）"),
-    (re.compile(r"\bgit\b[^;|]*\bfilter-branch\b"), "重写历史（git filter-branch）"),
+    (re.compile(r"\bgit\b[^;|]*\bfilter-(?:branch|repo)\b"), "重写历史（git filter-branch / filter-repo）"),
 ]
 for sig, why in WARN_SIGS:
     if sig.search(cmd):

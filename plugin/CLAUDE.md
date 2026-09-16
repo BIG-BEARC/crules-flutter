@@ -67,7 +67,10 @@
 ```
 
 > superpowers 叠加时：需求 Gate 用 `brainstorming`（HARD-GATE）、方案 Gate 用 `writing-plans`、实施用 TDD、评审用 `requesting-code-review`——skill 是增强，Gate 不被绕过。skill 不可用的环境降级为文本确认（编号选项 / 方案七要素列全后停下等回复）。
+<!-- gen:closing-tiers -->
+<!-- 仓内维护者勿手改：本块由 canonical/closing-tiers.md 生成 -->
 > 收尾时序**三档**——按任务规模三档判定，与项目档位无关（档位预设见 §十二）：**极简**（单点修复 / 文案 / 注释，无行为面变化）＝机械验证贴输出 + 一行汇报，review 豁免记 Gate 例外台账、无沉淀件头；**标准**（常规功能 / 修复 / 重构）＝现行时序——机械验证 → **review**（`checklist.md`，diff 为圆心、引用链为半径）→ 自测 → 交付汇报（含 review 结论 + 沉淀候选提示）→ 授权提交（feat + docs 两笔）；**重型**（跨域大改 / 公开 API / 资损面）＝标准 + **校验层**——review 发现先经隔离子代理逐条独立校验（CONFIRMED / REJECTED / 更优方案），低危列单默认修、语义类 / L1+ 列单等需求方裁决，再修复复验（校验层全规格见 `进阶/审查与复核纪律.md`）。交付汇报一律注明本任务收尾档。
+<!-- /gen:closing-tiers -->
 
 ### 任务分类（默认处理）
 
@@ -114,9 +117,12 @@
 
 需求方明确说"直接改"时，可在其明确指定范围内跳过对应 Gate。以下**不得**被模糊授权跳过：范围边界 / 无关改动保护 / 破坏性操作确认 / 证据真实性 / 提交和推送授权。
 
+<!-- gen:gate-exception -->
+<!-- 仓内维护者勿手改：本块由 canonical/gate-exception.md 生成 -->
 例外一律落 **Gate 例外台账**（`.claude/memory/.gate-exceptions`，JSONL 一行一条：日期 / 任务 / 豁免 Gate / 理由 / 范围）——AI 只追加不改写，需求方事后审计；不进 git（install.sh 已幂等落 `.gitignore`）。极简收尾 review 豁免、提速档治理、跳过方案独立评审均走此账（单一通道）。
 
 ---
+<!-- /gen:gate-exception -->
 
 ## 四、验证与证据
 
@@ -218,7 +224,7 @@
 
 **pub 发布检查**（发版前逐项过，全表见 skill flutter-rules `references/build-release.md`「pub 包发布」节）：
 
-- [ ] `flutter pub dev publish --dry-run` 零警告（CHANGELOG / 版本号 / description 一致）
+- [ ] `flutter pub publish --dry-run` 零警告（CHANGELOG / 版本号 / description 一致）
 - [ ] 破坏性 API 变更升 major；CHANGELOG 顶部版本与 pubspec 一致
 - [ ] Kotlin ↔ Swift 平台能力清单逐条对等；federated 插件 endorsed 平台包版本同步
 - [ ] example 工程可跑；发布后净工程 `flutter pub deps` 实测拉取
@@ -305,6 +311,8 @@ plugin 极契合 TDD——大量纯函数和明确的公开 API，**public API �
 - 协作偏好（可选——固定语言 / 提交触发词覆写 / 提速档声明）：
 - 下游兼容面说明（可选——支持的下游版本 / 平台）：
 
+<!-- gen:gear-preset -->
+<!-- 仓内维护者勿手改：本块由 canonical/gear-preset.md 生成；消费方按 init 引导删减未选段 -->
 ### 档位预设（init 选一，删未选两段；无块 = 默认标准）
 
 > 档位只改**行为件头**（收尾档倾向 / 记忆库 / 编排），不减常驻 token；两轴判分——项目档位（本节，init 一次定）× 收尾档（§三，按任务规模三档）。**不可配置项**（安全属性，无开关）：deny-list hook、协作红线、lint 硬拦。收尾时序档与校验层属任务轴、不设单项开关。
@@ -313,3 +321,4 @@ plugin 极契合 TDD——大量纯函数和明确的公开 API，**public API �
 - **标准〔normal〕**（日常工程，默认 = 现行行为）：档位：标准。记忆库：开（默认，可单关）。编排：按需。plan-reviewer：大需求启用。校验层：大改任务启用。收尾：按任务规模三档。
 - **完整〔full〕**（复杂 / 多 agent）：档位：完整。记忆库：开。编排：开。plan-reviewer：默认启用。校验层：默认启用（= 重型收尾必含、常规收尾默认不含；全量启用走单开）。收尾：按任务规模三档（重型含校验层）。沉淀闸：现行 + 度量复盘。
 - **提速档（三档通用，随选定段保留）**：standing instruction 走 Gate 例外通道，启用必须圈死三要素——范围（文件 / 模块面）、规模（N 个任务或时间窗）、验证档（对应收尾档），缺一不成立；AI 不得自行升档、连续返工降档；每批结束逐任务对照汇报，治理走 Gate 例外台账（单一通道）。
+<!-- /gen:gear-preset -->

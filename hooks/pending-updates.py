@@ -4,6 +4,8 @@
 #   是包外源文件，则把其路径追加进 .claude/memory/.pending-updates（去重）。
 # 边界（v18 复盘）：不判意图、不阻止任何操作——只是把「记得更新索引」从记忆问题变成看得见的待办；
 #   会话收尾主控看到队列非空即提示补索引（MAINTENANCE.md 自检清单）。
+# 输入契约 fail-open（批A F10①，1.0.11）：stdin 非法 JSON → exit 0 静默——输入由宿主构造风险低，
+#   fail-closed 恐误伤非 JSON 探活；本 hook 本就不阻止任何操作，静默即等价「无待办」
 import json, os, sys
 
 try:

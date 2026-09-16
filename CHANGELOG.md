@@ -1,5 +1,49 @@
 # crules-flutter CHANGELOG
 
+## 1.0.12 · 批D P1——孪生同文块生成化（canonical 单一源 + 双守卫 + 生成闸）
+
+> 依据链：[裁决单-2026-09-15](docs/裁决单-2026-09-15-1.0.10全面外审与四批处置.md) F3（需求方裁「部分采纳·四块试点」）→ [方案 v3](docs/方案-2026-09-15-孪生同文块生成化.md)（**两轮独立评审**，消解 R1-R19；第二轮实证「消解 ≠ 闭环」——v2 的修订动作自引入 5 条新缺口，R17 系「修 R1 的动作反噬 R1 的成果」）→ 本批 P1 落地。**防漂移从「检测」前移到「构造」**。
+
+- **canonical/ 四源**：档位预设节 / 收尾时序行 / Gate 例外段 / help↔README 档位段——从现模板**逐字提取**（非重写），sha 核验 app↔plugin 一致（`3b40a302…`/`972055…`/`24085e…`/`c2761b…`）
+- **[scripts/render-blocks.py](scripts/render-blocks.py)**：围栏区间整块注入 + **双守卫**——① 登记一致性（全仓 `gen:` id 集合 == EXPECTED 键集，堵「新增块忘登记」）+ 计数（每 id×文件恰好 1 对围栏，堵「没跑起来却空过」）；② 内容同步（渲染后重读区间 == canonical，堵「围栏在、内容未改写」）。围栏标记手写为位置锚、**区间全部内容**由 canonical 生成（R17 修正：原设计把说明行写在围栏内，与整块替换语义自毁）
+- **四文件加围栏**：app/plugin 模板各 +9 行（3 块 × 开/说明/闭）、help.md/README.md 各 +3 行；说明行区分双受众（「仓内维护者勿手改」+「消费方按 init 引导删减未选段」，与 `init.md:44` 同向不互斥）
+- **test-self 第 28 断言**：生成闸——**/tmp 副本**渲染后与仓内比对（不原地改写被跟踪文件，守既有只写 /tmp 隔离）；**旧 byte 互锁 2 条并保**（D4 双保险，试点两个 minor 后另批删，净 −1）
+- **验证**（证据分级：构建证据）：**围栏行 +9/+9/+3/+3，围栏外零改动**（相对 1.0.11 前置态逐字节 diff 核对——工作区叠有 1.0.11 批A/B/C 改动，裸 `git diff` 数值含前置批，口径见 review R3）；守卫有效性**实测**（手改围栏内→生成闸红；删围栏对→`rc=1`；**加固后四探针**：canonical 清空 / EXPECTED 清空 / 孤儿 canonical / 围栏挂未登记文件——皆 `rc=1`；锚串守卫**反向验证**→红）；render 幂等（两次跑皆 0 失败）；test-self **28/28** + deny-list fixture + stop-reminder 全绿
+- **实施后独立 review**（无 🔴；9 条 R1-R9 已处置）——**守卫①** 由「id 集合」扩为 **(文件, id) 对级校验**（原实现向 `commands/help.md` 挂 `gear-preset` 围栏可带垃圾内容全绿，reviewer R1 实测）+ canonical 文件名集校验（堵孤儿源 R6）+ EXPECTED 非空下限（R5）；**守卫②** 补 canonical **正文长度下限**（原 canonical 清空/截断 → 双侧对称 → 比对与四方同源闸**皆绿**、整段静默消失——系相对旧 byte 互锁的**能力回退**，reviewer R2 实测）；**第 28 断言补锚串守卫**（8 个锚串直查仓内目标文件，堵 R2 的「双侧对称绿」残留，反向验证已过）；其余 R3（证据基线口径）/R4（README F2 措辞改「建议·待裁」）/R7（尾随空行语义注明）/R9（方案用例回填）随批处置
+- **观测带数**：常驻面 app **16168**/18000、plugin **14867**/16500 字符（+9 行围栏，余量充足）；distill 四数——仍无数（止损线 2026-12-31 触发）
+- **P2/P3 待行**：P2 观测 2 个 minor（render 是否被遗忘触发）；P3 试点通过后删 2 条旧 byte 断言（前置：守卫已就位 ✓）
+- **维护者面指引**：README「每次 minor 例行」加「同文块改动」条（改 `canonical/<id>.md` + 跑 render，**勿直接改围栏区**；尾随空行语义注明）——机制上线但维护者不知情即等于无机制；CI 语法编译步纳入 `scripts/render-blocks.py`
+
+## 1.0.11 · 批A 安全面收口 + 批B 漂移补充 + 批C 度量文档
+
+> 依据链：[裁决单-2026-09-15](docs/裁决单-2026-09-15-1.0.10全面外审与四批处置.md)（1.0.10 全面外审四轮，F1-F16）**批 A**（F9/F10①/F11/F12/F13）+ **批 B 首项 F1**（F2 因验证手段待裁暂缓，见该单 §7）+ **批 C**（F4/F5/F7/F14/F15/F16/F10②）。批 A 全部先 fixture 红后修绿（fixture-first）；探测全程 json.dumps 构造（v41 纪律）。批 A 经独立 review（reviewer 轮，无 🔴）——R1/R2/R3 三条 🟡 已处置见下（含一次**事实声明超卖**：本条目初稿曾写「副作用已核」而未实跑，经 review 抓出改正）。
+
+- **F11 长旗标 `=value` 剥值**：`parse_flags` 长旗标 `t[2:].split("=",1)[0]`——`--force=true` 按 `--force` 判。此前 push/clean（集合判定）放行、reset（子串判定）拦截的**判定不一致**收口。**今日不可利用**（已在无远端草稿仓实证 git 自身拒绝该语法：`error: option 'force' takes no value`），系防御纵深一致化。**连带面如实记**（R2 复核补）：剥值使 `force_switch` 的豁免集合对 `--branch=X`/`--create=X`/`--source=X` 长形态生效（旧/新版对照：`git checkout -f --source=other main` 等四例 deny→allow）——git 现拒该语法故不可达，未来 git 若为 checkout/switch 补 `--source=<tree>` 时属语义正确的豁免。**既存不一致（本批未触及，待裁）**：`checkout_discards` 自解析 token、不调 parse_flags，故 `--source=stash@{1}` 长形态仍 deny 而 `-s stash@{1}` 短形态 allow（后者系既有 fixture 裁决 `test_deny_list.py:111`）；全表无 `--source=` 长形态样本故无闸
+- **F12 warn 层下载执行扩解释器面**：管道右侧由 shell 族扩至 `python3?|ruby|perl`——`curl x.sh | python3` 是下载执行第二常见形态，此前全放行。两步法（下载落盘再执行）/非管道形态仍不盖（头注诚实边界不变）
+- **F13 `git filter-repo` 入 warn**：filter 判定改 `filter-(branch|repo)`——filter-repo 是 filter-branch 官方推荐继任者，重写历史等价高危，拦旧工具放行新工具是时效缺口
+- **F9 归一化单调性性质断言（新机制）**：BLOCK 样本经三类「归一可还原」变异（引号插入 / 续行插入 / 反斜杠拼接）后**不得变 allow**——锁归一函数回归。样本取 `[::7]` 确定性抽样（防全量 subprocess 超时），位置 1/3·2/3；实跑 50 变异全绿。**价值界说（R3 复核修正，防高估）**：因三类变异均落在归一的全局删除规则上，`norm(变异) ≡ 原串` 恒成立，故本断言在 BLOCK 全绿时**必然全绿**——其独立价值仅在「归一函数回归」（如引号删除被收窄为词内）；首次跑红的 5 个变异系基准样本本身应拦未拦（F11 未修），**不构成本机制的独立价值证据**。全量纯函数版（提取 `normalize()` 后覆盖全样本 × 全位置）记为后续改进项（重构安全关键件收益/风险比待裁）
+- **F10① 三 hook 输入契约 fail-open 显式声明**：deny-list / pending-updates / stop-reminder 头注各补一行（stdin 非法 JSON → exit 0）——输入由宿主构造风险低，fail-closed 恐误伤非 JSON 探活，**行为不改只补声明**（stop-reminder 静默四态已有 fixture 锁定）。**解释器边界如实记**（R4 复核补）：`python3?` 不匹配 `python2`（EOL 不再扩）；路径 / env / sudo 带参前缀形态均不盖——「解释器须紧贴管道符」系既存边界
+- fixture 99→**105**（BLOCK +2 / WARN +4）+ 单调性 50 变异；防误伤探针 8 条全合理（`--force-with-lease` / stash drop / checkout -b / restore -s stash / curl 下载文件 / py_compile / ruby --version 均 allow；`filter-branch --help` 落 ask 系「形态匹配非语义分析」已声明边界）
+- **含 F16 覆盖面台账要求**（README 维护节「major 版本前·外审」——批 C 项提前随本单落，R6 复核补依据链）
+- 双 json 1.0.11 + README 横幅同步；test-self 26→**27** + deny-list fixture 全绿
+
+### 批 C（度量与文档，随手项）
+
+- **F15 无效命令修正**：分发面两处 `flutter pub dev publish --dry-run` → **`flutter pub publish --dry-run`**（pub.dev 是站点名非子命令，消费方真发 pub 包时会撞墙）——plugin 模板 §八 + skill `references/build-release.md`（复审轮补读产出）
+- **F4 常驻面字数预算闸**（test-self 第 27 断言）：app/plugin 模板 + NAVIGATION 合并**字符数** ≤ 18000 / 16500（批C 实测 15833 / 14532 + ~12% 裕量）。**口径 = 字符数（python len）而非 `wc -m`**——macOS 未设 locale 时 `wc -m` 按字节计，本人批C 即踩此坑（同一文件 wc -m 27915〔字节〕vs len 14769〔字符〕）并写出错误结论「1.0.7 换算比自相矛盾」（实为字节/字符混淆，1.0.7 的 ≈3.1 字/token 与实测 14769 字符 / 4.6k token ≈ 3.2 吻合，无矛盾——该错误由本闸当场暴露，见裁决单 §4）。**本闸首个战果即抓出批C 自身的事实声明超卖**
+- **F5 度量止损线改时间触发**：四数止损线由「2.0 前仍零样本」改「**2026-12-31 前仍零样本**」——版本里程碑可能长期不达，时间线更硬；首个 distill 周期列观测项第一
+- **F7 维护者面概念地图**：README 维护节新增「概念地图（维护者速查）」——双 Gate / 收尾三档 / 项目档位 / 证据 5 级 / L0-L2 / 校验层 / 沉淀闸（含档位）/ 提速档 / 两类台账 / 观测带数 共 11 行「一句定义 + 权威落点」，只索引不复制正文
+- **F14 performance.md 场景行**：SDK 选型节补「已有 RUM/Bugly 免费栈的团队优先沉淀现有栈接入坑（混淆符号表上传 / 维度口径 / 本地日志对账），不为此引新 SaaS」——生产栈（RUM+Bugly+自建本地日志）系成本动因下的既定决策，通用选项列举保留
+- **F10② 角色卡 model 档位复核**：入 major 外审清单点名项（agents frontmatter 硬编码模型代号随演进过期）
+- **F16 覆盖面台账要求**（随本单落，见上）
+
+### 批 B 首项（F1 漂移队列盲区）
+
+- **F1 git 快查补充盲区**：Bash 落盘的文件（`flutter create` / `mv` / `cp` / 重定向 / `build_runner` 生成器）不经 PostToolUse（matcher 仅 `Edit|Write|NotebookEdit`）故不进 `.pending-updates`——stop-reminder 队列非空时额外 `git status --porcelain -uall` 快查，检出未入队的 A/D/? 源文件并入提醒（排除 `.g.dart`/`.freezed.dart`/`.mocks.dart` 生成物与非 `.dart`）。**`-uall` 必需**——默认 git 把未追踪目录折叠成 `?? lib/` 单条目，展开才见具体文件（fixture 首跑即抓出此坑）。**设计取舍**：git 快查**不独立触发**（未提交改动是开发常态，独立触发会每次 Stop 重复打扰）——仅作队列非空时的补充信息，故「纯 Bash 落盘会话」仍不提醒（诚实边界，待观测后定是否加状态文件去重）；非 git 仓 / 超时（5s）静默降级
+- stop-reminder fixture 五态→**七态**（+git 快查补充 / +非 git 仓降级），全绿
+
+### 观测带数：常驻基线——本批零常驻面变化（改动全在 hooks / fixture / 文档，模板面未动）；distill 四数——仍无数（未到首个周期；止损线 F5 待处置）
+
 ## 1.0.10 · 常驻面收敛——§八/§九/§十一 按需下沉 + 近似规则去重
 
 > 依据链：1.0.9 后注意力稀释专项分析（本仓对话）——稀释主因是常驻面**条数×相似度**而非 token 量（§十一两表 28 行高度同构映射是最大单簇）；裁决单 B-D1 遗留 C4「按需 @import 拆分 §七~§十一」2026-09-14 裁「独立小方案另议」，本批即该件首期——§七系脚手架（装后自删）不在常驻面，本批收 §八/§九/§十一 下沉 + 近似条合并（孪生镜像改）。**跳过三簇裁决记录**：硬编码（§一 vs §十——枚举类型 vs 响应式归口，信息不重叠）、收尾时序（§三 vs §五——1.0.5 已下沉细则，余为序列级双镜头）、ThemeExtension ×3（预设说明 / 架构纪律 / 路由指针三角色）——各有独立信息量，非真重复不动。

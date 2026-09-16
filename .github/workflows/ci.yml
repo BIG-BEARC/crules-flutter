@@ -26,7 +26,7 @@ jobs:
         run: python3 hooks/test_deny_list.py
       - name: 语法编译
         if: always()
-        run: python3 -m py_compile hooks/deny-list.py hooks/test_deny_list.py hooks/pending-updates.py hooks/stop-reminder.py hooks/test_stop_reminder.py
+        run: python3 -m py_compile hooks/deny-list.py hooks/test_deny_list.py hooks/pending-updates.py hooks/stop-reminder.py hooks/test_stop_reminder.py scripts/render-blocks.py
       - name: 脚本自测（应报错断言 + 幂等断言）
         if: always()
         run: bash scripts/test-self.sh

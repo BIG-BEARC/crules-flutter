@@ -31,7 +31,7 @@
 
 ## pub 包发布（Plugin 形态）
 
-- [ ] `flutter pub dev publish --dry-run` 零警告（CHANGELOG / 版本号 / description / homepage 一致）
+- [ ] `flutter pub publish --dry-run` 零警告（CHANGELOG / 版本号 / description / homepage 一致）
 - [ ] 版本号语义化：破坏性 API 变更升 major；CHANGELOG 顶部版本与 pubspec 一致
 - [ ] 平台接口对等核验：Kotlin ↔ Swift 两侧能力清单逐条对（checklist「改了原生一侧，另一侧对等更新」同源）
 - [ ] example 工程可跑（consumer 视角首验——plugin 模板 §八 example 说明）；federated 插件确认 endorsed 平台包版本同步

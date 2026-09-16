@@ -58,6 +58,19 @@ mem=$(ls "$SRC"/memory/*.md | wc -l | tr -d ' ')
 said=$(sed -n 's/.*进阶 \([0-9][0-9]*\) 篇 + memory \([0-9][0-9]*\) 模板.*/\1 \2/p' "$SRC/commands/help.md" | head -1)
 [ "$said" = "$adv $mem" ] && { PASS=$((PASS+1)); echo "PASS  help 全景计数一致（进阶 $adv + memory $mem）"; } || { FAIL=$((FAIL+1)); echo "FAIL  help 计数漂移（help 说「${said:-未匹配}」，实际 进阶 $adv + memory $mem）"; }
 
+# 1.0.11 批C F4：常驻面字数预算闸——防「无意间回潮」（1.0.10 刚做过一轮 −0.7k 下沉）。
+# 口径 = **字符数**（python len，UTF-8 解码后）——勿用 `wc -m`：macOS 未设 locale 时按字节计
+# （实测同一文件 wc -m 27915〔字节〕vs len 14769〔字符〕，批C 本人即踩此坑并写错结论）。
+# 锚值 = 批C 实测（app 15833 / plugin 14532），留 ~12% 裕量；超线须显式裁（裁模板 or
+# 上调预算并记 CHANGELOG），不静默过。
+zen_app=$(python3 -c "import sys;print(sum(len(open(f,encoding='utf-8').read()) for f in sys.argv[1:]))" "$SRC/app/CLAUDE.md" "$SRC/memory/NAVIGATION.md")
+zen_plu=$(python3 -c "import sys;print(sum(len(open(f,encoding='utf-8').read()) for f in sys.argv[1:]))" "$SRC/plugin/CLAUDE.md" "$SRC/memory/NAVIGATION.md")
+if [ "${zen_app:-0}" -le 18000 ] && [ "${zen_plu:-0}" -le 16500 ]; then
+  PASS=$((PASS+1)); echo "PASS  常驻面字数预算（app ${zen_app}/18000，plugin ${zen_plu}/16500 字符）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  常驻面超预算（app ${zen_app}/18000，plugin ${zen_plu}/16500）——裁模板或显式上调预算记 CHANGELOG"
+fi
+
 # 0.4.1 断言（A1 回归）：模板 AO 内容过真 dart analyzer 零 warning（死配置零容忍——
 # cancelled_token_use / map 形态 disable 两事件；本机无 dart 时 SKIP 不计 FAIL，CI 由 ci.yml setup-dart 步硬拦）
 if command -v dart >/dev/null 2>&1; then
@@ -74,6 +87,35 @@ if command -v dart >/dev/null 2>&1; then
 else
   echo "SKIP  AO 内容断言（本机无 dart；CI setup-dart 步硬拦）"
 fi
+
+# 1.0.12 批D P1：孪生同文块生成闸——canonical 单一源与四文件同步。**在 /tmp 副本渲染后比对**
+# （不原地改写被跟踪文件——方案 §4 R16）；render 内含双守卫（登记一致性 + 内容同步）。
+# 旧 byte 互锁断言保留（D4 双保险，试点两个 minor 后另批删）。
+T6=$(mktemp -d)
+mkdir -p "$T6/scripts" "$T6/canonical" "$T6/app" "$T6/plugin" "$T6/commands"
+cp "$SRC/scripts/render-blocks.py" "$T6/scripts/"
+cp "$SRC"/canonical/*.md "$T6/canonical/"
+cp "$SRC/app/CLAUDE.md" "$T6/app/"; cp "$SRC/plugin/CLAUDE.md" "$T6/plugin/"
+cp "$SRC/commands/help.md" "$T6/commands/"; cp "$SRC/README.md" "$T6/"
+rout=$(python3 "$T6/scripts/render-blocks.py" 2>&1); rrc=$?
+same=1
+for p in app/CLAUDE.md plugin/CLAUDE.md commands/help.md README.md; do cmp -s "$T6/$p" "$SRC/$p" || same=0; done
+# 锚串守卫（review R2）：canonical 清空/截断时 render 双侧对称 → 比对仍绿；锚串**直查仓内**
+# 目标文件（不经比对），堵「整段静默消失」——P3 删旧 byte 断言后这是四块的关键防线之一
+anchor_bad=0
+for a in "app/CLAUDE.md|轻量〔light〕" "plugin/CLAUDE.md|轻量〔light〕" \
+         "app/CLAUDE.md|收尾时序**三档**" "plugin/CLAUDE.md|收尾时序**三档**" \
+         "app/CLAUDE.md|.gate-exceptions" "plugin/CLAUDE.md|.gate-exceptions" \
+         "commands/help.md|收尾档按任务规模三档判定" "README.md|收尾档按任务规模三档判定"; do
+  af="${a%%|*}"; as="${a##*|}"
+  grep -qF -- "$as" "$SRC/$af" || { anchor_bad=1; echo "  ↳ $af 缺锚串「$as」——canonical 疑似清空/截断"; }
+done
+if [ "$rrc" = "0" ] && [ "$same" = "1" ] && [ "$anchor_bad" = "0" ]; then
+  PASS=$((PASS+1)); echo "PASS  孪生同文块生成闸（canonical↔四文件同步 + 锚串在位；旧 byte 互锁并保）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  同文块异常（render rc=$rrc / 同步 $same / 锚串 $anchor_bad）：$(printf '%s' "$rout" | head -3 | tr '\n' ' ')"
+fi
+rm -rf "$T6"
 
 # 0.5.1 断言（D1）：双模板孪生结构守护——节序号集一致 + 孪生节 ^- 条数一致
 # （§二豁免：plugin 独有「发版特殊性」条目与破坏性操作行文差异系合法不对称；

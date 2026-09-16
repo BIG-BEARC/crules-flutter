@@ -119,7 +119,8 @@ function Normalize-DenyList([string]$c) {
     $c = [regex]::Replace($c, ('\\\r?' + $nl), '')      # bash 续行（跨界串无害拼合）
     $c = [regex]::Replace($c, ($bt + '\r?' + $nl), '')  # PS 续行
     $c = [regex]::Replace($c, "['`"]", '')              # 引号删除（单双同 py 语义）
-    $c = $c.Replace($bt, '')                            # 残余反引号（转义拼接拼合，只增拦截面）
+    $c = [regex]::Replace($c, [regex]::Escape($bt), '') # 残余反引号（转义拼接拼合，只增拦截面）
+    # （勿写 .Replace($bt,'')：PS 重载绑到 Replace(char,char)，空串转 char 抛——pwsh 实测炸点）
     return $c
 }
 

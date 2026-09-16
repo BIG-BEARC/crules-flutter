@@ -7,6 +7,12 @@
 #     本包三脚本此类位置一律花括号隔离（v59 BSD grep 环境坑同款教训）
 set -uo pipefail
 SRC=$(cd "$(dirname "$0")/.." && pwd)
+# 环境守卫（1.0.13）：本脚本两条断言（draft / tag）依赖 git 历史，其余 26 条不依赖。在无 .git 的拷贝里
+# （典型：插件 cache = 全仓文件快照、非 clone）draft 吃 git 报错码 128 → **假红**；tag 则落到「读 HEAD 失败」
+# 分支 → **假绿**，其声称守护的「1.0.2 D2 防 tag 打在 bump 前旧树」版本比对从未执行。假绿比报错更贵——
+# 故显式拒绝，不静默变形。
+git -C "$SRC" rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
+  echo "❌ test-self.sh 须在 git 树内运行（draft/tag 两断言依赖 git 历史）——插件 cache 是文件快照、非 git 仓"; exit 1; }
 PASS=0; FAIL=0
 t() { eval "$2" >/dev/null 2>&1; rc=$?
   if [ "$rc" = "$1" ]; then PASS=$((PASS+1)); echo "PASS  $3"; else FAIL=$((FAIL+1)); echo "FAIL  $3（rc=$rc 期望 $1）"; fi; }
@@ -19,6 +25,14 @@ t 0 "bash $SRC/scripts/release.sh draft"                    "release draft 应�
 t 0 "python3 $SRC/hooks/test_deny_list.py"                 "deny-list fixture 应全绿"
 t 0 "python3 $SRC/hooks/test_stop_reminder.py"            "stop-reminder fixture 应全绿（A3 读侧闭环）"
 t 1 "bash $SRC/scripts/release.sh tag 9.9.9"               "release tag 版本不匹配应报错（1.0.2 D2——防 tag 打在 bump 前旧树）"
+# 非 git 树守卫的反向断言（1.0.13）：把脚本本身拷进非 git 目录跑，须**显式拒绝**。判据三条件缺一不可——
+# rc≠0 单独不成立：守卫缺失时该拷贝会跑完全套，并因既有 FAIL>0 同样退出非零（又一个假绿）；故另须确认
+# 提示语命中、且输出无 PASS 行（守卫在断言之前就中止，一条都没跑）。
+GN="$D/nogit"; rm -rf "$GN"; mkdir -p "$GN/scripts"; cp "$SRC/scripts/test-self.sh" "$GN/scripts/"
+go=$(bash "$GN/scripts/test-self.sh" 2>&1); grc=$?
+[ "$grc" != "0" ] && echo "$go" | grep -q "须在 git 树内" && ! echo "$go" | grep -q '^PASS' \
+  && { PASS=$((PASS+1)); echo "PASS  非 git 树守卫显式拒绝（1.0.13）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  非 git 树守卫（rc=$grc——未拒绝 / 未在断言前中止）"; }
 t 1 "bash $SRC/scripts/install.sh $D/old --app --upgrade"  "upgrade 无戳老项目应中止（D3·1.0.6）"
 U=/tmp/cf-upg; rm -rf "$U"; mkdir -p "$U"
 printf '<!-- crules-flutter: v0.0.1 @ 2026-01-01 -->\n' > "$U/CLAUDE.md"

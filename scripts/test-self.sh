@@ -25,6 +25,15 @@ t 1 "bash $SRC/scripts/install.sh $D/old --app"           "install 老项目（�
 t 1 "bash $SRC/scripts/release.sh abc"                     "release 非法版本号应报错"
 t 0 "bash $SRC/scripts/release.sh draft"                    "release draft 应正常出稿（外审②回归断言）"
 t 0 "python3 $SRC/hooks/test_deny_list.py"                 "deny-list fixture 应全绿"
+# 1.0.17 批F2 双驱：ps1 侧夹具在 PowerShell 可得时全跑（CI pwsh 步），否则 SKIP 不红——
+# 本机 mac 无 pwsh = SKIP（Windows 实机为用户最终闸，裁决单 §8）；不占断言数（同 AO dart SKIP 先例）
+if command -v pwsh >/dev/null 2>&1; then
+  t 0 "pwsh -NoProfile -File $SRC/hooks/test_deny_list.ps1" "deny-list.ps1 fixture 应全绿（pwsh）"
+elif command -v powershell >/dev/null 2>&1; then
+  t 0 "powershell -NoProfile -ExecutionPolicy Bypass -File $SRC/hooks/test_deny_list.ps1" "deny-list.ps1 fixture 应全绿（powershell）"
+else
+  echo "SKIP  deny-list.ps1 fixture（本机无 PowerShell——Windows 实机为最终闸，CI pwsh 步硬拦）"
+fi
 t 0 "python3 $SRC/hooks/test_stop_reminder.py"            "stop-reminder fixture 应全绿（A3 读侧闭环）"
 t 1 "bash $SRC/scripts/release.sh tag 9.9.9"               "release tag 版本不匹配应报错（1.0.2 D2——防 tag 打在 bump 前旧树）"
 # 非 git 树守卫的反向断言（1.0.13）：把脚本本身拷进非 git 目录跑，须**显式拒绝**。判据三条件缺一不可——

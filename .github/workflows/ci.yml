@@ -27,6 +27,12 @@ jobs:
       - name: 语法编译
         if: always()
         run: python3 -m py_compile hooks/deny-list.py hooks/test_deny_list.py hooks/pending-updates.py hooks/stop-reminder.py hooks/test_stop_reminder.py scripts/render-blocks.py
+      - name: deny-list.ps1 双驱 fixture（批F2；ubuntu runner 预装 pwsh）
+        if: always()
+        # 证据级声明：PS Core on Linux ≠ Windows PowerShell 行为全同——本步锁「语法 + 判据逻辑 +
+        # 契约探针」，os=win 例（$env:TEMP 依赖）由驱动按平台跳过；**Windows 实机为用户最终闸**
+        # （裁决单 §8 落账口径，CI 步系可选加固位转正）。ps1 语法红 = deny 语法错误，首红即修（v51）
+        run: pwsh -NoProfile -File hooks/test_deny_list.ps1
       - name: 脚本自测（应报错断言 + 幂等断言）
         if: always()
         run: bash scripts/test-self.sh

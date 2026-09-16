@@ -100,16 +100,22 @@ done
 echo "== 汇总：写入 ${W}，跳过/保留 ${S}，.new 待合并 ${N}，失败 ${E} =="
 
 # D3：hooks 环境显式降级警告（不阻塞安装——静默降级改显式，2026-09-05）
-# D4（1.0.6）：Windows 显式不支持警告（README「环境要求」同口径——模板仍落位，仅 hooks 不生效）
+# D4（1.0.6 Windows 显式警告；1.0.17 批F2 改分层）：Windows 不再是「hooks 不支持」——
+# deny-list 已有 PowerShell 原生实现（deny-list.ps1，PowerShell 工具会话生效）；
+# 漂移队列 / Stop 提醒仍需 python（Git Bash/WSL 或 PATH 有 python 时可跑）
 case "$(uname -s 2>/dev/null)/${OS:-}" in
-  MINGW*|MSYS*|CYGWIN*|*Windows_NT)
-    echo "⚠️ Windows 本机：本包 hooks（deny-list 硬闸 / 漂移队列 / Stop 收尾提醒）**不支持 Windows**——模板与 skill/agents 照常落位生效，hooks 防线缺失，终极防线回到 Claude Code 原生权限确认；建议在 WSL / macOS / Linux 会话中使用" ;;
+  MINGW*|MSYS*|CYGWIN*)
+    # Git Bash 会话：三 python hooks 取决于 python3（下方统一检测），deny-list 双实现各管各的 shell 域
+    echo "ℹ️ Windows（Git Bash 会话）：Bash 工具走 deny-list.py、PowerShell 工具走 deny-list.ps1（1.0.17 起）——破坏性命令两域都拦；漂移队列/Stop 提醒需 python" ;;
+  *Windows_NT)
+    # cmd 直跑 install.sh（无 uname）：原生 PowerShell 会话形态
+    echo "ℹ️ Windows 原生会话：deny-list 硬闸走 deny-list.ps1（PowerShell 工具 matcher，1.0.17 起，ps1 属用户实机验证面）；漂移队列/Stop 提醒需 python（无则缺），防线回到 Claude Code 原生权限确认" ;;
   *) : ;;
 esac
 if command -v python3 >/dev/null 2>&1; then
   python3 -c "import fcntl" 2>/dev/null || echo "⚠️ 本机 python3 缺 fcntl（Windows 常见）——deny-list 硬闸与 Stop 收尾提醒可用，pending-updates 漂移队列降级为无锁追加（仍记录）"
 else
-  echo "⚠️ 本机无 python3——deny-list 硬闸 / 漂移队列 / Stop 收尾提醒三 hooks 均不生效，防线回到 Claude Code 原生权限确认（README「环境要求与更新信任」）"
+  echo "⚠️ 本机无 python3——deny-list.py / 漂移队列 / Stop 收尾提醒三 python hooks 不生效（Windows 原生 PowerShell 会话的 deny-list 走 ps1 不受此限，1.0.17 起）；防线回到 Claude Code 原生权限确认（README「环境要求与更新信任」）"
 fi
 
 echo "== 下一步 == ① 完成 CLAUDE.md §七【复制后必填】三选一 ② 填 §十二附录 ③ 填 .claude/memory/platform-pitfalls.md 支持矩阵（/crules-flutter:init 三段式初稿） ④ 有 .new 文件时对照合并后替换 ⑤ flutter-rules skill 与 7 agents 已随 plugin 就位"

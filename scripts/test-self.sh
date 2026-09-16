@@ -7,7 +7,7 @@
 #     本包三脚本此类位置一律花括号隔离（v59 BSD grep 环境坑同款教训）
 set -uo pipefail
 SRC=$(cd "$(dirname "$0")/.." && pwd)
-# 环境守卫（1.0.13）：本脚本两条断言（draft / tag）依赖 git 历史，其余 26 条不依赖。在无 .git 的拷贝里
+# 环境守卫（1.0.13）：本脚本两条断言（draft / tag）依赖 git 历史，其余 25 条不依赖（1.0.15 断言 29→27 时同步）。在无 .git 的拷贝里
 # （典型：插件 cache = 全仓文件快照、非 clone）draft 吃 git 报错码 128 → **假红**；tag 则落到「读 HEAD 失败」
 # 分支 → **假绿**，其声称守护的「1.0.2 D2 防 tag 打在 bump 前旧树」版本比对从未执行。假绿比报错更贵——
 # 故显式拒绝，不静默变形。
@@ -16,7 +16,9 @@ git -C "$SRC" rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
 PASS=0; FAIL=0
 t() { eval "$2" >/dev/null 2>&1; rc=$?
   if [ "$rc" = "$1" ]; then PASS=$((PASS+1)); echo "PASS  $3"; else FAIL=$((FAIL+1)); echo "FAIL  $3（rc=$rc 期望 $1）"; fi; }
-D=/tmp/cf-selftest
+# 夹具根一律 mktemp（1.0.15）：固定 /tmp 路径跨实例并发互踩实锤（收尾 rm 删并发实例夹具 →
+# install.sh [ -d ] exit 2 等四种失败签名，见 CHANGELOG 1.0.13 连带发现）；模板留 cf- 前缀可寻残骸
+D=$(mktemp -d /tmp/cf-selftest.XXXXXX)
 mkdir -p "$D/old"
 printf '# 老项目\n' > "$D/old/CLAUDE.md"
 t 1 "bash $SRC/scripts/install.sh $D/old --app"           "install 老项目（无戳）应中止"
@@ -34,14 +36,15 @@ go=$(bash "$GN/scripts/test-self.sh" 2>&1); grc=$?
   && { PASS=$((PASS+1)); echo "PASS  非 git 树守卫显式拒绝（1.0.13）"; } \
   || { FAIL=$((FAIL+1)); echo "FAIL  非 git 树守卫（rc=$grc——未拒绝 / 未在断言前中止）"; }
 t 1 "bash $SRC/scripts/install.sh $D/old --app --upgrade"  "upgrade 无戳老项目应中止（D3·1.0.6）"
-U=/tmp/cf-upg; rm -rf "$U"; mkdir -p "$U"
+U=$(mktemp -d /tmp/cf-upg.XXXXXX)
 printf '<!-- crules-flutter: v0.0.1 @ 2026-01-01 -->\n' > "$U/CLAUDE.md"
 o=$(printf 'n\n' | bash $SRC/scripts/install.sh $U --app --upgrade 2>&1); rc=$?
 [ "$rc" = "0" ] && ! ls "$U/checklist.md" >/dev/null 2>&1 && echo "$o" | grep -q 已取消 \
   && { PASS=$((PASS+1)); echo "PASS  upgrade 拒绝确认零改动（D3·1.0.6）"; } || { FAIL=$((FAIL+1)); echo "FAIL  upgrade 取消路径（rc=$rc）"; }
+rm -rf "$U"   # 原代码从不收尾（靠下一跑开头 rm 兜底）——mktemp 化后兜底消失，须自清
 
 # F2 回归三断言（真机 fixture 固化——2026-08-27 flutter create 28 行注释版产物签入 testdata/）
-T1=/tmp/cf-ao1; T2=/tmp/cf-ao2; mkdir -p "$T1" "$T2"
+T1=$(mktemp -d /tmp/cf-ao1.XXXXXX); T2=$(mktemp -d /tmp/cf-ao2.XXXXXX)
 cp "$SRC/scripts/testdata/scaffold-analysis_options.yaml" "$T1/analysis_options.yaml"
 printf 'include: package:flutter_lints/flutter.yaml\nlinter:\n  rules:\n    - always_use_package_imports\n' > "$T2/analysis_options.yaml"
 o1=$(bash $SRC/scripts/install.sh $T1 --app 2>/dev/null | grep -c UPGRADE)
@@ -51,10 +54,10 @@ o2=$(bash $SRC/scripts/install.sh $T2 --app 2>/dev/null | grep -c SIDE-CAR)
 printf 'WR-SENTINEL\n' > "$T1/.claude/memory/business-rules.md"
 bash $SRC/scripts/install.sh $T1 --app --force >/dev/null 2>&1
 grep -q 'WR-SENTINEL' "$T1/.claude/memory/business-rules.md" && [ -f "$T1/CLAUDE.md.new" ] && { PASS=$((PASS+1)); echo "PASS  force 升级：memory 哨兵 KEEP + CLAUDE.md 出 .new"; } || { FAIL=$((FAIL+1)); echo "FAIL  force 安全升级"; }
-rm -rf /tmp/cf-ao1 /tmp/cf-ao2
+rm -rf "$T1" "$T2"
 
 # 0.4.0 批1断言（设计 §5 test-self 行）：落位 8 模板 / init 三处必填 / twin 一致性
-T4=/tmp/cf-pitfalls; mkdir -p "$T4"
+T4=$(mktemp -d /tmp/cf-pitfalls.XXXXXX)
 bash $SRC/scripts/install.sh $T4 --app >/dev/null 2>&1
 nm=$(ls "$T4/.claude/memory"/*.md 2>/dev/null | wc -l | tr -d ' ')
 [ "$nm" = "8" ] && { PASS=$((PASS+1)); echo "PASS  memory 落位 8 模板"; } || { FAIL=$((FAIL+1)); echo "FAIL  memory 应落位 8 模板（实为 ${nm}）"; }
@@ -88,7 +91,8 @@ fi
 # 0.4.1 断言（A1 回归）：模板 AO 内容过真 dart analyzer 零 warning（死配置零容忍——
 # cancelled_token_use / map 形态 disable 两事件；本机无 dart 时 SKIP 不计 FAIL，CI 由 ci.yml setup-dart 步硬拦）
 if command -v dart >/dev/null 2>&1; then
-  DA=/tmp/cf-ao-dart; rm -rf "$DA"; dart create --no-pub "$DA" >/dev/null 2>&1
+  DA=$(mktemp -d /tmp/cf-ao-dart.XXXXXX); rm -rf "$DA"   # mktemp 只占唯一名——dart create 要求目标目录不存在
+  dart create --no-pub "$DA" >/dev/null 2>&1
   (cd "$DA" && dart pub add dev:flutter_lints >/dev/null 2>&1)
   cp "$SRC/analysis_options.yaml" "$DA/analysis_options.yaml"
   out=$( (cd "$DA" && dart analyze . 2>&1) || true )
@@ -104,7 +108,8 @@ fi
 
 # 1.0.12 批D P1：孪生同文块生成闸——canonical 单一源与四文件同步。**在 /tmp 副本渲染后比对**
 # （不原地改写被跟踪文件——方案 §4 R16）；render 内含双守卫（登记一致性 + 内容同步）。
-# 旧 byte 互锁断言保留（D4 双保险，试点两个 minor 后另批删）。
+# P3 已行（1.0.15）：旧 byte 互锁 2 条删（试点两 minor〔1.0.13/1.0.14〕闸均绿）——覆盖差如实记：
+# 围栏外节内文本不再逐字比对，围栏内由本闸 + 锚串守卫全权。
 T6=$(mktemp -d)
 mkdir -p "$T6/scripts" "$T6/canonical" "$T6/app" "$T6/plugin" "$T6/commands"
 cp "$SRC/scripts/render-blocks.py" "$T6/scripts/"
@@ -125,7 +130,7 @@ for a in "app/CLAUDE.md|轻量〔light〕" "plugin/CLAUDE.md|轻量〔light〕" 
   grep -qF -- "$as" "$SRC/$af" || { anchor_bad=1; echo "  ↳ $af 缺锚串「$as」——canonical 疑似清空/截断"; }
 done
 if [ "$rrc" = "0" ] && [ "$same" = "1" ] && [ "$anchor_bad" = "0" ]; then
-  PASS=$((PASS+1)); echo "PASS  孪生同文块生成闸（canonical↔四文件同步 + 锚串在位；旧 byte 互锁并保）"
+  PASS=$((PASS+1)); echo "PASS  孪生同文块生成闸（canonical↔四文件同步 + 锚串在位）"
 else
   FAIL=$((FAIL+1)); echo "FAIL  同文块异常（render rc=$rrc / 同步 $same / 锚串 $anchor_bad）：$(printf '%s' "$rout" | head -3 | tr '\n' ' ')"
 fi
@@ -193,24 +198,6 @@ done
 for s in "${gd[@]}"; do grep -qF -- "${s}" "${SRC}/commands/init.md" || { gear_ok=0; echo "  ↳ commands/init.md 缺「${s}」"; }; done
 [ "${gear_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  档位四方同源闸（附录块↔help↔README↔§三收尾行，三档标记/默认/收尾三档/校验层）"; } || { FAIL=$((FAIL+1)); echo "FAIL  档位四方同源闸（见上漂移清单）"; }
 
-# P1b 断言②：twin 档位预设节（### 档位预设 匹配行后至下一个 ^### / ^## / 文件尾正文）+
-# §三「> 收尾时序」行双模板逐字同文——与 tt 结构闸同哲学，锚点机械守护替代人肉同源对照（方案 §2 决策 7）
-tp_sect() { awk -v q='### 档位预设' 'index($0, q)==1 {f=1; next} f && (/^### / || /^## /) {f=0} f' "${1}"; }
-tp_tail() { grep '^> 收尾时序' "${1}"; }
-tp_gate() { awk '/^例外一律落/{f=1} f && /^$/ {if (n++ > 0) exit} f' "${1}"; }
-tw_g_ok=1
-for fn in tp_sect tp_tail tp_gate; do
-  va=$("${fn}" "${SRC}/app/CLAUDE.md")
-  vb=$("${fn}" "${SRC}/plugin/CLAUDE.md")
-  case "${fn}" in tp_sect) lbl='档位预设节';; tp_tail) lbl='收尾时序行';; tp_gate) lbl='Gate 例外台账段';; esac
-  if [ -z "${va}" ] || [ "${va}" != "${vb}" ]; then
-    tw_g_ok=0
-    echo "  ↳ twin ${lbl} 漂移（app ↔ plugin 首差异，- app + plugin）："
-    diff <(printf '%s\n' "${va}") <(printf '%s\n' "${vb}") | head -6 | sed 's/^/    /'
-  fi
-done
-[ "${tw_g_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  twin 档位预设块 + 收尾时序行 + Gate 例外台账段双模板逐字同文"; } || { FAIL=$((FAIL+1)); echo "FAIL  twin 档位块/收尾行/台账段漂移（双模板须同源对照改）"; }
-
 # 1.0.7 断言①：Gate 例外台账同源闸——.gate-exceptions 定义四点同源（双模板 Gate 例外节 ↔ MAINTENANCE ↔ install.sh）
 # （外审 🟡2 处置：台账被四处引用、零定义——定义落四处 + 上闸，防「意图先于机制」复发）
 ge_ok=1
@@ -219,18 +206,8 @@ for f in app/CLAUDE.md plugin/CLAUDE.md memory/MAINTENANCE.md scripts/install.sh
 done
 [ "${ge_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  Gate 例外台账同源闸（双模板 Gate 例外节↔MAINTENANCE↔install.sh）"; } || { FAIL=$((FAIL+1)); echo "FAIL  Gate 例外台账同源闸（见上漂移清单）"; }
 
-# 1.0.7 断言②：help↔README 档位说明段逐字同文——守串升级守文（外审 🟡3：canonical 串只守存在性，
-# 同段解说仍可各自演化；本段两处现状即逐字复制，上 byte 级互锁钉死——此后改此段须双文件同改）
-hp1=$(grep -m1 '收尾档按任务规模三档判定' "${SRC}/commands/help.md" || true)
-hp2=$(grep -m1 '收尾档按任务规模三档判定' "${SRC}/README.md" || true)
-if [ -n "${hp1}" ] && [ "${hp1}" = "${hp2}" ]; then
-  PASS=$((PASS+1)); echo "PASS  help↔README 档位说明段逐字同文"
-else
-  FAIL=$((FAIL+1)); echo "FAIL  help↔README 档位说明段漂移（须同源对照改）"; diff <(printf '%s\n' "${hp1}") <(printf '%s\n' "${hp2}") | head -4 | sed 's/^/    /'
-fi
-
 # 1.0.5 断言：gitignore 幂等落位——首装补四行（1.0.7 增 .gate-exceptions），重装不重复（取代 1.0.4 模板侧文字指引）
-T5=/tmp/cf-gi; rm -rf "$T5"; mkdir -p "$T5"
+T5=$(mktemp -d /tmp/cf-gi.XXXXXX)
 bash $SRC/scripts/install.sh "$T5" --app >/dev/null 2>&1
 gi1=$(grep -c '^\.claude/memory' "$T5/.gitignore" 2>/dev/null) || gi1=0
 bash $SRC/scripts/install.sh "$T5" --app --force >/dev/null 2>&1
@@ -246,6 +223,6 @@ r1=$(printf '%s' "$j1" | python3 "$SRC/hooks/deny-list.py" | grep -c '"deny"' ||
 r2=$(printf '%s' "$j1" | python3 "$SRC/hooks/deny-list.py" | grep -c '"deny"' || true)
 if [ "$r1" = "$r2" ] && [ "$r1" -ge 1 ]; then PASS=$((PASS+1)); echo "PASS  deny-list 重复调用幂等（两次均 deny）"; else FAIL=$((FAIL+1)); echo "FAIL  幂等断言（r1=${r1} r2=${r2}）"; fi
 
-rm -rf /tmp/cf-selftest
+rm -rf "$D"
 echo "== 脚本自测：PASS=$PASS FAIL=$FAIL =="
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1

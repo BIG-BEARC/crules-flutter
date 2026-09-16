@@ -3,7 +3,7 @@
 面向 **Flutter 工程**的 AI 协作规则 plugin：把「AI 怎么跟你安全地干活」固化成机制——危险命令硬拦、改动先过方案确认、交付必过审查、经验自动沉淀。
 独立自持（源自 crules fork，2026-09 起 1.0.0 独立演进，史见 [CHANGELOG](CHANGELOG.md)）；许可 **MIT**（[LICENSE](LICENSE)）。
 
-> 当前状态：1.0.13（版本编年史见 [CHANGELOG](CHANGELOG.md)）
+> 当前状态：1.0.14（版本编年史见 [CHANGELOG](CHANGELOG.md)）
 
 ---
 
@@ -120,7 +120,7 @@ bash "$SRC" <项目根> --app --upgrade    # 巡检版本差 → 确认 → --fo
 
 ## 环境要求与更新信任
 
-- **环境要求：macOS / Linux**（hooks 依赖 `python3`，无 python3 时自动回退 `python`）。**Windows 说明**（1.0.11 重评）：hooks 是**开发机**工具（Claude Code 宿主环境），与「App 的部署目标平台」是两个概念——POS 等 Windows 收银机是 App 跑的地方，不影响 hooks 可用性。Windows 原生的实际边界：**无 Git Bash 时 Bash 工具不注册 → deny-list 永不触发**（matcher 无对象）；有 Git Bash 但无 python3 时 hooks 报不可用。install 时显式警告，终极防线回到 Claude Code 原生权限确认。**PowerShell 原生实现（F2）主控建议降为按需（待需求方裁，见裁决单 §8）**——成本是引入双语言实现=新孪生维护面（deny-list 为安全关键件、持续演进），收益面仅「在 Windows 原生上写代码的开发者」（长尾），待真实需求出现时再做（届时带 pwsh CI 验证；见裁决单 §7/§8）
+- **环境要求：macOS / Linux**（hooks 依赖 `python3`，无 python3 时自动回退 `python`）。**Windows 说明**（1.0.11 重评）：hooks 是**开发机**工具（Claude Code 宿主环境），与「App 的部署目标平台」是两个概念——POS 等 Windows 收银机是 App 跑的地方，不影响 hooks 可用性。Windows 原生的实际边界：**无 Git Bash 时 Bash 工具不注册 → deny-list 永不触发**（matcher 无对象）；有 Git Bash 但无 python3 时 hooks 报不可用。install 时显式警告，终极防线回到 Claude Code 原生权限确认。**PowerShell 原生实现（F2）已裁恢复排期（2026-09-16）**——原「降为按需」建议被需求方推翻：本人在 Windows 原生环境开发并将实机完成验证；独立成批落地（deny-list.ps1 + Windows 侧接线 + 夹具单源双驱），CI pwsh 步降为可选加固（见裁决单 §7/§8 落账）
 - **更新信任（供应链）**：本 plugin 的 hooks 在每次 Bash 调用前执行——`plugin update` 后新 hook 代码静默生效，被污染的更新 = 任意代码执行。建议 update 前先看 hooks 变更（`git -C <本仓> diff <旧tag>..<新tag> -- hooks/`）或锁定 commit。
 
 ## 停用 / 恢复 / 共存

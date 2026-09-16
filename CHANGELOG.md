@@ -1,5 +1,20 @@
 # crules-flutter CHANGELOG
 
+## 1.0.14 · 批E——checkout_discards 判据换「目标面」+ F9 销项 + docs 轮次化
+
+> 依据链：[裁决单-2026-09-15](docs/裁决单-2026-09-15-1.0.10全面外审与四批处置.md) §6-①（需求方裁「换判据为目标面」）→ 本批落地；§6-② F9 全量纯函数版裁「不做」销项（判据更换后 checkout_discards 不再自解析 token，双解析器已不存在，纯函数版前提消失）；§8 F2 裁「恢复排期」落账（Windows 原生批另开，README 环境节措辞随批改）。批E 经独立 review（无 🔴，🟡×2 / 🟢×4，处置见下）。
+
+- **判据更换（§6-①）**：checkout_discards 由「源是否为 HEAD」改为「**目标面写工作区 + 丢弃形态 pathspec**」——`git restore -h` 实证 `-W, --worktree` 是默认目标面（restore 默认写工作区），源取值（-s/--source，HEAD 还是 stash）不改变「覆盖工作区即丢弃」的事实，原判据与 git 语义相悖。旗标一律走 parse_flags（捆绑短旗标 / 长旗标 =值 同源），位置解析整段移除（函数净 −7 行），-s / -s贴值 / --source / --source=值 / --source 值 五拼法天然同判——1.0.11 F11 记录的「checkout_discards 自解析 token 不走 parse_flags」既存不一致就此收口
+- **行为变更两格（fixture 翻转）**：`git restore -s stash@{1} .` 改拦（原放——v39「指定其他源=非丢弃」裁决随判据推翻，覆盖工作面即拦，净收紧）；`git restore --staged .` / `--staged -s stash@{1} .` 改放（原误拦——-S 只动暂存区不写工作区，本轮探针新发现的 FP 顺手修）
+- **git 事实底座（本机 git 实证探针）**：checkout/switch 无 --source 选项（`git checkout --branch=x` / `git switch --create=x` 均拒——F11 豁免面不可达）；restore 的 `--source=<tree>` git 接受（可达，故收口有实际效力）
+- **review 处置**（🟡×2 已修）：R1 W-override 分支首锁——`git restore -SW .`（S 豁免被 W 覆盖仍拦）此前零 fixture 走到、回归可静默翻转，BLOCK 补例；R2 空格长形态 `--source stash@{1} .` 补锁（探针已验未上闸）；R6 头注死指针修正只修一半（行号 19 实为 25）——去行号化改 grep 锚，:97 同款既存行号引用顺带去；R3 🟢 docstring 补「:/ 前缀源值窄误拦（deny 方向用户摩擦，deny-by-default 取舍内）」诚实边界；R4（`--` 后旗标形文件名，玩具场景）/ R5（force_switch 的 s/source 豁免 git 现不可达、头注已记）记档不修；R7 正向核验——头注/docstring/fixture/计数四方自洽，12 探针形态 trace 相符，`-bs` 捆绑建分支豁免顺带修正旧码 exact-token 漏豁免
+- **F9 销项（§6-②）**：全量纯函数版不做——三类变异均落归一化全局删除规则（norm(变异) ≡ 原串），BLOCK 全绿则断言必绿（1.0.11 R3 复核已定），325 变异 ≈ +24s CI 无新甄别力；批E 后双解析器不存在，「重构安全关键件」理由消失
+- **docs 轮次化**：删复盘两篇（批2c双坑 / 质量脚本与裸push双坑——结论已入 0.1.1 / 0.4.1 条目，git 史可寻回）；0.1.1 条目出处指针去链改注（「1.0.14 轮次化删除」）；checklist.md 核无具名引用
+- **裁决单/方案落账**：裁决单状态行全刷（F2 恢复排期 / §6 两项已裁 / 支付 Q2=A+B〔Q1 仍待裁〕/ 批D P2/P3 待行）；支付方案 V6 行改需求方裁 A+B 两向并存，§5-4 修复时序改两向都走
+- **fixture → 111**（实跑 70 拦 + 30 放 + 11 warn + 单调性 50 变异，0 失败；批E +3 拦翻转 1 放 / review +2 拦；计数以实跑输出为准）
+- **观测带数**：常驻基线——本批零常驻面变化（改动全在 hooks / fixture / docs，模板面未动）；distill 四数——仍无数（止损线 2026-12-31）
+- 双 json 1.0.14 + README 横幅同步；test-self 29 断言单实例跑（/tmp 固定路径并发坑勿并发，见 1.0.13 连带发现）
+
 ## 1.0.13 · test-self 非 git 树守卫——快照自测「draft 假红 / tag 假绿」显式拒绝
 
 > 发现链：1.0.12 发版链末步「快照独立验证」（cache 是全仓快照 → 在快照上跑其自身自测）抓出 PASS=27 FAIL=1。**非本批引入**——1.0.9/1.0.10 快照同样 FAIL=1（cache 从来不是 clone）。根因：28 条断言中仅有的 2 条 git 依赖断言在无 .git 树里变形，方向还相反。
@@ -358,4 +373,4 @@
 
 ## 0.1.1 · 批 2c 复盘整合
 
-- **`app/CLAUDE.md` / `plugin/CLAUDE.md` 实施纪律各 +1 条**：「跨仓/跨目录操作一律绝对路径（cwd 会话间重置，实战 6 踩曾污染母版）+ 特殊字面串文件用专用写工具（防 deny-list 误拦）+ 跨仓收尾 git status 验零污染」——源：[docs/复盘-2026-08-27-批2c双坑.md](docs/复盘-2026-08-27-批2c双坑.md)
+- **`app/CLAUDE.md` / `plugin/CLAUDE.md` 实施纪律各 +1 条**：「跨仓/跨目录操作一律绝对路径（cwd 会话间重置，实战 6 踩曾污染母版）+ 特殊字面串文件用专用写工具（防 deny-list 误拦）+ 跨仓收尾 git status 验零污染」——源：docs/复盘-2026-08-27-批2c双坑.md（1.0.14 轮次化删除，git 史可寻回）

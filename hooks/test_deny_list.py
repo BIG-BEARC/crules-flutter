@@ -2,21 +2,22 @@
 # 溯源：源自 crules v74 fork；1.0.0（2026-09）起随 deny-list.py Vendor 终态自持演进（fixture 库本地为权威）
 """deny-list 回归测试（v37 沉淀——修正 v35「单测 15/15 跑完即弃、无文件无痕」）。
 
-跑法：python3 hooks/test_deny_list.py（scripts/check-consistency.sh 的 H 查调用）
+跑法：python3 hooks/test_deny_list.py（scripts/test-self.sh 的「deny-list fixture 应全绿」断言调用）
 fixture 原则：该拦全拦（含 v37 外审 5 绕过、1.0.8 拼合绕过 10 形态）、该放全放
 （含 --force-with-lease / /tmp 白名单）、高危弹窗（1.0.9 warn 层：四形态 ask 非 deny）；
 新增绕过形态时**先加 fixture（红）→ 修 deny-list（绿）**，
 测试即对抗样本库；计数以本文件实跑输出为准（历史条目转抄数不作权威——1.0.0「75」实点为 77）。
 探测纪律（v41，第三轮红队假证据教训）：对 deny-list 做人工/脚本探测时，输入 JSON
-必须用 json.dumps 构造（如本文件 :97），**禁止 shell 手拼**——手拼含引号命令会产生
+必须用 json.dumps 构造（如本文件 decision() 的 input 构造），**禁止 shell 手拼**——手拼含引号命令会产生
 非法 JSON，脚本 json.load 失败即 exit(0)，探测结果恒为「放行」的假证据。
 """
 import json, os, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-# 应拦：v35 起 8 批外审/红队对抗样本累计（v35 原 10 + v37 绕过 6 + 加固 4 + v39 红队 13 +
-# v40 10 + v47 10 + 1.0.8 拼合绕过 10 + 批A F11 长旗标=值 2）= 65 例
+# 应拦：v35 起 9 批外审/红队对抗样本累计（v35 原 10 + v37 绕过 6 + 加固 4 + v39 红队 13 +
+# v40 10 + v47 10 + 1.0.8 拼合绕过 10 + 批A F11 长旗标=值 2 + 批E 目标面判据 3 + 批E review
+# 补锁 2〔--source 空格长形态 / -SW 捆绑双面〕）= 70 例
 BLOCK_CASES = [
     # --- v35 原有 ---
     "git push --force origin main",
@@ -93,6 +94,15 @@ BLOCK_CASES = [
     # 无远端草稿仓实证），属防御纵深一致化锁定（push 集合判定与 reset 子串判定对齐）---
     "git push --force=true origin main",
     "git clean --force=yes",
+    # --- 批E（1.0.14）：checkout_discards 判据换「目标面」——restore 默认写工作区（`-W, --worktree
+    # restore the working tree (default)`，git restore -h 实证），故不论源是 HEAD 还是 stash，
+    # 覆盖工作区即丢弃；源取值不参与判定 → 长/短/贴值三形态天然同判。
+    # 本条推翻了 v39 残留#2 的「指定其他源=非丢弃」理由——该理由与 -W 默认事实相悖 ---
+    "git restore -s stash@{1} .",            # 原 ALLOW（v39 裁决），按目标面改拦
+    "git restore --source=stash@{1} .",      # 长形态：与 -s 同判（原已拦，此处锁一致性）
+    "git restore -sstash@{1} .",             # 短旗标贴值：与 -s 同判（原已拦，锁一致性）
+    "git restore --source stash@{1} .",      # 空格长形态：四拼法收齐（探针已验，review R2 补锁）
+    "git restore -SW .",                     # 捆绑双面：S 豁免被 W 覆盖不早退 → 仍拦（review R1——W-override 分支首锁）
 ]
 
 # 应放：正常命令 / 白名单 / 安全变体
@@ -108,7 +118,8 @@ ALLOW_CASES = [
     "git log --oneline",
     "git checkout main",                     # 切分支（非丢弃）
     "git checkout -b feat",                  # 建分支
-    "git restore -s stash@{1} .",            # 指定源恢复（非丢弃工作区）
+    "git restore --staged .",                # 批E：只动暂存区（不写工作区）——原误拦，按目标面修
+    "git restore --staged -s stash@{1} .",   # 批E：同上 + 指定源（目标面仅暂存区）
     "echo 'a|b'",                            # 引号内的管道符
     "pip install --force",                   # 非 git push 的 --force
     # --- v39 dry-run 放行（修 v38 发现的误拦）---

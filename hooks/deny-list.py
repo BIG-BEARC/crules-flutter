@@ -22,9 +22,12 @@
 #     （reset 的子串判定与 push/clean/branch 的集合判定对齐）。**连带面**：剥值亦使
 #     force_switch 的豁免集合对 --branch=/--create=/--source= 长形态生效（checkout -f
 #     --source=other main 等四例 deny→allow）——git 现拒该语法故不可达；未来 git 若为
-#     checkout/switch 补 --source=<tree> 时该豁免属语义正确。**注**：checkout_discards
-#     自解析 token 不调 parse_flags，--source=stash@{1} 长形态与 -s 短形态判定仍不一致
-#     （既存，本批未触及；全表无 --source= 样本故无闸）
+#     checkout/switch 补 --source=<tree> 时该豁免属语义正确（checkout/switch 现无该选项，
+#     git -h 实证）。**批E（1.0.14）收口**：checkout_discards 判据由「源是否为 HEAD」改为
+#     「是否写工作区」——restore 的 -W/--worktree 是默认目标面（git restore -h 实证），
+#     `-s stash@{1} .` 与 `-s HEAD .` 同样覆盖工作区，故 --source= / -s / -s<贴值> 三形态
+#     同判 deny（原三者不一致）；同时修掉 `git restore --staged .` 的误拦（只动暂存区不写
+#     工作区）。旗标统一走 parse_flags，该函数不再自解析 token
 #   - 输入契约 fail-open（批A F10①）：stdin 非法 JSON → exit 0 静默放行——输入由宿主构造
 #     风险低，fail-closed 恐误伤非 JSON 探活/心跳；如改须先核宿主行为再动
 # 边界与局限（诚实声明）：
@@ -94,19 +97,26 @@ def parse_flags(tokens):
     return short, longs
 
 def checkout_discards(seg_after_sub):
-    """checkout/restore/switch 之后的 pathspec 是否丢弃形态：. ./ :/… *（剥引号，-- 直通）"""
+    """是否丢弃工作区改动——判据 = **目标面写工作区** + 丢弃形态 pathspec（. ./ :/… *）。
+
+    批E（1.0.14）换判据：原判「源是否为 HEAD」（-s HEAD 算丢弃 / -s 其他算非丢弃）与 git
+    事实相悖——restore 的 `-W/--worktree` 是默认目标面（git restore -h 实证），`-s stash@{1} .`
+    与 `-s HEAD .` 一样覆盖工作区。改判目标面后 **-s/--source 取值不参与判定**，长/短/贴值
+    三形态天然同判（原三者判定不一致，系 F11 剥值连带面的既存项）；本函数不再需要「哪个
+    旗标吃值」的位置解析。旗标一律走 parse_flags（捆绑短旗标与长旗标 =value 同源）。
+    只动暂存区（-S/--staged 且无 -W/--worktree）不写工作区，不拦（原误拦，批E 修）。
+    已知窄误拦（review R3，接受）：空格形态的源值若以 `:/` 开头（git 修订语法 `:/text`）
+    会落入 pathspec 扫描判拦（`-s ":/fix login" x.dart`）——deny 方向用户摩擦，deny-by-default
+    取舍内；贴值/=值 形态无此问题（token 以 `-` 开头整体跳过）。
+    """
     toks = seg_after_sub.split()
-    for i, tok in enumerate(toks):
-        if tok == "--":
-            continue
-        if tok.startswith("-"):
-            if tok in ("-b", "--branch", "-c", "--create"):
-                return False  # 建分支，非丢弃
-            if tok in ("-s", "--source"):
-                nxt = toks[i + 1] if i + 1 < len(toks) else ""
-                if nxt == "HEAD" or nxt.startswith(("HEAD~", "HEAD^")):
-                    continue  # 从 HEAD 恢复 = 丢弃工作区，不豁免（与 --source=HEAD 对齐）
-                return False  # 指定其他源（stash 等）恢复，非丢弃（既有 fixture 决策）
+    short, longs = parse_flags(toks)
+    if "b" in short or "c" in short or longs & {"branch", "create"}:
+        return False  # 建分支，非丢弃
+    if ("S" in short or "staged" in longs) and not ("W" in short or "worktree" in longs):
+        return False  # 目标面仅暂存区（restore -S），工作区不动
+    for tok in toks:
+        if tok == "--" or tok.startswith("-"):
             continue
         t = strip_quotes(tok)
         core = t.rstrip("/") or t

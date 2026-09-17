@@ -42,7 +42,14 @@
 #   - robocopy /MIR、format、diskpart、Set-MpPreference 等 Windows 原生破坏族不入名单——
 #     黑名单不可穷尽（原则同 py 头注）
 # 终极防线：本 hook 是安全网而非沙箱；终极防线是 Claude Code 原生权限确认与需求方人工执行。
-# 输入契约 fail-open（镜像 py F10①）：stdin 非法 JSON / 读流失败 → exit 0 静默放行。
+# 输入契约（1.0.22 双源同改）：
+#   - **非空但非法 JSON** → exit 0 静默放行（镜像 py F10①，疑为探活/心跳，fail-closed 误伤正常流更糟）
+#   - **stdin 为空 / 读流失败 / 判据体未捕获异常** → 改判 **ask** 交需求方当场裁夺（Invoke-DenyListSelfFailure）。
+#     理由（官方 hooks 文档 2026-09-17 查证）：宿主对 PreToolUse **唯一**靠退出码就能拦的是 exit 2，
+#     exit 1 等一律 non-blocking → 动作照常执行；故未捕获异常在旧写法下 = 静默 fail-open。
+#     既不静默放行、也不硬锁死（硬拦会把「闸有 bug」放大成「Bash 全不可用」）。
+#   诚实边界（镜像 py）：本段只捕获**终止性**错误；PowerShell 非终止性错误默认不抛（本脚本判据体
+#     几为 .NET 静态调用与正则，cmdlet 面极小），入口段已置 $ErrorActionPreference='Stop' 收紧。
 # 兼容底线 Windows PowerShell 5.1（不假设 pwsh7）：无 ??/三元/-AsHashtable；输出走 [Console]::Out.Write
 #   （禁 Write-Host）；UTF-8 显式化（5.1 码页坑：stdin 按 UTF-8 解、stdout 无 BOM 写，否则宿主 JSON
 #   解析被 BOM/码页破坏）。黑盒契约探针 ×4 在 test_deny_list.ps1 锁本段。
@@ -328,20 +335,45 @@ $DENYLIST_WARN_SIGS = @(
 )
 
 # ========== 双源对照表（维护义务：改判据两源同改 + 双驱夹具全绿） ==========
-# py L54-61 归一      ↔ Normalize-DenyList（D-a：无 \<word> 步；反引号并入删除）
-# py L63-78 blocked/warned ↔ $DENYLIST_TAIL + 入口段 JSON（手工模板 + \ " 转义）
-# py L80 GIT_SIG      ↔ $DENYLIST_GIT_SIG（IgnoreCase，D-b）
-# py L81 RM_SIG        ↔ $DENYLIST_CMDLET_SIG（别名域扩集，D-c）
-# py L83-87 strip_quotes ↔ Get-StripQuotes   py L89-97 parse_flags ↔ Get-GitFlags
-# py L99-125 checkout_discards ↔ Test-CheckoutDiscards（D-d）
-# py L127-132 force_switch     ↔ Test-ForceSwitch
-# py L134-180 主循环/rm/白名单 ↔ Get-DenyListDecision / Test-RmDestructive / Get-RmFlags /
-#                                Resolve-PsPath / Collapse-DenyListPath / Get-TempRoots（D-e）
-# py L182-193 WARN_SIGS        ↔ $DENYLIST_WARN_SIGS（D-f）
+# 锚点口径：**只钉函数/赋值行号**（不给区间），改 py 后重取行号——本表曾因 py 加段而整体漂移
+#   （1.0.21 加流编码段未同步，锚点已偏 ~37 行；1.0.22 已按 # grep -n "^def " 重取）
+# py L68  _hook_utf8_streams  ↔ 入口段 UTF8 流（R4）
+# py L94/L105 gate_self_failure/excepthook ↔ Invoke-DenyListSelfFailure（1.0.22 新，双源同判 ask）
+# py L135-137 归一      ↔ Normalize-DenyList（D-a：无 \<word> 步；反引号并入删除）
+# py L147/L155 blocked/warned ↔ $DENYLIST_TAIL + Write-DenyListDecision（手工模板 + \ " 转义）
+# py L164 GIT_SIG      ↔ $DENYLIST_GIT_SIG（IgnoreCase，D-b）
+# py L165 RM_SIG       ↔ $DENYLIST_CMDLET_SIG（别名域扩集，D-c）
+# py L167 strip_quotes ↔ Get-StripQuotes   py L173 parse_flags ↔ Get-GitFlags
+# py L183 checkout_discards ↔ Test-CheckoutDiscards（D-d）
+# py L211 force_switch ↔ Test-ForceSwitch；其后主循环/rm/白名单（至 L268）↔ Get-DenyListDecision /
+#                                Test-RmDestructive / Get-RmFlags / Resolve-PsPath /
+#                                Collapse-DenyListPath / Get-TempRoots（D-e）
+# py L270 WARN_SIGS    ↔ $DENYLIST_WARN_SIGS（D-f）
 # 有意差异全集：D-a / D-b（命令名折叠、git 旗标保区分）/ D-c / D-d / D-e / D-f——审读只查这六处。
 
 # ========== 入口段（驱动置 $global:DENYLIST_LIB_ONLY=$true 点源时短路） ==========
 if ($global:DENYLIST_LIB_ONLY) { return }
+# 终止性错误一律抛出（1.0.22）：使下方 try/catch 真正兜得住判据体的意外；本段只在**非点源**时
+#   执行（驱动已在上一行 return），故不会改到夹具驱动的 in-process 判据面
+$ErrorActionPreference = 'Stop'
+# 出口 JSON 单一构造点（1.0.22 抽出）：正常判定与「闸自身失效」两条路共用，防转义逻辑分叉
+function Write-DenyListDecision([string]$kind, [string]$reason) {
+    if ($kind -eq 'deny') { $reason += $DENYLIST_TAIL }
+    $reason = $reason.Replace('\', '\\').Replace('"', '\"')
+    $json = '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"' + $kind +
+            '","permissionDecisionReason":"' + $reason + '"}}'
+    try {
+        $outStream = [Console]::OpenStandardOutput()
+        $writer = New-Object System.IO.StreamWriter($outStream, (New-Object System.Text.UTF8Encoding($false)))
+        $writer.Write($json); $writer.Flush()
+    } catch { }
+}
+# 闸自身失效（1.0.22，镜像 py gate_self_failure）：判不出结果时改判 ask 交需求方当场裁夺——
+#   与 warn 层同构（ask 在自动批准模式下仍强制弹窗）。理由详见头注「输入契约」段。
+function Invoke-DenyListSelfFailure([string]$why) {
+    Write-DenyListDecision 'ask' ('crules-flutter 安全闸自身失效（' + $why + '）——本次判定不可信，请人工裁夺')
+    exit 0
+}
 # 编码走 OpenStandardInput/Output + 显式 UTF8 流（review R4：[Console]::InputEncoding setter 依赖
 # 附加控制台——无控制台宿主 spawn 下抛异常会 fail-open 整闸静默放行，且成功时改用户共享控制台码页；
 # 流式构造无控制台依赖）
@@ -350,23 +382,21 @@ try {
     $inStream = [Console]::OpenStandardInput()
     $reader = New-Object System.IO.StreamReader($inStream, (New-Object System.Text.UTF8Encoding($false)))
     $raw = $reader.ReadToEnd()
-} catch { exit 0 }
+} catch { Invoke-DenyListSelfFailure 'stdin 读取失败' }
+if ([string]::IsNullOrWhiteSpace($raw)) {
+    # 空 stdin = 参数根本没到（宿主**总会**送 JSON）。Windows 侧是 exec form 直起 powershell.exe、
+    #   无 `||` 兜底链，但姿态双源一致：判不了就 ask，不静默放行（py 侧该情形的正源是兜底链二次读）。
+    Invoke-DenyListSelfFailure 'stdin 为空（参数未送达）'
+}
 $cmdIn = $null
 try {
     $obj = ConvertFrom-Json $raw
     if ($null -ne $obj.tool_input) { $cmdIn = [string]$obj.tool_input.command }
-} catch { exit 0 }
-$d = Get-DenyListDecision $cmdIn
+} catch { exit 0 }   # F10① 镜像：**非空**但非法 JSON 仍 fail-open
+try {
+    $d = Get-DenyListDecision $cmdIn
+} catch { Invoke-DenyListSelfFailure ('判据体异常 ' + $_.Exception.GetType().Name) }
 if ($d.kind -eq 'deny' -or $d.kind -eq 'ask') {
-    $reason = $d.reason
-    if ($d.kind -eq 'deny') { $reason += $DENYLIST_TAIL }
-    $reason = $reason.Replace('\', '\\').Replace('"', '\"')
-    $json = '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"' + $d.kind +
-            '","permissionDecisionReason":"' + $reason + '"}}'
-    try {
-        $outStream = [Console]::OpenStandardOutput()
-        $writer = New-Object System.IO.StreamWriter($outStream, (New-Object System.Text.UTF8Encoding($false)))
-        $writer.Write($json); $writer.Flush()
-    } catch { }
+    Write-DenyListDecision $d.kind $d.reason
 }
 exit 0

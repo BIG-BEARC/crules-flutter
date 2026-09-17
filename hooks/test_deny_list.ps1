@@ -3,13 +3,20 @@
 # 结构（与 py 驱动的差异及理据）：
 #   ① 判据面 = **点源 in-process**（$DENYLIST_LIB_ONLY 短路入口段，直调 Get-DenyListDecision）——
 #      黑盒逐例 spawn powershell.exe 冷启 ≈0.4-1.0s × 138 例不可受；in-process <2s
-#   ② 契约面 = **黑盒 spawn 探针 ×4**（stdin JSON → stdout JSON / exit code 全链路）：
-#      deny JSON 形态、非法 JSON fail-open exit 0、ask JSON 形态、文案锁「不要尝试绕过」——
+#   ② 契约面 = **黑盒 spawn 探针 ×6**（stdin JSON → stdout JSON / exit code 全链路）：
+#      deny JSON 形态、非法 JSON fail-open exit 0、ask JSON 形态、文案锁「不要尝试绕过」、
+#      **空 stdin / 纯空白 stdin → ask JSON（1.0.22 闸自身失效兜底，与 py 侧同判）**——
 #      契约在入口段、判据在 Get-Decision，两层各测其责（py 侧纯黑盒无所谓慢系冷启 ~30ms 的平台差）
 #   ③ 单调性变异（ps 集）：引号插 / 反引号续行插（D-a 无 \w 步故无反斜杠变异——cases.json
 #      monotonicity.mutators 单源声明）
 #   ④ os=win 例（$env:TEMP 依赖）在非 Windows（pwsh Linux/mac）跳过并计数——CI pwsh 步证据级声明。
 # 探测纪律（v41 镜像）：黑盒输入一律 ConvertTo-Json 构造，禁手拼。
+# 启动失败降噪**本驱动不做**（有意差异，声明于此）：py 驱动每遍 spawn ~165 个子进程，是其主成本，
+#   故那里设 SetErrorMode 抑制「加载器级硬错误框」并做启动失败重试/计数；本驱动判据面进程内、
+#   契约面仅 6 个 spawn，量级差 27 倍而 Add-Type 编译 P/Invoke 自身要 1-3 秒——收益不抵成本。
+#   本机实情（2026-09-17 定位）：联软 UniAccess agent 把 32 位 Vozokopot.dll 挂在 AppInit_DLLs 上
+#   （两 hive 均 LoadAppInit_DLLs=1），注入失败即 STATUS_DLL_INIT_FAILED(0xc0000142)；该硬错误框
+#   **不进 WER、不进事件日志**，故「日志干净」不是「没发生」的证据。
 # 兼容：Windows PowerShell 5.1 底线（无 ??/三元；-File 直跑）。
 $ErrorActionPreference = 'Stop'
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -73,7 +80,7 @@ for ($i = 0; $i -lt $blockCases.Count; $i += $step) {
     }
 }
 
-# ---- ② 契约面：黑盒 spawn 探针 ×4 ----
+# ---- ② 契约面：黑盒 spawn 探针 ×6 ----
 $denyListPath = Join-Path $here 'deny-list.ps1'
 function Invoke-Blackbox([string]$stdinStr) {
     $psi = New-Object System.Diagnostics.ProcessStartInfo
@@ -103,9 +110,21 @@ $p3 = Invoke-Blackbox (@{tool_input = @{command = 'chmod -R 755 assets'}} | Conv
 if ($p3.out -notmatch '"permissionDecision":"ask"') { $fails += ('黑盒探针3 ask JSON 缺失: ' + $p3.out) }
 # 探针 4：文案锁（跨实现字节级一致断言点，py 驱动同款）
 if ($p1.out -notmatch '不要尝试绕过') { $fails += '黑盒探针4 拦截文案缺「不要尝试绕过」' }
+# 探针 5/6：闸自身失效兜底（1.0.22）——**空 stdin / 纯空白 stdin → ask**，与 py 侧 gate_self_failure 同判。
+#   归因：宿主**总会**送 JSON，stdin 空 = 参数没到（最现实成因是 hooks.json 的 `python3 … || python …`
+#   兜底链：首解释器读完 stdin 后非零退出，兜底那次立即 EOF 只拿到空串）。旧写法此处落 json.load 失败
+#   → except → exit 0 零输出 → 宿主侧与「无命中」不可区分 = 静默 fail-open；这正是本轮要锁死的行为。
+#   断言用 ASCII 子串（`crules-flutter` 系 reason 固定前缀）：父进程读中文 reason 依赖宿主码页，
+#   probe 4 已覆盖中文文案锁，此处不重复引入编码耦合。
+$p5 = Invoke-Blackbox ''
+if ($p5.code -ne 0 -or $p5.out -notmatch '"permissionDecision":"ask"' -or $p5.out -notmatch 'crules-flutter') {
+    $fails += ('黑盒探针5 空 stdin 未改判 ask（静默 fail-open 回归）: code=' + $p5.code + ' out=' + $p5.out) }
+$p6 = Invoke-Blackbox "  `r`n`t "
+if ($p6.code -ne 0 -or $p6.out -notmatch '"permissionDecision":"ask"' -or $p6.out -notmatch 'crules-flutter') {
+    $fails += ('黑盒探针6 纯空白 stdin 未改判 ask: code=' + $p6.code + ' out=' + $p6.out) }
 
 # ---- 汇总 ----
 foreach ($f in $fails) { Write-Out ('FAIL ' + $f) }
 $osNote = if ($isWin) { 'os=win 全跑' } else { ('os=win 跳过 ' + $skipOs) }
-Write-Out ('deny-list 测试(ps 驱动): ' + $nDeny + ' 拦 + ' + $nAllow + ' 放 + ' + $nAsk + ' warn + 单调性 ' + $mutTotal + ' 变异 + 黑盒探针 4, 失败 ' + $fails.Count + ' (' + $osNote + ')')
+Write-Out ('deny-list 测试(ps 驱动): ' + $nDeny + ' 拦 + ' + $nAllow + ' 放 + ' + $nAsk + ' warn + 单调性 ' + $mutTotal + ' 变异 + 黑盒探针 6, 失败 ' + $fails.Count + ' (' + $osNote + ')')
 if ($fails.Count -eq 0) { exit 0 } else { exit 1 }

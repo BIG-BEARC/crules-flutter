@@ -28,8 +28,16 @@
 #     `-s stash@{1} .` 与 `-s HEAD .` 同样覆盖工作区，故 --source= / -s / -s<贴值> 三形态
 #     同判 deny（原三者不一致）；同时修掉 `git restore --staged .` 的误拦（只动暂存区不写
 #     工作区）。旗标统一走 parse_flags，该函数不再自解析 token
-#   - 输入契约 fail-open（批A F10①）：stdin 非法 JSON → exit 0 静默放行——输入由宿主构造
-#     风险低，fail-closed 恐误伤非 JSON 探活/心跳；如改须先核宿主行为再动
+#   - 输入契约 fail-open（批A F10①）：**非空但非法 JSON** → exit 0 静默放行——输入由宿主构造
+#     风险低，fail-closed 恐误伤非 JSON 探活/心跳；**已核宿主行为（1.0.22，官方 hooks 文档
+#     2026-09-17）**：唯一靠退出码就能拦的是 exit 2，exit 1 等一律 non-blocking 放行 → 未捕获
+#     异常与「兜底吃空 stdin」两条路都会静默 fail-open，故新增 gate_self_failure（见下方
+#     L78+ 段注）：**stdin 空 / 未预期异常 → 改判 ask**（不静默放行、不硬锁死）。非空非法 JSON
+#     维持 fail-open（F10① 未变）。
+#   - 诚实边界（1.0.22 仍开口）：①首解释器被中途 kill（超时）→ 管道剩半截 JSON（非空非法）→
+#     落 F10① 放行；②本文件语法错误 → 解释器根本没跑起来、excepthook 未安装 → exit 1 放行
+#     （release.sh 的 py_compile + 夹具步是此路线的发行前闸）；③两解释器皆缺 → exit 127 放行
+#     （README 声明：终极防线回 Claude Code 原生权限确认）；④宿主超时的 hook 按官方口径本就不拦
 # 边界与局限（诚实声明）：
 #   - 非锚定搜索会把字符串里的破坏命令（含引号内原文——1.0.8 归一后成立）一并拦下——
 #     按 deny-by-default 哲学接受，误拦走白名单调整
@@ -75,10 +83,46 @@ def _hook_utf8_streams():
 
 _hook_utf8_streams()
 
+# 闸自身失效的承重兜底（1.0.22）：判据体位于本段之下，任何未预期异常都会让解释器以 **exit 1**
+#   收场——而宿主对 PreToolUse 的语义是「exit 1 及一切非 0/2 码 = non-blocking error，动作照常
+#   执行」（官方 hooks 文档 2026-09-17 查证：**唯一**靠退出码就能拦的是 exit 2；exit 0 且 stdout
+#   无合法 JSON = 无判定 = 走正常权限流）。故未捕获异常 = 静默 fail-open，与本轮 `||` 双读 stdin
+#   同属「闸失效 → 静默放行」家族：前者闸崩、后者兜底误读，两条路都汇到「宿主眼里什么都没发生」。
+#   处置：判不出结果时**既不静默放行、也不硬锁死**，改判 ask 交需求方当场裁夺——与 warn 层同构
+#   （ask 在自动批准模式下仍强制弹窗，官方口径）。JSON 走 ensure_ascii（纯 ASCII）→ 任何码页都
+#   编得出，这条兜底自身不会再因编码二次失败（P0-A 同族教训：兜底必须比正路更不可能失败）。
+def gate_self_failure(reason):
+    try:
+        sys.stdout.write(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse",
+              "permissionDecision": "ask",
+              "permissionDecisionReason": f"crules-flutter 安全闸自身失效（{reason}）——本次判定不可信，请人工裁夺"}},
+              ensure_ascii=True) + "\n")
+        sys.stdout.flush()
+    except Exception:
+        pass
+    os._exit(0)   # 绕开默认 traceback 与 exit 1（非阻塞码）；stdout 已显式 flush
+
+def _gate_excepthook(exc_type, exc, tb):
+    gate_self_failure(exc_type.__name__)
+
+sys.excepthook = _gate_excepthook
+
 try:
-    data = json.load(sys.stdin)
+    raw = sys.stdin.read()
 except Exception:
-    sys.exit(0)
+    raw = ""
+if not raw.strip():
+    # stdin 为空 = 本次调用的参数根本没到（宿主**总会**送 JSON）→ 判据无从谈起。最现实的成因是
+    # hooks.json 的 `python3 … || python …` 兜底链：首解释器读完 stdin 后因任何原因非零退出，
+    # 兜底那次立即 EOF 只拿到空串（2026-09-17 单管道模型实测 0 字节 → 旧写法 json.load 抛
+    # JSONDecodeError → 走 except exit 0），宿主侧与「无命中」**完全不可区分** = 静默放行的正源。
+    # 归入「闸自身失效」同判 ask。残余边界：若首解释器被**中途 kill**（超时），管道里剩的是
+    # 半截 JSON（非空且非法）→ 仍落入下方 F10① 的 fail-open，未收口（见头注诚实声明）。
+    gate_self_failure("stdin 为空（参数未送达，疑为兜底解释器二次读取）")
+try:
+    data = json.loads(raw)
+except Exception:
+    sys.exit(0)   # F10① 原样保留：**非空**但非法 JSON 仍 fail-open（疑为探活/心跳，fail-closed 误伤正常流更糟）
 cmd = (data.get("tool_input") or {}).get("command") or ""
 if not cmd.strip():
     sys.exit(0)

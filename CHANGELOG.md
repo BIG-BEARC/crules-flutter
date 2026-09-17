@@ -1,5 +1,18 @@
 # crules-flutter CHANGELOG
 
+## 1.0.22 · 闸自身失效兜底——空 stdin / 未预期异常改判 ask（`||` 兜底链静默 fail-open 收口）+ 驱动分辨「启动失败」与「判定失败」
+
+> 依据链：1.0.21 头注 ③ **留裁项的收口**。裁据是官方 hooks 文档（2026-09-17 查证）的退出码语义——**唯一靠退出码就能拦的是 `exit 2`**；`exit 0` 且 stdout 无合法 JSON = **无判定**（走正常权限流，不等于放行）；**`exit 1` 及一切非 0/2 码 = non-blocking error，动作照常执行**（文档自陈：*Without valid JSON on stdout, Claude Code treats exit code 1 as a non-blocking error and proceeds with the action…If your hook is meant to enforce a policy, use `exit 2`*）；**超时的 command hook 亦不拦**。故「未捕获异常」与「兜底吃空 stdin」两条路都汇到**静默 fail-open**，且 PreToolUse 的纯文本 stdout **不进上下文**（只进 debug log）——静默得更彻底。
+
+- **py 侧（deny-list.py）**：新增 `gate_self_failure(reason)` + `sys.excepthook` 接管——**stdin 空（含纯空白）/ 未预期异常 → 改判 `ask`**（不静默放行、不硬锁死，交需求方当场裁夺，与 warn 层同构；`ask` 在自动批准模式下仍强制弹窗）。`os._exit(0)` 绕开默认 traceback 与非阻塞退出码，stdout 显式 flush；JSON 走 `ensure_ascii`（纯 ASCII）→ 任何码页都编得出，**兜底自身不会再因编码二次失败**（P0-A 同族教训：兜底必须比正路更不可能失败）。**F10① 未变**：**非空**但非法 JSON 仍 `exit 0` fail-open（疑为探活/心跳，fail-closed 恐误伤正常流）。
+- **ps1 侧（deny-list.ps1）**：同判 `Invoke-DenyListSelfFailure`（空 stdin / 流读失败 / 判据体未捕获异常）；入口段置 `$ErrorActionPreference = 'Stop'`（驱动 `$global:DENYLIST_LIB_ONLY` 短路在该行之前，故点源判定面不受扰动），判据体包 `try/catch`。
+- **回归锁**：py 契约锁 4（空 stdin / 纯空白 / 非空非法 JSON / 文案锁）、ps 黑盒探针 ×4 → **×6**（新增空 stdin、纯空白两例，断言 `"permissionDecision":"ask"` + `crules-flutter` 闸标识）。**两条路必须同测**——只锁 ask 会让「把 F10① 也一并收口」的过度修正不被发现。
+- **验证**（实机证据，非 CI 推演）：py 驱动 `70 拦 + 30 放 + 11 warn + 单调性 50 变异 + 契约锁 4, 失败 0`；ps 驱动 **Windows PowerShell 5.1 与 pwsh 7 均** `81 拦 + 38 放 + 17 warn + 单调性 24 变异 + 黑盒探针 6, 失败 0（os=win 全跑）`——计数与 1.0.21 **逐字相同**，即入口段改动未扰动判据面。**A/B 负控**（同机同解释器）：py 侧按 hooks.json 兜底链的**单管道共享**模型注入「首解释器读完 stdin 后再抛」→ PRE（HEAD 1.0.21 树）`rc=0` 实得 **allow（无输出 = 静默 fail-open）**，POST（本版）实得 **ask**；ps1 侧空 stdin 直喂 → PRE **空输出** vs POST **ask JSON**（探针 5/6 对 HEAD 即为红，非空锁）。
+- **诚实边界（本版仍开口）**：①首解释器被**中途 kill**（超时）→ 管道剩半截 JSON（非空非法）→ 仍落 F10① 放行；②本文件**语法错误** → 解释器根本没跑起来、`excepthook` 未安装 → `exit 1` 放行（`release.sh` 的 py_compile + 夹具步是此路线的发行前闸）；③两解释器皆缺 → `exit 127` 放行（README 声明：终极防线回 Claude Code 原生权限确认）；④宿主**超时**的 hook 按官方口径本就不拦；⑤ps1 只捕获 **terminating** error（非终止错误不进 catch，`ErrorActionPreference='Stop'` 已尽量收紧）
+- **验证环境缺陷（非本包缺陷，但直接影响证据可信度，故记录在案）**：本机装**联软 UniAccess** 终端管控 agent，它把 32 位 `Vozokopot.dll` 挂在 `AppInit_DLLs`（64 位 hive 与 WOW6432Node **两处**均 `LoadAppInit_DLLs=1`）→ 每个加载 user32 的新进程启动时都被注入，注入失败即 `STATUS_DLL_INIT_FAILED(0xc0000142)`，Windows 弹**加载器级硬错误框**——**不进 WER、不进事件日志**（故「查日志干净」不能作为「没发生」的证据）。密集 spawn 时偶发，曾表现为 py 驱动**概率性红**（子进程无输出被旧写法判成「非 deny」，与「判错」混成一条无从下手的红）。处置：驱动**分辨**「启动失败」（rc≠0 且 stdout 空）与「判定失败」——前者重试一次，且**重试/仍失败次数一律进汇总行**（不许静默——否则重试就把一次真实的环境故障洗成无痕的绿）；父进程设 `SetErrorMode(SEM_FAILCRITICALERRORS)` 抑制该框（**官方口径：子进程继承父进程 error mode**；故障本身偶发、无法按需复现，故属**机制正确 + 未实测**）。**本项属需求方终端管控面，处置须走 IT，本包不代改**。**实测率（本版发布时捕获）**：`release.sh 1.0.22` 的自动 verify 打出「重试 1 次 / 仍失败 0 次」——即约 165 次 spawn 中 1 次启动失败 ≈ **0.6%**，与本节此前观测到的概率红率同量级（旧写法下这一次就是一条无从下手的红）；重试后全绿，且计数在汇总行可见 = 该分类改造的直接收益
+- **观测带数**：常驻基线——零常驻面变化（改动全在 `hooks/`，不入常驻面）；distill 四数——仍无数（止损线 2026-12-31）
+- 双 json 1.0.22 + README 横幅同步
+
 ## 1.0.21 · Windows 实机验证（用户最终闸）——隐式码页缺陷族 7 处收口 + rm 白名单归一（test-self 22/6 → 28/0）
 
 > 依据链：[裁决单-2026-09-15](docs/裁决单-2026-09-15-1.0.10全面外审与四批处置.md) §7/§8「Windows 实机为用户最终闸」的**实机执行**（2026-09-17，需求方本机 Windows 10 19045 / 系统码页 **cp950 繁中**）——1.0.20 落账时该单仅余此项。**底座事实**：本项目源码消息为**简体中文**，而 Big5 编不出简体字形（请/块/试/节…）——同一份代码在 zh-CN（cp936/GBK）不崩、在 cp950 必崩，故「CI 绿（macOS UTF-8 环境）」长期掩盖此族；「非 UTF-8 码页」须全修，不能只看崩不崩。

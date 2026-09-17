@@ -1,5 +1,15 @@
 # crules-flutter CHANGELOG
 
+## 1.0.23 · F2 触发面裁决落账——「再验」，裁决单状态戳刷新（D2 缺口补）
+
+> 依据链：需求方裁决（2026-09-17）——F2 最后一项触发面（PowerShell 工具真会话里 ps1 hook 被触发并拦截）**不列接受边界、裁「再验」**：Windows 机设 `CLAUDE_CODE_USE_POWERSHELL_TOOL=1` → 重开会话 → `/hooks` 确认 PowerShell 工具+hook 在列 → 金丝雀命令复验。判据面/契约面已实机全绿（1.0.21/1.0.22），此为最后一类证据。背景：1.0.21/1.0.22 落地后裁决单状态戳仍停「Windows 实机验证进行中」（D2 纪律缺口——裁决索引即状态戳，须反映最新终态），本批代刷。
+
+- **[裁决单-2026-09-15](docs/裁决单-2026-09-15-1.0.10全面外审与四批处置.md) 状态戳**：F2 段刷为「判据面/契约面已完成（1.0.21/1.0.22）；仅余触发面，需求方已裁再验（2026-09-17）」——验毕该单全部终态，随下轮轮次化可删（docs 6→5，余 09-14 五件套）
+- **README 环境节零改动**：触发面残余表述 1.0.21 已如实在位（「仍开口：ps1 分支的真机触发面未闭环」），本批仅裁决侧落账
+- **验证**：test-self 28 断言实跑绿（纯 docs 面，零代码扰动）
+- **观测带数**：常驻基线——零常驻面变化；distill 四数——仍无数（止损线 2026-12-31）
+- 双 json 1.0.23 + README 横幅同步
+
 ## 1.0.22 · 闸自身失效兜底——空 stdin / 未预期异常改判 ask（`||` 兜底链静默 fail-open 收口）+ 驱动分辨「启动失败」与「判定失败」
 
 > 依据链：1.0.21 头注 ③ **留裁项的收口**。裁据是官方 hooks 文档（2026-09-17 查证）的退出码语义——**唯一靠退出码就能拦的是 `exit 2`**；`exit 0` 且 stdout 无合法 JSON = **无判定**（走正常权限流，不等于放行）；**`exit 1` 及一切非 0/2 码 = non-blocking error，动作照常执行**（文档自陈：*Without valid JSON on stdout, Claude Code treats exit code 1 as a non-blocking error and proceeds with the action…If your hook is meant to enforce a policy, use `exit 2`*）；**超时的 command hook 亦不拦**。故「未捕获异常」与「兜底吃空 stdin」两条路都汇到**静默 fail-open**，且 PreToolUse 的纯文本 stdout **不进上下文**（只进 debug log）——静默得更彻底。

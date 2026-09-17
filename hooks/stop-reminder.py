@@ -16,6 +16,28 @@
 #   故「纯 Bash 落盘会话」仍不提醒（诚实边界，待观测后定是否加状态文件去重）。耗时受 timeout 5s 约束
 import json, os, subprocess, sys
 
+# 流编码显式化（1.0.21，Windows 实机 P0-A）：宿主码页非 UTF-8 时本 hook 的 print 中文或崩
+#   （该码页编不出该字，如 cp950 遇简体字形）或吐非 UTF-8 字节（cp936），两者都使提醒 JSON
+#   一字未能按契约送达——与 deny-list.py 同批同因，见该文件头注的双码页实测与兜底链放大效应。
+#   stdin 方向不抛（Windows 标准流 errors=surrogateescape），坏字节变孤立代理项＝失真非失败。
+def _hook_utf8_streams():
+    for name in ("stdin", "stdout", "stderr"):
+        s = getattr(sys, name, None)
+        if s is None:
+            continue
+        try:
+            s.reconfigure(encoding="utf-8", errors="replace")
+            continue
+        except Exception:
+            pass
+        try:   # Python < 3.7 无 reconfigure：退到重包 TextIOWrapper
+            import io
+            setattr(sys, name, io.TextIOWrapper(s.buffer, encoding="utf-8", errors="replace"))
+        except Exception:
+            pass
+
+_hook_utf8_streams()
+
 
 def git_source_changes(root, known):
     """git status 检出未入队的源文件变更（A/D/?）——Bash 落盘盲区补充；非 git 仓/超时静默返回 []

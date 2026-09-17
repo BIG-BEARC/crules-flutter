@@ -246,8 +246,8 @@ function Resolve-PsPath([string]$tok) {
         if ([string]::IsNullOrEmpty($h)) { return 'UNRESOLVED' }
         $t = $h + $t.Substring(1)
     }
-    if ($t.StartsWith('$env:\')) {
-        $mm = $DENYLIST_PFE.Match($t.Substring(6))
+    if ($t.StartsWith('$env:')) {
+        $mm = $DENYLIST_PFE.Match($t.Substring(5))
         if (-not $mm.Success) { return 'UNRESOLVED' }
         $v = Get-UnsafeEnv $mm.Groups['name'].Value
         if ([string]::IsNullOrEmpty($v)) { return 'UNRESOLVED' }

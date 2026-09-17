@@ -8,6 +8,15 @@
 #   fail-closed 恐误伤非 JSON 探活；本 hook 本就不阻止任何操作，静默即等价「无待办」
 import json, os, sys
 
+# stdin 编码显式化（1.0.21，Windows 实机 P0-A）：宿主送来的 JSON 是 UTF-8，非 UTF-8 码页
+#   （简中 936 / 繁中 950…）下按码页解——实测**不抛**（Windows 标准流 errors=surrogateescape），
+#   坏字节变孤立代理项：file_path 含非 ASCII（中文目录名）时被解成垃圾串，仍会写进队列但条目
+#   不可用（失真，非漏记）。本 hook 不写 stdout/stderr（输出侧无 P0-A 之病），故只钉输入流。
+try:
+    sys.stdin.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
 try:
     data = json.load(sys.stdin)
 except Exception:

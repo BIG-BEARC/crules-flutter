@@ -15,6 +15,15 @@ fixture 原则：该拦全拦（含 v37 外审 5 绕过、1.0.8 拼合绕过 10 
 """
 import json, os, subprocess, sys
 
+# 编码显式化（1.0.21，Windows 实机 P0-A，与 deny-list.py 同批）：①驱动自身 print 含中文，
+#   宿主码页非 UTF-8 时抛 UnicodeEncodeError 整跑即崩；②子进程输出自 1.0.21 起为显式 UTF-8，
+#   父端 `text=True` 默认按宿主码页解 → cp950 下解码错/乱码（ps 驱动的 StandardOutputEncoding
+#   =UTF8 同款处置）。两侧钉死，本驱动与宿主码页解耦。
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 FIXTURES = os.path.join(HERE, "fixtures", "deny-list-cases.json")
 
@@ -29,7 +38,7 @@ def decision(case: str) -> str:
     p = subprocess.run(
         [sys.executable, os.path.join(HERE, "deny-list.py")],
         input=json.dumps({"tool_input": {"command": case}}),
-        capture_output=True, text=True,
+        capture_output=True, text=True, encoding="utf-8",
     )
     if '"deny"' in p.stdout:
         return "deny"
@@ -85,7 +94,7 @@ def main() -> int:
     p = subprocess.run(
         [sys.executable, os.path.join(HERE, "deny-list.py")],
         input=json.dumps({"tool_input": {"command": "git push --force origin main"}}),
-        capture_output=True, text=True,
+        capture_output=True, text=True, encoding="utf-8",
     )
     if "不要尝试绕过" not in p.stdout:
         fails.append("拦截文案缺「不要尝试绕过」提示（blocked() 追加语回归）")

@@ -40,7 +40,10 @@ case "$1" in
     [ $# -ge 2 ] || usage
     ver="$2"
     echo "$ver" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "版本号格式: X.Y.Z"; exit 1; }
-    head_ver=$(git show HEAD:.claude-plugin/plugin.json 2>/dev/null | python3 -c 'import json,sys;print(json.load(sys.stdin)["version"])' 2>/dev/null) || { echo "❌ 读 HEAD plugin.json 失败（非 git 仓 / 无提交？）"; exit 1; }
+    # 1.0.21 Windows 实机 P0-A 同族：sys.stdin 缺显式编码 → 按宿主码页解 git show 的 UTF-8 输出，
+    #   plugin.json 含中文 description → cp950 下 UnicodeDecodeError → 2>/dev/null 吞掉 → 「读 HEAD
+    #   plugin.json 失败」把 tag 卡死在第一步。改走 buffer + 显式 UTF-8。
+    head_ver=$(git show HEAD:.claude-plugin/plugin.json 2>/dev/null | python3 -c 'import json,sys;print(json.loads(sys.stdin.buffer.read().decode("utf-8"))["version"])' 2>/dev/null) || { echo "❌ 读 HEAD plugin.json 失败（非 git 仓 / 无提交？）"; exit 1; }
     [ "${ver}" = "${head_ver}" ] || { echo "❌ HEAD 提交内 plugin.json 为 v${head_ver} ≠ v${ver}——先 commit 含 bump 的改动再打 tag（防 tag 指向旧树；注意读的是提交内版本，工作区未提交的 bump 不算）"; exit 1; }
     if git rev-parse -q --verify "refs/tags/v${ver}" >/dev/null; then
       echo "🟡 tag v${ver} 已存在，跳过（幂等）"
@@ -70,6 +73,7 @@ case "$1" in
     echo "$ver" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo "版本号格式: X.Y.Z"; exit 1; }
     python3 - "$ver" <<'PY'
 import json, sys
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")   # 1.0.21 Windows P0-A：宿主码页非 UTF-8 时 stdout 按该码页编码（实测 cp936 下本段输出为 cp936 字节、非 UTF-8）——终端同码页时显示正常，但任何 UTF-8 消费者（CI 日志 / Git Bash / 管道）读到乱码；且若消息含该码页**编不出**的字（如 cp950/Big5 遇简体「块」）则 print 抛 UnicodeEncodeError，因落在每轮写盘之后故双 json 停在半完成态。钉死 UTF-8 使输出与宿主码页解耦
 ver = sys.argv[1]
 for path, set_ver in (
     (".claude-plugin/plugin.json", lambda d: d.__setitem__("version", ver)),

@@ -14,7 +14,11 @@
 # 护栏：目标已有 CLAUDE.md 且无 crules-flutter 戳 → 中止（老项目人工合并）；有戳 → 按 --force 语义升级
 set -uo pipefail
 SRC=$(cd "$(dirname "$0")/.." && pwd)
-VER=$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["version"])' "$SRC/.claude-plugin/plugin.json" 2>/dev/null) || VER="unknown"
+# 1.0.21 Windows 实机 P0-A 同族：open() 原缺 encoding → 按宿主码页解，而 plugin.json 的 description
+#   含中文（UTF-8 字节）→ cp950 等码页下 UnicodeDecodeError → stderr 被 2>/dev/null 吞掉、|| 兜到
+#   VER="unknown" → 戳写成 `vunknown` → 下方 v[0-9] 守卫认不出「本包装的工程」，--force/--upgrade
+#   全部误走「老项目无戳」分支中止（本机实测 force 安全升级红）。显式 UTF-8 即通。
+VER=$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1],encoding="utf-8"))["version"])' "$SRC/.claude-plugin/plugin.json" 2>/dev/null) || VER="unknown"
 STAMP="<!-- crules-flutter: v$VER @ $(date +%Y-%m-%d) -->"
 [ $# -ge 1 ] || { echo "用法: bash scripts/install.sh <目标项目根> --app|--plugin [--dry-run] [--force] [--upgrade]"; exit 2; }
 TARGET=$1; KIND=""; DRYRUN=0; FORCE=0; UPGRADE=0

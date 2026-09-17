@@ -3,7 +3,7 @@
 面向 **Flutter 工程**的 AI 协作规则 plugin：把「AI 怎么跟你安全地干活」固化成机制——危险命令硬拦、改动先过方案确认、交付必过审查、经验自动沉淀。
 独立自持（源自 crules fork，2026-09 起 1.0.0 独立演进，史见 [CHANGELOG](CHANGELOG.md)）；许可 **MIT**（[LICENSE](LICENSE)）。
 
-> 当前状态：1.0.20（版本编年史见 [CHANGELOG](CHANGELOG.md)）
+> 当前状态：1.0.21（版本编年史见 [CHANGELOG](CHANGELOG.md)）
 
 ---
 
@@ -120,7 +120,7 @@ bash "$SRC" <项目根> --app --upgrade    # 巡检版本差 → 确认 → --fo
 
 ## 环境要求与更新信任
 
-- **环境要求：macOS / Linux**（hooks 依赖 `python3`，无 python3 时自动回退 `python`）。**Windows 说明**（1.0.17 批F2 更新）：hooks 是**开发机**工具（Claude Code 宿主环境），与「App 的部署目标平台」是两个概念——POS 等 Windows 收银机是 App 跑的地方，不影响 hooks 可用性。**deny-list 已双实现**（1.0.17 起）：Bash 工具会话走 deny-list.py、PowerShell 工具会话走 deny-list.ps1（Windows 无 Git Bash 时 Claude Code 注册 PowerShell 工具——两 matcher 双 handler 都挂，无静默缺口）；残余边界：EncodedCommand / 变量拼接构造不拦、**漂移队列与 Stop 提醒仍需 python**（无 python 时缺，终极防线回 Claude Code 原生权限确认）。ps1 判据逻辑经 CI pwsh 回归（证据级=逻辑非 Windows 实证），**Windows 实机验证进行中**（需求方本机）。**PowerShell 原生实现（F2）已落地 1.0.17**（裁决沿革见裁决单 §7/§8 落账）
+- **环境要求：macOS / Linux**（hooks 依赖 `python3`，无 python3 时自动回退 `python`）。**Windows 说明**（1.0.17 批F2 更新）：hooks 是**开发机**工具（Claude Code 宿主环境），与「App 的部署目标平台」是两个概念——POS 等 Windows 收银机是 App 跑的地方，不影响 hooks 可用性。**deny-list 已双实现**（1.0.17 起）：Bash 工具会话走 deny-list.py、PowerShell 工具会话走 deny-list.ps1（Windows 无 Git Bash 时 Claude Code 注册 PowerShell 工具——两 matcher 双 handler 都挂）。残余边界：EncodedCommand / 变量拼接构造不拦、**漂移队列与 Stop 提醒仍需 python**（无 python 时缺，终极防线回 Claude Code 原生权限确认）。**Windows 实机验证已完成**（1.0.21，2026-09-17，需求方本机 cp950 繁中底座：`test-self.sh` 22/6 → **28/0**，双驱夹具全绿，ps1 判据面 Windows PowerShell 5.1 与 pwsh 7 实测）——本轮据此收口**隐式码页缺陷族 7 处**（非 UTF-8 码页下 hook 曾整体静默 fail-open；cp936 等码页则 reason 失真）与 rm 白名单归一，详见 [CHANGELOG](CHANGELOG.md) 1.0.21。**仍开口**：ps1 分支的**真机触发面**未闭环（须 `CLAUDE_CODE_USE_POWERSHELL_TOOL=1` 注册 PowerShell 工具后复验；判据面/契约面已实测），旧 npm CLI（2.1.81）剥 `args` 故 ps1 闸退化为 fail-open。「无静默缺口」的**判据面**成立，**触发面**以该开关为准。**PowerShell 原生实现（F2）已落地 1.0.17**（裁决沿革见裁决单 §7/§8 落账）
 - **更新信任（供应链）**：本 plugin 的 hooks 在每次 Bash 调用前执行——`plugin update` 后新 hook 代码静默生效，被污染的更新 = 任意代码执行。建议 update 前先看 hooks 变更（`git -C <本仓> diff <旧tag>..<新tag> -- hooks/`）或锁定 commit。
 
 ## 停用 / 恢复 / 共存

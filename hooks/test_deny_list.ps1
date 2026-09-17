@@ -14,6 +14,17 @@
 $ErrorActionPreference = 'Stop'
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 
+# 出口编码显式化（1.0.21，Windows 实机乱码收口）：PS 5.1 重定向时 Write-Output 走**系统 ANSI
+#   码页**——实测 cp950 下「已同步」写成 a4 77 a6 50…（非 UTF-8 字节），且**该码页没有的字在写盘
+#   前即被替换成 `?`**（实测「测试」→ 3f 3f，不可逆丢失）。故本驱动的汇总行与 FAIL 行在宿主侧
+#   既乱码又缺字——而失败信息恰是最需要读清的东西。
+#   手法与 deny-list.ps1 入口段一致（OpenStandardOutput + UTF8Encoding($false)）；**不用**
+#   [Console]::OutputEncoding——R4：setter 依赖附加控制台，无控制台宿主下抛异常。
+$script:OUT = New-Object System.IO.StreamWriter([Console]::OpenStandardOutput(),
+    (New-Object System.Text.UTF8Encoding($false)))
+$script:OUT.AutoFlush = $true
+function Write-Out([string]$s) { $script:OUT.WriteLine($s) }
+
 # ---- 夹具单源加载 ----
 $docJson = Get-Content -Raw -Encoding UTF8 (Join-Path (Join-Path $here 'fixtures') 'deny-list-cases.json')
 $doc = ConvertFrom-Json $docJson
@@ -94,7 +105,7 @@ if ($p3.out -notmatch '"permissionDecision":"ask"') { $fails += ('黑盒探针3 
 if ($p1.out -notmatch '不要尝试绕过') { $fails += '黑盒探针4 拦截文案缺「不要尝试绕过」' }
 
 # ---- 汇总 ----
-foreach ($f in $fails) { Write-Output ('FAIL ' + $f) }
+foreach ($f in $fails) { Write-Out ('FAIL ' + $f) }
 $osNote = if ($isWin) { 'os=win 全跑' } else { ('os=win 跳过 ' + $skipOs) }
-Write-Output ('deny-list 测试(ps 驱动): ' + $nDeny + ' 拦 + ' + $nAllow + ' 放 + ' + $nAsk + ' warn + 单调性 ' + $mutTotal + ' 变异 + 黑盒探针 4, 失败 ' + $fails.Count + ' (' + $osNote + ')')
+Write-Out ('deny-list 测试(ps 驱动): ' + $nDeny + ' 拦 + ' + $nAllow + ' 放 + ' + $nAsk + ' warn + 单调性 ' + $mutTotal + ' 变异 + 黑盒探针 4, 失败 ' + $fails.Count + ' (' + $osNote + ')')
 if ($fails.Count -eq 0) { exit 0 } else { exit 1 }

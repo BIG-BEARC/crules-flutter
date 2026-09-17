@@ -22,6 +22,15 @@ import os
 import re
 import sys
 
+# 出口编码显式化（1.0.21，Windows 实机 P0-A 同批）：宿主码页非 UTF-8 时 stdout 按该码页编码。
+#   实测 cp950（Big5）下本脚本结尾的汇总 print 抛 UnicodeEncodeError（「块」系简体字形，Big5 无）
+#   → 整跑即崩、rc=1，test-self.sh 的孪生同文块闸在 Windows 上恒红（与内容是否同步无关）；
+#   cp936（GBK）下不崩但吐 cp936 字节（非 UTF-8），UTF-8 消费者读到乱码。钉死 UTF-8 与 hooks 同款。
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CANON = "canonical"
 MIN_BODY = 15   # canonical 正文最小长度（去说明行后）——防清空/截断静默抹除整段（review R2）

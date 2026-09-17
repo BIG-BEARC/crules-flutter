@@ -5,7 +5,9 @@ SRC=$(cd "$(dirname "$0")/.." && pwd)
 [ $# -ge 1 ] || { echo "用法: bash scripts/check-imports.sh <消费项目根>"; exit 2; }
 TARGET=$1; CM="$TARGET/CLAUDE.md"
 [ -f "$CM" ] || { echo "❌ 未找到 $CM"; exit 2; }
-SRC_VER=$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["version"])' "$SRC/.claude-plugin/plugin.json" 2>/dev/null) || SRC_VER="?"
+# 1.0.21 Windows 实机 P0-A 同族：open() 缺 encoding → 宿主码页解 plugin.json（含中文 description）
+#   即 UnicodeDecodeError，被 2>/dev/null 吞掉、|| 兜到 SRC_VER="?" → 巡检退化为「未检出戳」假绿
+SRC_VER=$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1],encoding="utf-8"))["version"])' "$SRC/.claude-plugin/plugin.json" 2>/dev/null) || SRC_VER="?"
 STAMP=$(grep -oE '<!-- crules-flutter: v[0-9]+\.[0-9]+\.[0-9]+' "$CM" | head -1 | sed 's/.*v//')
 if [ -n "$STAMP" ] && [ "$SRC_VER" != "?" ]; then
   if [ "$STAMP" = "$SRC_VER" ]; then echo "✅ 版本戳 v$STAMP 与源一致"

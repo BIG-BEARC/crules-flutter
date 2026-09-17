@@ -43,6 +43,38 @@
 #     python3? 不匹配 python2（EOL 不再扩）；`| python3 -m json.tool` 格式化惯用法误弹（ask 无害）
 import json, os, re, sys
 
+# 流编码显式化（1.0.21，Windows 实机 P0-A）：宿主码页非 UTF-8 时 stdout 按该码页编码，两种后果
+#   按「该码页能否编出消息里的字」分岔（2026-09-17 双码页实测）：
+#   ①编不出 → blocked() 的 print 抛 UnicodeEncodeError，拦截 JSON **一字未出**即退出；hooks.json
+#     的 `python3 … || python …` 兜底链再把它洗白——首个解释器已读完 stdin，兜底那次拿到空输入 →
+#     json.load 失败 → exit 0，宿主侧与「无命中」不可区分（cp950/Big5 遇简体字形实测 exit 0 +
+#     stdout 0 字节），hard gate 整体静默 fail-open。
+#   ②编得出（如 cp936/GBK 对简体消息）→ 不崩，但 stdout 是 **cp936 字节而非 UTF-8**，宿主按
+#     UTF-8 读则 reason 失真（决策字段系 ASCII，所测样本仍可解析——属未爆隐患，非安全态）。
+#   stdin 方向**不抛**（Windows 标准流 errors=surrogateescape，实测）——坏字节变孤立代理项，
+#   属「失真」而非「失败」：ASCII 骨架（rm/git 签名、/tmp 前缀）保留故判定面未见翻转，
+#   但含非 ASCII 的路径/白名单串会被解成代理项垃圾。仍钉 UTF-8，使两侧语义与 ps1 一致。
+# 修法 = 三流钉死 UTF-8，不依赖宿主码页，与 deny-list.ps1 入口段的 OpenStandardInput/Output +
+#   UTF8Encoding($false) 同款（ps1 早有此手，py 侧补齐）。errors 两侧均 replace：编码侧防孤立
+#   代理项（\udXXX）令闸门自毁，解码侧保住 ASCII 骨架（签名/路径仍可判）——两个方向都优于抛异常。
+def _hook_utf8_streams():
+    for name in ("stdin", "stdout", "stderr"):
+        s = getattr(sys, name, None)
+        if s is None:
+            continue
+        try:
+            s.reconfigure(encoding="utf-8", errors="replace")
+            continue
+        except Exception:
+            pass
+        try:   # Python < 3.7 无 reconfigure：退到重包 TextIOWrapper
+            import io
+            setattr(sys, name, io.TextIOWrapper(s.buffer, encoding="utf-8", errors="replace"))
+        except Exception:
+            pass
+
+_hook_utf8_streams()
+
 try:
     data = json.load(sys.stdin)
 except Exception:
@@ -59,6 +91,14 @@ if not cmd.strip():
 cmd = re.sub(r"\\\r?\n", "", cmd)
 cmd = re.sub(r"\\(\w)", r"\1", cmd)
 cmd = re.sub(r"['\"]", "", cmd)
+
+# rm 白名单根（1.0.21 Windows 实机）：根与 token **同经 normpath** 再比较——原写法拿字面
+#   "/tmp/" 去比 normpath 后的 token，而 Windows 的 normpath 把 / 翻成 \（normpath("/tmp/junk")
+#   = "\tmp\junk"），前缀恒不命中 → /tmp、/var/folders 白名单族 5 例 both-allow 夹具在 Windows
+#   全数误拦（macOS/Linux 上 normpath 不翻分隔符，故 CI 长期绿、掩盖此病）。归一后 POSIX 语义
+#   逐字不变（normpath("/tmp") 仍为 "/tmp"），Windows 侧与 deny-list.ps1 D-e「字面 /tmp
+#   /var/folders 跨界仍对」的声明对齐（双源对照表 temp 根一项）。
+TMP_ROOTS = (os.path.normpath("/tmp"), os.path.normpath("/var/folders"))
 
 def blocked(reason):
     # 1.0.9：输出契约现代化——顶层 {"decision":"block"} 为官方已废弃旧形态（仅靠映射兼容），
@@ -176,7 +216,8 @@ for part in re.split(r";|&&|\|\||\||\r?\n", cmd):
             REDIR = re.compile(r"^\d*[<>]")  # 重定向 token（2>&1 / 2>/dev/null / <file）不作 path
             paths = [os.path.normpath(os.path.expanduser(strip_quotes(t)))
                      for t in tokens[1:] if not t.startswith("-") and not REDIR.match(t)]
-            if not paths or not all(p == "/tmp" or p.startswith("/tmp/") or p.startswith("/var/folders/") for p in paths):
+            if not paths or not all(any(p == rt or p.startswith(rt + os.sep) for rt in TMP_ROOTS)
+                                    for p in paths):
                 blocked("破坏性命令（rm 递归+强制，非临时目录或无操作数）：请人工确认后自行执行")
 
 # warn 层（1.0.9 外审 🟢7）：高危四形态「先确认」机制化，全部未命中 deny 才到此处。

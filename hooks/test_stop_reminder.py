@@ -2,6 +2,14 @@
 # stop-reminder.py fixture 回归（A3）——四态：无队列静默 / 空队列静默 / stop_hook_active 抑制 / 队列非空出 additionalContext
 import json, os, subprocess, sys, tempfile
 
+# 驱动自身 print 含中文（1.0.21 Windows 实机 P0-A，与 deny-list.py 同批）：宿主码页非 UTF-8
+#   （简中 936 / 繁中 950…）时抛 UnicodeEncodeError 整跑即崩。读侧无需动——bytes.decode()
+#   本就默认 UTF-8（子进程输出自 1.0.21 起为显式 UTF-8，两侧对齐）。
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
 HOOK = os.path.join(os.path.dirname(os.path.abspath(__file__)), "stop-reminder.py")
 fails = 0
 

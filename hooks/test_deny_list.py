@@ -16,8 +16,10 @@ fixture 原则：该拦全拦（含 v37 外审 5 绕过、1.0.8 拼合绕过 10 
 （F10① 不变）——两条同测，防「一并收口」或「一并放开」的过度修正。
 启动失败（子进程没起来）与判定失败**分开处置、分开计数**（见 _spawn）：前者是环境故障
 （本机注入型终端管控 agent 所致），后者才是被测对象的失败——混成一团会让红无从下手。
+1.0.23 起**判定主体改进程内**（exec 闸源码，闸本体零改动；165 次 spawn → 7 次），保真锚点与
+契约面仍走真子进程，`--diff` 可对全量用例两路并跑比对——改动 harness 或闸本体后须重跑一次。
 """
-import json, os, subprocess, sys
+import io, json, os, subprocess, sys
 
 # 编码显式化（1.0.21，Windows 实机 P0-A，与 deny-list.py 同批）：①驱动自身 print 含中文，
 #   宿主码页非 UTF-8 时抛 UnicodeEncodeError 整跑即崩；②子进程输出自 1.0.21 起为显式 UTF-8，
@@ -57,6 +59,8 @@ def _raw_spawn(stdin_text: str):
     """喂任意 stdin 跑一次 deny-list.py，返回 (rc, stdout)。子进程根本起不来（OSError）时 rc=None。
     返回 rc **而非抛异常**：本机装注入型终端管控 agent，密集 spawn 下偶发进程启动失败
     （STATUS_DLL_INIT_FAILED），抛出去会让整个驱动崩掉、拿不到其余用例的证据。"""
+    global SPAWNS
+    SPAWNS += 1
     try:
         p = subprocess.run(
             [sys.executable, os.path.join(HERE, "deny-list.py")],
@@ -72,6 +76,8 @@ def _raw_spawn(stdin_text: str):
 #   并按当次实得值报；重试与失败次数**一律进汇总行**，故「本机在丢进程」永远看得见、不会变成假绿。
 SPAWN_RETRY = 0
 SPAWN_FAIL = 0
+INPROC = 0     # 进程内判定次数（1.0.23 起为主体路径）
+SPAWNS = 0     # 真子进程 spawn 次数（契约面 + 锚点 + --diff）
 
 def _spawn(stdin_text: str):
     """带启动失败重试的 spawn（见上方纪律）；返回 (rc, stdout)。"""
@@ -84,14 +90,66 @@ def _spawn(stdin_text: str):
             SPAWN_FAIL += 1
     return rc, out
 
-def decision(case: str) -> str:
-    """三值判定：deny / ask / allow（1.0.9 warn 层起拦放不再是二元）"""
-    _, out = _spawn(json.dumps({"tool_input": {"command": case}}))
+def _verdict(out: str) -> str:
+    """输出文本 → 三值判定（deny / ask / allow，1.0.9 warn 层起拦放不再是二元）"""
     if '"deny"' in out:
         return "deny"
     if '"ask"' in out:
         return "ask"
     return "allow"
+
+# ── 进程内判定（1.0.23）───────────────────────────────────────────────────────
+# **为什么**：本驱动每遍 spawn 约 165 个 python 子进程，而本机每个新 python 进程启动时都要过一遍
+#   注入的终端管控 DLL 的 DllMain（见文件头），偶发 STATUS_DLL_INIT_FAILED → 弹加载器级硬错误框。
+#   而判定逻辑本身是**纯函数**（读 stdin → 判 → 写 stdout），除少量保真锚点外没有必要进程隔离。
+# **为什么不动 deny-list.py**：闸本体是随 plugin 分发的安全组件；为测试便利改它的主流程（加
+#   __main__ 守卫、把 blocked()/warned() 的 sys.exit 改成 return）是拿**安全面**换**测试便利**，
+#   收益/风险比不划算（原 R3 复核结论「需重构主流程，收益/风险比待裁」即指此）。本方案把承载判定
+#   所需的机制**全部放在测试侧**，闸源码逐字节不被本改动触碰。
+# **保真边界（诚实声明，别高估本 harness）**：进程内只等价于闸的**判定语义**（deny/ask/allow 与
+#   输出文本），**不**等价于**进程契约**（退出码、真管道、空 stdin、`||` 兜底链、UTF-8 流重配）。
+#   故三处仍走真子进程：①契约锁 4 例（其被测对象正是进程契约本身）；②判定锚点 3 例（拦/放/ask 各一，
+#   两条路同判才过）；③`--diff`（对**全部**用例与变异两路并跑比对，是本 harness 的保真证明）。
+#   **改动本 harness 或闸本体后，须重跑一次 --diff**（一次性代价：全量 spawn 约 165 次）。
+_CODE = compile(open(os.path.join(HERE, "deny-list.py"), encoding="utf-8").read(),
+                os.path.join(HERE, "deny-list.py"), "exec")
+
+class _FakeStream(io.StringIO):
+    """假三流。闸源码开头的 _hook_utf8_streams() 会逐个对 sys.std* 调 reconfigure()，
+    必须接住（否则退到 io.TextIOWrapper(s.buffer) 分支再失败一次——虽然也被 try 兜住，
+    但让那条路跑起来没有意义）。带上 reconfigure 即走 `continue`，与真流同形。"""
+    def reconfigure(self, **kw):
+        pass
+
+def _fake_exit(code=0):
+    """替身 os._exit：gate_self_failure 用它绕开 traceback，进程内要改成可捕获的退出。"""
+    raise SystemExit(code)
+
+def _judge_inproc(stdin_text: str):
+    """进程内跑一次判定，返回 (rc, stdout)——rc 恒 0，与真闸的常规出口（含 gate_self_failure）同形。"""
+    old = (sys.stdin, sys.stdout, sys.stderr, os._exit, sys.excepthook)
+    global INPROC
+    INPROC += 1
+    fin, fout = _FakeStream(), _FakeStream()
+    fin.write(stdin_text)
+    fin.seek(0)
+    sys.stdin, sys.stdout, sys.stderr = fin, fout, _FakeStream()
+    os._exit = _fake_exit
+    try:
+        exec(_CODE, {"__name__": "crules_deny_list_under_test"})
+    except SystemExit:
+        pass
+    finally:
+        sys.stdin, sys.stdout, sys.stderr, os._exit, sys.excepthook = old
+    return 0, fout.getvalue()
+
+def decision(case: str) -> str:
+    """判定（默认走进程内；真子进程版见 _decision_subprocess，两者由锚点与 --diff 钉住同判）"""
+    return _verdict(_judge_inproc(json.dumps({"tool_input": {"command": case}}))[1])
+
+def _decision_subprocess(case: str) -> str:
+    """真子进程判定——保真锚点与 --diff 专用。"""
+    return _verdict(_spawn(json.dumps({"tool_input": {"command": case}}))[1])
 
 # 批A F9（1.0.11）：归一化单调性属性断言——deny 样本经「归一化可还原」的变异后不得变 allow。
 # 「归一方向一律拼合 = 只增拦截面」是 deny-list 头注声称的不变量，此处上机器锁。
@@ -163,6 +221,12 @@ def main() -> int:
             fails.append(f"闸自身失效契约破（{label}）: rc={qrc} stdout={qout!r}")
         if want_ask and "crules-flutter" not in qout:
             fails.append(f"闸自身失效 ask 未带闸标识（{label}）: stdout={qout!r}")
+    # 1.0.23 判定锚点：拦 / 放 / ask 各一例**两路并跑**（进程内 vs 真子进程），同判才过——
+    #   进程内 harness 的保真锚点（上头「保真边界」第②条）。三值各覆盖一条，防只看拦不看放。
+    for label, case in (("拦", BLOCK_CASES[0]), ("放", ALLOW_CASES[0]), ("ask", WARN_CASES[0])):
+        v_in, v_sp = decision(case), _decision_subprocess(case)
+        if v_in != v_sp:
+            fails.append(f"判定锚点两路不同判（{label}）: {case!r} 进程内={v_in} 真子进程={v_sp}")
     for f in fails:
         print("FAIL", f)
     # 启动失败计数进汇总行（**不为零必现形**）：本机注入型 agent 下「在丢进程」必须可见，
@@ -170,8 +234,43 @@ def main() -> int:
     spawn_note = ""
     if SPAWN_RETRY or SPAWN_FAIL:
         spawn_note = f"  子进程启动失败：重试 {SPAWN_RETRY} 次 / 仍失败 {SPAWN_FAIL} 次"
-    print(f"deny-list 测试(py 驱动): {len(BLOCK_CASES)} 拦 + {len(ALLOW_CASES)} 放 + {len(WARN_CASES)} warn + 单调性 {mut_total} 变异 + 契约锁 4, 失败 {len(fails)}{spawn_note}")
+    # 判定路径构成一并入汇总行：进程内占比是本版的核心改动，**必须可见**（否则日后有人把
+    #   decision() 改回 spawn，弹窗面悄悄回来而汇总行毫无变化 = 又一次无痕回归）。
+    print(f"deny-list 测试(py 驱动): {len(BLOCK_CASES)} 拦 + {len(ALLOW_CASES)} 放 + {len(WARN_CASES)} warn + 单调性 {mut_total} 变异 + 契约锁 4, 失败 {len(fails)}"
+          f"（判定路径：进程内 {INPROC} / 子进程 spawn {SPAWNS}{spawn_note}）")
     return 1 if fails else 0
 
+def diff_all() -> int:
+    """`--diff`：对**全部**用例与单调性变异两路并跑比对，输出不一致清单。
+    这是进程内 harness 的**保真证明**——只跑一次不够，改动 harness 或闸本体后须重跑。
+    代价 = 全量 spawn（约 165 次），故不进默认路径。"""
+    bad, n = [], 0
+    for c in BLOCK_CASES + ALLOW_CASES + WARN_CASES:
+        n += 1
+        a, b = decision(c), _decision_subprocess(c)
+        if a != b:
+            bad.append(f"{c!r}: 进程内={a} 真子进程={b}")
+    for c in BLOCK_CASES[::_MONO_STEP]:
+        for m in _norm_mutants(c):
+            n += 1
+            a, b = decision(m), _decision_subprocess(m)
+            if a != b:
+                bad.append(f"{m!r}: 进程内={a} 真子进程={b}")
+    # 契约形状的输入也须两路并跑：**这是本 harness 最可疑的一环**——空 stdin 走 gate_self_failure，
+    #   而它用 os._exit(0) 绕开 traceback，进程内靠 _fake_exit 拦成 SystemExit。harness 若在这里
+    #   失真，恰恰是「兜底路径判错」这种最不该错的失真，故必须显式覆盖（不只比 verdict，比全文）。
+    for label, payload in (("空 stdin", ""), ("纯空白 stdin", "  \n\t "), ("非空非法 JSON", "{not json")):
+        n += 1
+        a_in, a_sp = _judge_inproc(payload)[1], _spawn(payload)[1]
+        if a_in != a_sp:
+            bad.append(f"[{label}] 输出不同: 进程内={a_in!r} 真子进程={a_sp!r}")
+    note = ""
+    if SPAWN_RETRY or SPAWN_FAIL:
+        note = f"  子进程启动失败：重试 {SPAWN_RETRY} 次 / 仍失败 {SPAWN_FAIL} 次"
+    print(f"deny-list --diff 保真比对: {n} 例两路并跑, 不同判 {len(bad)}{note}")
+    for f in bad:
+        print("DIFF", f)
+    return 1 if bad else 0
+
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(diff_all() if "--diff" in sys.argv[1:] else main())

@@ -215,6 +215,20 @@ for f in app/CLAUDE.md plugin/CLAUDE.md memory/MAINTENANCE.md scripts/install.sh
 done
 [ "${ge_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  Gate 例外台账同源闸（双模板 Gate 例外节↔MAINTENANCE↔install.sh）"; } || { FAIL=$((FAIL+1)); echo "FAIL  Gate 例外台账同源闸（见上漂移清单）"; }
 
+# 1.0.27 断言：评审包自护条款防删改检查——两张评审卡「缺包即停」条款 + 令牌语法须在位，被删/改时此处变红。
+# 令牌契约见 进阶/Agent编排.md「评审包契约化」；若将来加 hooks 派单闸（派单时机械校验令牌），闸校验的
+# 即同一令牌——本断言是其文档侧锚（F11 教训：新增执行面不得零断言）。
+pk_ok=1
+for f in agents/plan-reviewer.md agents/reviewer.md; do
+  for s in '缺包即停' '【切片包】' '【切片包-免】'; do
+    grep -qF -- "${s}" "${SRC}/${f}" || { pk_ok=0; echo "  ↳ ${f} 缺「${s}」"; }
+  done
+done
+for s in '【切片包-免】' '派单前置条件'; do
+  grep -qF -- "${s}" "${SRC}/进阶/Agent编排.md" || { pk_ok=0; echo "  ↳ 进阶/Agent编排.md 缺「${s}」"; }
+done
+[ "${pk_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  评审包自护条款在位（两卡缺包即停 + Agent编排 令牌/派单前置）"; } || { FAIL=$((FAIL+1)); echo "FAIL  评审包自护条款漂移（见上）"; }
+
 # 1.0.5 断言：gitignore 幂等落位——首装补四行（1.0.7 增 .gate-exceptions），重装不重复（取代 1.0.4 模板侧文字指引）
 T5=$(mktemp -d /tmp/cf-gi.XXXXXX)
 bash $SRC/scripts/install.sh "$T5" --app >/dev/null 2>&1

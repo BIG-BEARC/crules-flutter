@@ -325,6 +325,8 @@ flutter_screenutil（.w/.h 按稿缩放）。注：5.9.3 后 ~28 个月无稳定
 @.claude/memory/NAVIGATION.md
 
 > 找东西的第一站，启动即内联载入（约 +0.7k token 常驻）；`MAINTENANCE.md` / `patterns.md` / `business-rules.md` / `INVARIANTS.md` 等经 NAVIGATION 指针**涉域前 Read**，不整库 @import（按需加载设计）。小项目不用记忆库时：删本行与 `.claude/memory/`（启用条件见 `进阶/记忆库体系.md`）。
+>
+> **落点锚定（一仓一 memory）**：memory 全家（坑卡 / patterns / ledger / Gate 台账等）的读写一律锚定**本 CLAUDE.md 所在目录**的 `.claude/memory/`，与会话 cwd 解耦——cwd 在子目录时先上溯到本层再落盘，禁止就地新建；**同一仓库不得安装第二套 crules 宪法层或第二个 memory**（monorepo 子包需要法时引用本层，不重复安装）——否则 ledger 聚合与坑库检索随层分叉，「distill 聚合恒零」类假信号即由此生。
 
 ### 项目附录（复制后填写）
 

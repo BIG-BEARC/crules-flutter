@@ -53,7 +53,7 @@
 ## git 分层（团队共享 vs 本机生成）
 
 - **进 git（制度资产，团队共享）**：本文件 / `patterns.md` / `business-rules.md` / `INVARIANTS.md` / `decisions/`——规则与决策是团队资产
-- **不进 git（本机生成物，可重建）**：`indexes/`（代码索引）与 `.pending-updates`（漂移队列）、`.review-ledger`（review 裁决台账——本机私域，防误报率被拿作考核）与 `.gate-exceptions`（Gate 例外台账——豁免留痕，备事后审计）——四行由 install.sh **幂等自动落位**到 `.gitignore`（已存在不重复）；想反着来（如 indexes 进 git）装后自行删行即可
+- **不进 git（本机生成物，可重建）**：`indexes/`（代码索引）与 `.pending-updates*`（漂移队列——1.0.30 起按会话分文件 `.pending-updates.<会话id>`，旧单文件为旧宿主/升级存量）、`.review-ledger`（review 裁决台账——本机私域，防误报率被拿作考核）与 `.gate-exceptions`（Gate 例外台账——豁免留痕，备事后审计）——四行由 install.sh **幂等自动落位**到 `.gitignore`（已存在不重复）；想反着来（如 indexes 进 git）装后自行删行即可
 - 同理：`.claude/settings.json`（团队共享的权限 / hooks 配置）**进 git**；`settings.local.json` **永不进**（本机私有）
 
 ## 规模演进触发
@@ -62,7 +62,7 @@
 
 ## 自检清单（每轮对话结束前）
 
-- [ ] `.claude/memory/.pending-updates` 非空？（PostToolUse 自动记录的漂移队列——本轮改过哪些源文件，对应索引补了吗？补完清空该文件）
+- [ ] 自己会话的漂移队列非空？（`.claude/memory/.pending-updates.<会话id>`——1.0.30 起按会话分文件，PostToolUse 自动记录；旧宿主无 session_id 时为旧单文件 `.pending-updates`）本轮改过哪些源文件，对应索引补了吗？补完清空**自己那个**；他人队列文件超 24 小时未清（孤儿，收尾提醒会报数）可顺手清掉
 - [ ] 新建 / 删除 / 重命名了源文件？对应索引同步了吗？
 - [ ] 新增状态单元 / 组件 / 路由吗？索引有登记吗？
 - [ ] 做了影响后续编码的设计决策吗？有 decision 文件吗？

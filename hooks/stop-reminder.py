@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 # crules-flutter 记忆库漂移队列收尾提醒（Stop hook 读侧闭环——A3，2026-09-05 三审复核 §5 自守卫版）
-# 机制：会话收尾时 .pending-updates 非空 → hookSpecificOutput.additionalContext 注入事实提醒，
-#   模型可据此补索引（pending-updates.py 写侧的读侧对位；此前读侧仅 MAINTENANCE 自检清单软约定）
+# 机制（1.0.30 队列分文件对位读侧——D3/D4/D5/D8）：收尾时读**本会话自己的队列文件**——
+#   - 项目根自 cwd 向上逐级找 .claude/memory/NAVIGATION.md 定根（D8，与写侧同源；cd 漂移不丢读侧）
+#   - 有 session_id → .pending-updates.<sid>；自己为空且旧单文件存在 → 读旧单文件（D3——升级
+#     存量一次性迁移读，写侧 1.0.30 起已不再写它）；无 session_id → 直接读旧单文件（D2 对位）
+#   - 自己队列非空时顺带两件事：①孤儿只报不删（D4）——其他会话队列文件中 mtime 超 24h 的计一条数，
+#     新鲜的不提（并行会话仍在途，不互扰）；②git 快查（批B F1）的「已入队」集合并入**所有**队列
+#     文件的行（D5——他人已入队文件不再被误报成未入队）
+#   - 自己队列与 legacy 皆空 → 静默退出（孤儿也不提——自己没事就闭嘴，防并行常态下互相打扰）
 # 自守卫（防连环续轮——官方：additionalContext 与 decision:block 共享 stop_hook_active + 连续 8 次上限）：
 #   stop_hook_active=true（本提醒刚触发的续轮）→ 直接 exit 0 不再提醒；自然停轮后队列仍非空会再提醒一次
 #   ——接受此节奏（漂移本该尽快清），更复杂的「仅条数变化时提醒」留观测后再议
@@ -14,7 +20,10 @@
 #   git status 快查，检出未入队的 A/D/? 源文件并入提醒。**设计取舍**：git 快查**不独立触发**
 #   （未提交改动是开发常态，独立触发会在每次 Stop 重复打扰）——仅作队列非空时的补充信息，
 #   故「纯 Bash 落盘会话」仍不提醒（诚实边界，待观测后定是否加状态文件去重）。耗时受 timeout 5s 约束
-import json, os, subprocess, sys
+import json, os, re, subprocess, sys, time
+
+MAX_SID = 80            # sid 作文件名时的截断长度（与 pending-updates.py 同源常量，改动需同步）
+ORPHAN_TTL = 24 * 3600  # 他人队列文件「孤儿」判定阈值（D4 只报不删；删除留给人）
 
 # 流编码显式化（1.0.21，Windows 实机 P0-A）：宿主码页非 UTF-8 时本 hook 的 print 中文或崩
 #   （该码页编不出该字，如 cp950 遇简体字形）或吐非 UTF-8 字节（cp936），两者都使提醒 JSON
@@ -38,6 +47,30 @@ def _hook_utf8_streams():
 
 _hook_utf8_streams()
 
+
+def find_project_root(start):
+    """自 start 向上逐级找含 .claude/memory/NAVIGATION.md 的目录（1.0.30 D8）；到盘根未中 → None
+    **与 pending-updates.py 的 find_project_root 同源，改动须两处同步**（两 hook 随 plugin 独立分发，不引共享模块）"""
+    d = os.path.abspath(start)
+    while True:
+        if os.path.exists(os.path.join(d, ".claude", "memory", "NAVIGATION.md")):
+            return d
+        parent = os.path.dirname(d)
+        if parent == d:
+            return None
+        d = parent
+
+def read_lines(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return [l.strip() for l in f if l.strip()]
+    except OSError:
+        return []
+
+def norm_paths(ls):
+    """队列行路径归一为正斜杠——与写侧落盘归一（pending-updates.py 1.0.30 R5 实测修）对位；
+    兼容 1.0.30 之前 Windows 落下的反斜杠旧队列行，否则 git 正斜杠路径与之恒不匹配"""
+    return {l.replace("\\", "/") for l in ls}
 
 def git_source_changes(root, known):
     """git status 检出未入队的源文件变更（A/D/?）——Bash 落盘盲区补充；非 git 仓/超时静默返回 []
@@ -66,22 +99,57 @@ try:
     data = json.load(sys.stdin)
 except Exception:
     sys.exit(0)
+# 形状守卫（1.0.30 复读 N1，与写侧同）：JSON 解析成功 ≠ 形状合法——顶层非对象（[] / "x" / 123）
+#   时 `data.get` 抛 AttributeError 且在 try 外即未捕获崩溃，与 fail-open 头注不符
+if not isinstance(data, dict):
+    sys.exit(0)
 if data.get("stop_hook_active"):
     sys.exit(0)
-queue = os.path.join(os.getcwd(), ".claude", "memory", ".pending-updates")
-try:
-    lines = [l.strip() for l in open(queue, encoding="utf-8") if l.strip()]
-except OSError:
+root = find_project_root(os.getcwd())
+if not root:
     sys.exit(0)
+mem = os.path.join(root, ".claude", "memory")
+# 取值类型守卫（1.0.30 收口 R3，与写侧同）：合法 JSON 但 session_id 非字符串时 re.sub 会抛未捕获异常，
+#   与头注 fail-open 契约不符——str 守卫使异型退化为「无此字段」语义
+sid = re.sub(r"[^A-Za-z0-9_-]", "-", str(data.get("session_id") or ""))[:MAX_SID]  # 与写侧 D6 同规则净化
+own_name = (".pending-updates." + sid) if sid else ".pending-updates"
+src_name = own_name   # 报出的条目实际来自哪个队列文件（R6——D3 回退命中时文案须指向 legacy，否则用户清无可清）
+lines = read_lines(os.path.join(mem, own_name))
+if not lines and sid:
+    lines = read_lines(os.path.join(mem, ".pending-updates"))  # D3：升级存量一次性迁移读
+    if lines:
+        src_name = ".pending-updates"
 if not lines:
     sys.exit(0)
 first = lines[0][:120]
 msg = f"记忆库漂移队列非空：{len(lines)} 条待补索引（如 {first}）。"
-extra = git_source_changes(os.getcwd(), set(lines))
+# D4/D5：他人队列文件——行并入已入队集合（D5），mtime 超 ORPHAN_TTL 计孤儿（D4 只报不删，删除留给人）
+now = time.time()
+orphans = 0
+known = norm_paths(lines)
+try:
+    known |= norm_paths(read_lines(os.path.join(mem, ".pending-updates")))  # legacy 存量也算已入队
+    for name in os.listdir(mem):
+        if not name.startswith(".pending-updates.") or name == own_name:
+            continue
+        p = os.path.join(mem, name)
+        known |= norm_paths(read_lines(p))
+        try:
+            if now - os.path.getmtime(p) > ORPHAN_TTL:
+                orphans += 1
+        except OSError:
+            pass
+except OSError:
+    pass
+if orphans:
+    msg += f"另有 {orphans} 个其他会话队列文件超 24 小时未清（孤儿，可能来自崩溃或已收尾会话），可按 MAINTENANCE.md 自检清理。"
+extra = git_source_changes(root, known)
 if extra:
     msg += (f"另 git 检出 {len(extra)} 个未入队源文件变更（如 {extra[0][:80]}）"
             f"——Bash 落盘路径（create / mv / 重定向 / 生成器）不进 PostToolUse 队列，请一并核对。")
-msg += ("本轮改动若已收尾，按 .claude/memory/MAINTENANCE.md 触发表补对应索引后清空 .pending-updates；"
+clear_hint = (f"清空本会话队列文件 {own_name}" if src_name == own_name
+              else "清空旧单文件 .pending-updates（升级存量，写侧 1.0.30 起已不再写它）")
+msg += (f"本轮改动若已收尾，按 .claude/memory/MAINTENANCE.md 触发表补对应索引后{clear_hint}；"
         "仍在继续任务则可忽略本条，收尾时会再提示。")
 print(json.dumps({"hookSpecificOutput": {"hookEventName": "Stop", "additionalContext": msg[:10000]}}, ensure_ascii=False))
 sys.exit(0)

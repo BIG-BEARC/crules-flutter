@@ -7,7 +7,7 @@
 #     本包三脚本此类位置一律花括号隔离（v59 BSD grep 环境坑同款教训）
 set -uo pipefail
 SRC=$(cd "$(dirname "$0")/.." && pwd)
-# 环境守卫（1.0.13）：本脚本两条断言（draft / tag）依赖 git 历史，其余 25 条不依赖（1.0.15 断言 29→27 时同步）。在无 .git 的拷贝里
+# 环境守卫（1.0.13）：本脚本两条断言（draft / tag）依赖 git 历史，其余 29 条不依赖（1.0.30 断言 29→31 时同步）。在无 .git 的拷贝里
 # （典型：插件 cache = 全仓文件快照、非 clone）draft 吃 git 报错码 128 → **假红**；tag 则落到「读 HEAD 失败」
 # 分支 → **假绿**，其声称守护的「1.0.2 D2 防 tag 打在 bump 前旧树」版本比对从未执行。假绿比报错更贵——
 # 故显式拒绝，不静默变形。
@@ -35,6 +35,7 @@ else
   echo "SKIP  deny-list.ps1 fixture（本机无 PowerShell——Windows 实机为最终闸，CI pwsh 步硬拦）"
 fi
 t 0 "python3 $SRC/hooks/test_stop_reminder.py"            "stop-reminder fixture 应全绿（A3 读侧闭环）"
+t 0 "python3 $SRC/hooks/test_pending_updates.py"          "pending-updates 写侧 fixture 应全绿（1.0.30 队列分文件）"
 t 1 "bash $SRC/scripts/release.sh tag 9.9.9"               "release tag 版本不匹配应报错（1.0.2 D2——防 tag 打在 bump 前旧树）"
 # 非 git 树守卫的反向断言（1.0.13）：把脚本本身拷进非 git 目录跑，须**显式拒绝**。判据三条件缺一不可——
 # rc≠0 单独不成立：守卫缺失时该拷贝会跑完全套，并因既有 FAIL>0 同样退出非零（又一个假绿）；故另须确认
@@ -237,6 +238,19 @@ bash $SRC/scripts/install.sh "$T5" --app --force >/dev/null 2>&1
 gi2=$(grep -c '^\.claude/memory' "$T5/.gitignore" 2>/dev/null) || gi2=0
 [ "${gi1}" = "4" ] && [ "${gi2}" = "4" ] && { PASS=$((PASS+1)); echo "PASS  gitignore 幂等落位（首装 4 行，force 重装仍 4 行）"; } || { FAIL=$((FAIL+1)); echo "FAIL  gitignore 落位（首装 ${gi1} 行 / 重装 ${gi2} 行，期望 4/4）"; }
 rm -rf "$T5"
+
+# 1.0.30 断言：gitignore entry 精确名 → 通配名（.pending-updates → .pending-updates*，队列按会话分文件）。
+# 升级用户旧 gitignore 已有精确行——须迁移旧行而非留下双行近似重复（install.sh 精确行比对不会命中通配 entry）。
+T5B=$(mktemp -d /tmp/cf-gi2.XXXXXX)
+printf '.claude/memory/indexes/\n.claude/memory/.pending-updates\n.claude/memory/.review-ledger\n.claude/memory/.gate-exceptions\n' > "$T5B/.gitignore"
+bash $SRC/scripts/install.sh "$T5B" --app >/dev/null 2>&1
+gi3=$(grep -c '^\.claude/memory' "$T5B/.gitignore" 2>/dev/null) || gi3=0
+gi_old=$(grep -cxF '.claude/memory/.pending-updates' "$T5B/.gitignore" 2>/dev/null) || gi_old=0
+gi_new=$(grep -cxF '.claude/memory/.pending-updates*' "$T5B/.gitignore" 2>/dev/null) || gi_new=0
+[ "${gi3}" = "4" ] && [ "${gi_old}" = "0" ] && [ "${gi_new}" = "1" ] \
+  && { PASS=$((PASS+1)); echo "PASS  gitignore 升级迁移（旧精确行已换通配新行，仍 4 行）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  gitignore 升级迁移（${gi3} 行 / 旧行 ${gi_old} / 新行 ${gi_new}，期望 4/0/1）"; }
+rm -rf "$T5B"
 
 # 幂等断言：同输入两次运行结论一致且均 deny（双 plugin 共存的可测背书；1.0.9 输出契约
 # 现代化 block→permissionDecision deny，grep 口径随迁）

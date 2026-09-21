@@ -3,7 +3,7 @@
 面向 **Flutter 工程**的 AI 协作规则 plugin：把「AI 怎么跟你安全地干活」固化成机制——危险命令硬拦、改动先过方案确认、交付必过审查、经验自动沉淀。
 独立自持（源自 crules fork，2026-09 起 1.0.0 独立演进，史见 [CHANGELOG](CHANGELOG.md)）；许可 **MIT**（[LICENSE](LICENSE)）。
 
-> 当前状态：1.0.29（版本编年史见 [CHANGELOG](CHANGELOG.md)）
+> 当前状态：1.0.30（版本编年史见 [CHANGELOG](CHANGELOG.md)）
 
 ---
 
@@ -96,7 +96,7 @@ sequenceDiagram
 | `CLAUDE.md`（App / Plugin 模板二选一 + 版本戳） | 项目根 | 协作规则本体 |
 | `checklist.md` | 项目根 | 审查清单（通用 10 条编号 0–9 + Flutter 专项） |
 | `analysis_options.yaml` | 项目根 | 三态落位：flutter 脚手架默认 → 升级替换（原文件留 `.scaffold-bak`）；已有自定义 → 落伴生文件待人工合并；无 → 写入 |
-| `.gitignore` 三行 | 项目根 | memory 本机生成物（索引/漂移队列/review 台账）自动排除出 git（幂等） |
+| `.gitignore` 四行 | 项目根 | memory 本机生成物（索引 / 漂移队列 `.pending-updates*` / review 台账 / Gate 例外台账）自动排除出 git（幂等；1.0.30 起队列行改通配，升级时旧精确行自动迁移） |
 | `进阶/` 6 篇 | 项目根 | 上手教程 / 工程化流程 / 审查纪律 / 方案评审闭环 / Agent 编排 / 记忆库体系 |
 | `memory/` 8 模板 | `.claude/memory/` | 制度资产（含 `reference-map.md` 分域参考系 / `platform-pitfalls.md` 平台坑库） |
 
@@ -131,7 +131,7 @@ bash "$SRC" <项目根> --app --upgrade    # 巡检版本差 → 确认 → --fo
 | 恢复 | `claude plugin enable crules-flutter@crules-flutter-market`（**完整形态**，纯名会 not found；**新会话生效**——当前会话不装载 hooks，别在旧会话验证） |
 | 彻底卸 | `claude plugin uninstall crules-flutter@crules-flutter-market` + `claude plugin marketplace remove crules-flutter-market` |
 
-**与其他规则 plugin 共存**：同一项目二选一（勿与其他全量规则包双装）；同机器不同项目各装各的无冲突——万一两套 hooks 同项目双跑：deny-list 并集拦截（任一 deny 即 deny，deny > ask 优先级官方明确，保守无害）、pending-updates 写同一队列文件经 flock 幂等。
+**与其他规则 plugin 共存**：同一项目二选一（勿与其他全量规则包双装）；同机器不同项目各装各的无冲突——万一两套 hooks 同项目双跑：deny-list 并集拦截（任一 deny 即 deny，deny > ask 优先级官方明确，保守无害）、pending-updates 队列按会话分文件（1.0.30 起，各会话互不写同一文件；仅无 session_id 的旧宿主退化为共享单文件，POSIX 经 flock、Windows 原子追加）。
 
 ---
 

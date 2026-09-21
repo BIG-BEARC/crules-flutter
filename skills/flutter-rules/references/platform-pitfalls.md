@@ -48,6 +48,14 @@
 - 状态：现行 ｜ 最后核验：2026-09-08
 - 出处：实证 saas-cashier `af24988e3`（SPUtil 备份恢复 + init 失败降级启动）/ `4017e21c1`（Android channel 重试）/ `4df1c2702`（deviceId 种子冻结文件化）/ `f890669f2`
 
+### [全平台] flutter_screenutil：.sp 求值早于 ScreenUtilInit builder → LateInitializationError
+
+- 归属：三方依赖（flutter_screenutil ^5.9.3，ScreenUtilInit 机制）
+- 触发场景：widget 测试 pumpWidget 之前构造含 `.sp` / 样式常量（AppTextStyles 类）的 widget——参数默认值 / 探针直接 new 最常见 ｜ 症状：测试构建期抛 `LateInitializationError: Field '_minTextAdapt...' has not been initialized`，栈顶 ScreenUtil.setSp ← `.sp` 求值点 ｜ 根因：ScreenUtil 单例在 ScreenUtilInit builder 内才初始化，builder 外求值 `.sp` 触碰未初始化 LateInit 字段 ｜ 规避：`.sp` / 样式求值必须在 ScreenUtilInit builder 子树内——pump 前构造 widget 参数时惰性化（`() => _body()` 放 builder 内调用）；主套件未踩到只因样式恰在 build 阶段求值，**探针 / 临时测试最易中招**
+- 区间：ScreenUtilInit 机制（实证项目锁 ^5.9.3；其他版本未查证）
+- 状态：现行机制 ｜ 最后核验：2026-09-20
+- 出处：生产实证（私有仓探针实测，栈：ScreenUtil.scaleText ← SizeExtension.sp ← AppTextStyles.textStyle18；同构先例 member_manager_toolbar_test.dart `_pump` 惰性构造）
+
 ## Flutter SDK
 
 ### [Windows] 中文输入法吞 character 通道 × numpad 键 keyLabel 空串——扫码枪/按键监听纯数字全灭
@@ -82,6 +90,30 @@
 - 状态：引擎回退机制现行，未变 ｜ 最后核验：2026-09-08
 - 出处：实证三笔（saas-cashier `bbf976e42` Android Roboto 全字重打包 / `0508ac9b5` Windows 普惠体打包 / `656558508` 内联绕过复发修复）+ [flutter#154166](https://github.com/flutter/flutter/issues/154166)（ColorOS 字重裁剪）、[flutter#145069](https://github.com/flutter/flutter/issues/145069)（跨平台渲染不一致）、[官方自定义字体 Cookbook](https://docs.flutter.dev/cookbook/design/fonts)
 
+### [全平台] TabBar indicatorSize.label × 非零 indicatorPadding 双重内缩——下划线过短且左缘缩进
+
+- 归属：Flutter SDK（Material TabBar）
+- 触发场景：TabBar 同时设 `indicatorSize: TabBarIndicatorSize.label` 与非零 `indicatorPadding` ｜ 症状：选中 Tab 下划线比文字短、左缘缩进 labelPadding.left——视觉即「title 未对齐 / 未靠左」，常被当布局 bug 排查 ｜ 根因：label 模式下划线定位已由 labelPadding 承担，indicatorPadding 同设必被二次内缩（3.27.4 tabs.dart:542-560 label 分支后 `insets.deflateRect(rect)`） ｜ 规避：indicatorSize.label 时 indicatorPadding 保持默认 zero 不设
+- 区间：已核验 3.19.6 / 3.27.4（跨版本逻辑相同）
+- 状态：框架行为（规避即终态） ｜ 最后核验：2026-09-20
+- 出处：生产实证（私有仓三处同坑：delivery_order_panel.dart:189 修复，先例 member_manager_page.dart:121-122、coupon_benefits_panel.dart:183）+ 本地 SDK 源码行号
+
+### [全平台] 滚动 TabBar dividerColor: transparent 跨 SDK 撑满 / 收缩差异——同代码两版渲染不同
+
+- 归属：Flutter SDK（Material TabBar，版本行为差异）
+- 触发场景：滚动 TabBar 设 `dividerColor: transparent` 且需满宽承载 ｜ 症状：3.19.6 构建整条 Tab 右移 (列宽−条宽)/2（外层 Column 默认 center 居中收缩块），3.27.4 贴左——「测试对真机错」的探针矛盾 ｜ 根因：widthFactor 语义跨版本变更——3.19.6 `showDivider ? null : 1.0`（transparent → 收缩定宽）；3.27.4 改 `dividerHeight > 0 ? null : 1.0`（transparent 仍撑满）（3.19.6 tabs.dart:1698-1705 vs 3.27.4 tabs.dart:1890-1895 双源码核验） ｜ 规避：需满宽承载时显式撑满（Positioned.fill / 宽约束），不依赖 SDK 填充行为
+- 区间：Flutter 3.19.6 × 3.27.4（双源码核验）
+- 状态：框架行为差异（规避即终态） ｜ 最后核验：2026-09-20
+- 出处：生产实证（私有仓 delivery_order_panel.dart:178 修复）+ 本地双版本 SDK 源码
+
+### [全平台] InputDecorator 垂直定位基线制——textAlignVertical 无杠杆、hint 盒居中几何断言不可达
+
+- 归属：Flutter SDK（Material InputDecorator）
+- 触发场景：对 hint 垂直居中写几何断言；或 input 被钉顶后调 textAlignVertical 想救 ｜ 症状：①InputBorder.none（非 outline）默认 textAlignVertical=top，定高容器内 input 子级被拉伸钉顶；②包 Row 松约束后残余偏差 = input(EditableText) 与 hint 段落盒的基线差（测试字体 2.25px）——「上下间隙差 ≤0.5」类断言任何结构变体下不可达，红断言随批进仓 ｜ 根因：装饰器按基线排版且恒被 input 子级填满（maxVerticalOffset=0），textAlignVertical 无杠杆（探针 A==B、C==D 实证；3.19.6 input_decorator.dart:800-802 默认 top / 1086-1137 基线公式 / 919-945 _layoutLineBox 字母基线） ｜ 规避：hint 垂直居中用「Row 松约束 + crossAxisAlignment.center」；几何断言写「间隙差 ≤5（实测可达值）+ 装饰器固有高结构锁」；勿再调 textAlignVertical
+- 区间：已核验 3.19.6（input_decorator.dart 行号）；跨版本稳定性未逐一核验
+- 状态：框架行为（规避即终态） ｜ 最后核验：2026-09-20
+- 出处：生产实证（私有仓探针四变体实测 + 修复批 member_manager_toolbar_test.dart；1.0.29「表征断言先实测再落锁」条同源实证）
+
 ## OS 平台
 
 ### [Android] 版本兼容基线（一卡多区间合并）
@@ -96,3 +128,21 @@
 - 症状：越过基线后旧存储 API 失效 / 权限模型变化 / 返回手势行为差异 / Play 上架被 16KB 拦截 / 状态栏遮挡或崩溃 ｜ 规避：按官方文档采用 MediaStore / photo picker / OnBackPressedDispatcher + predictive back 声明；16KB 升级 Flutter ≥3.38（自有 `.so` 用 NDK r28 重编对齐）；edge-to-edge 改 `enableEdgeToEdge` + insets 适配并跟随 Flutter SystemUiMode 新默认
 - 状态：官方文档口径（API 29 / 33 / 35 / 36 关键锚点；16KB 期限 2027-02-01）；photo picker 与 predictive back 细节部分未逐字核验 ｜ 最后核验：2026-09-05
 - 出处：[Android 11 存储隐私](https://developer.android.com/about/versions/11/privacy/storage)、[存储总览](https://developer.android.com/training/data-storage)、[photo picker](https://developer.android.com/training/data-storage/shared/photopicker)、[预测性返回手势](https://developer.android.com/guide/navigation/predictive-back-gesture)、[16KB page size 要求与期限](https://developer.android.com/guide/practices/page-sizes)、[Android 15 行为变更](https://developer.android.com/about/versions/15/behavior-changes-15)、[Android 16 行为变更（豁免移除）](https://developer.android.com/about/versions/16/behavior-changes-16)、[Flutter 3.38（NDK r28 默认）](https://flutter.dev/blog/whats-new-in-flutter-3-38)、[Flutter SystemUiMode 破坏性变更](https://docs.flutter.dev/release/breaking-changes/default-systemuimode-edge-to-edge)
+
+## 工具链
+
+### [Windows] 页面级 widget test 载入即崩——「类找不到」先疑工具链损坏（dill 陈旧），勿急降依赖
+
+- 归属：工具链损坏（fvm 安装的 SDK platform dill 陈旧）——同族原始卡曾误判「三方依赖 win32 × SDK 组合」，经复盘推翻归因
+- 触发场景：页面级 widget 测试载入即崩（纯逻辑 / 共享 widget 测试不受影响） ｜ 症状：编译期类找不到（实例 `UnmodifiableUint8ListView not found`，win32 guid.dart） ｜ 根因：fvm 安装的 `vm_platform_strong.dill` 陈旧损坏（grep 损坏版 0 命中、健康版 11 命中）；降依赖 pin 证伪（win32 降 5.4.0 仍崩）、fvm clean + pub get 复验仍崩 ｜ 规避：**诊断序——编译报类找不到先 grep 实际参与编译的 dill**，勿急降依赖 pin、勿误判为被测代码缺陷；损坏安装重装修复
+- 区间：Windows × fvm 安装 × 测试编译（损坏实例 3.27.4 / 3.24.3）
+- 状态：部分解决（显式健康版本后全过；坏安装待重装） ｜ 最后核验：2026-09-20
+- 出处：生产实证（私有仓复盘 docs/复盘-2026-09-18-sdk混态排障.md 实锤链）
+
+### [Windows] 机械验证直调错误版本 SDK——逃生门二进制的版本取自报错文案而非钉定版本
+
+- 归属：OS 工具链（多版本 SDK 共存：fvm shim 缺 PATH / 子包 .fvmrc 独立）
+- 触发场景：质量脚本失败后走「显式二进制」逃生门 ｜ 症状：直调了错误版本的 flutter 完成机械验证（实例：子包 UI 批 analyze 用了 3.27.4，与 Windows 钉定 3.19.6 失配），验证结论作废 ｜ 根因：①版本取自脚本报错文案（脚本读子包 .fvmrc 给安装建议——**报错文案不是版本依据**）②monorepo 子包自带 .fvmrc 不受根 .fvmrc 约束 ｜ 规避：机械验证 / 测试一律显式「平台钉定版本」的全路径二进制（含子包）；钉定版本以平台决策为准，不从脚本报错文案现场取
+- 区间：Windows × fvm 全版本 × Git Bash（shim 缺失为常驻诱因）
+- 状态：已修复（钉定统一 + 显式二进制纪律，复验 analyze exit 0） ｜ 最后核验：2026-09-20
+- 出处：生产实证（需求方指令「Windows 钉死 3.19.6……沉淀以防再犯」+ 私有仓复盘 docs/复盘-2026-09-18-sdk混态排障.md）

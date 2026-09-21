@@ -52,7 +52,7 @@ sequenceDiagram
 - **命令 ×5**：init / update-memory / help / distill / diagram
 - **agents ×7**：frontend / backend / i18n / platform / error / reviewer / plan-reviewer（出场时机见 `进阶/Agent编排.md`）
 - **skill**：flutter-rules（技术规范参考 + 方案骨架 + 平台坑节 + 状态管理 / 测试选型 / dart-flutter 映射速查）
-- **hooks ×3**：deny-list（PreToolUse 安全闸：破坏命令硬拦 deny + 高危形态弹窗确认 ask）/ pending-updates（PostToolUse 同步提示）/ stop-reminder（Stop 收尾提醒）（供应链说明见 README）
+- **hooks ×3**：deny-list（PreToolUse 安全闸：破坏命令硬拦 deny + 高危形态弹窗确认 ask）/ pending-updates（PostToolUse 漂移队列，1.0.30 起按会话分文件）/ stop-reminder（Stop 收尾提醒，只读本会话队列）（供应链说明见 README）
 - **模板**：根 CLAUDE.md（App / Plugin 二选一）+ checklist + 进阶 6 篇 + memory 8 模板
 
 ## 冲突时听谁的（优先级链）

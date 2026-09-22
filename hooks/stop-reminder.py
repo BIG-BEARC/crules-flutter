@@ -22,6 +22,17 @@
 #   故「纯 Bash 落盘会话」仍不提醒（诚实边界，待观测后定是否加状态文件去重）。耗时受 timeout 5s 约束
 import json, os, re, subprocess, sys, time
 
+# 进程期 AV 弹框压制（1.0.33，三 hook 同款同改；2026-09-22 A/B 实测）：Windows 注入型管控 agent
+#   会使进程中途访问违例并弹模态框——hook 挂起等点击直至超时；脚本内 SetErrorMode(0x2) 即无框
+#   静默死（rc 仍非零，走 1.0.22/1.0.24 兜底，判定行为零变化）。父进程预设会被 CPython 启动覆写
+#   为 1，故必须脚本内设；压框失败仅退回原状；启动期 0xc0000142 族发生在用户代码前，不覆盖
+if sys.platform == "win32":
+    try:
+        import ctypes
+        ctypes.windll.kernel32.SetErrorMode(0x0002)
+    except Exception:
+        pass
+
 MAX_SID = 80            # sid 作文件名时的截断长度（与 pending-updates.py 同源常量，改动需同步）
 ORPHAN_TTL = 24 * 3600  # 他人队列文件「孤儿」判定阈值（D4 只报不删；删除留给人）
 

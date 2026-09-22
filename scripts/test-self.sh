@@ -362,6 +362,17 @@ else
   FAIL=$((FAIL+1)); echo "FAIL  checklist 编号漂移（实得 ${ck_nums:-无}，期望 0123456789）"
 fi
 
+# 1.0.33 断言：三 hook AV 弹框压制守卫防删改（36→37）——Windows 注入型管控 agent 会使 hook 进程期
+# 访问违例弹模态框、挂起等点击直至超时；守卫（win32 判定 + SetErrorMode(0x2)）被删/改时此处变红。
+# 必须落在脚本内部（CPython 启动覆写继承 error mode，父进程预设无效）；实测依据见 CHANGELOG 1.0.33。
+av_ok=1
+for f in hooks/deny-list.py hooks/pending-updates.py hooks/stop-reminder.py; do
+  for s in 'sys.platform == "win32"' 'SetErrorMode(0x0002)'; do
+    grep -qF -- "${s}" "${SRC}/${f}" || { av_ok=0; echo "  ↳ ${f} 缺「${s}」"; }
+  done
+done
+[ "${av_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  三 hook AV 弹框压制守卫在位（win32 判定 + SetErrorMode）"; } || { FAIL=$((FAIL+1)); echo "FAIL  AV 弹框压制守卫漂移（见上）"; }
+
 # 1.0.5 断言：gitignore 幂等落位——首装补四行（1.0.7 增 .gate-exceptions），重装不重复（取代 1.0.4 模板侧文字指引）
 T5=$(mktemp -d /tmp/cf-gi.XXXXXX)
 bash $SRC/scripts/install.sh "$T5" --app >/dev/null 2>&1

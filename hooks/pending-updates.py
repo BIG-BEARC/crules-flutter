@@ -13,6 +13,17 @@
 #   fail-closed 恐误伤非 JSON 探活；本 hook 本就不阻止任何操作，静默即等价「无待办」
 import json, os, re, sys
 
+# 进程期 AV 弹框压制（1.0.33，三 hook 同款同改；2026-09-22 A/B 实测）：Windows 注入型管控 agent
+#   会使进程中途访问违例并弹模态框——hook 挂起等点击直至超时；脚本内 SetErrorMode(0x2) 即无框
+#   静默死（rc 仍非零，走 1.0.22/1.0.24 兜底，判定行为零变化）。父进程预设会被 CPython 启动覆写
+#   为 1，故必须脚本内设；压框失败仅退回原状；启动期 0xc0000142 族发生在用户代码前，不覆盖
+if sys.platform == "win32":
+    try:
+        import ctypes
+        ctypes.windll.kernel32.SetErrorMode(0x0002)
+    except Exception:
+        pass
+
 MAX_SID = 80  # sid 作文件名时的截断长度（与 stop-reminder.py 同源常量，改动需同步）
 
 # stdin 编码显式化（1.0.21，Windows 实机 P0-A）：宿主送来的 JSON 是 UTF-8，非 UTF-8 码页

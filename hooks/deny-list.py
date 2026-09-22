@@ -51,6 +51,17 @@
 #     python3? 不匹配 python2（EOL 不再扩）；`| python3 -m json.tool` 格式化惯用法误弹（ask 无害）
 import json, os, re, sys
 
+# 进程期 AV 弹框压制（1.0.33，三 hook 同款同改；2026-09-22 A/B 实测）：Windows 注入型管控 agent
+#   会使进程中途访问违例并弹模态框——hook 挂起等点击直至超时；脚本内 SetErrorMode(0x2) 即无框
+#   静默死（rc 仍非零，走 1.0.22/1.0.24 兜底，判定行为零变化）。父进程预设会被 CPython 启动覆写
+#   为 1，故必须脚本内设；压框失败仅退回原状；启动期 0xc0000142 族发生在用户代码前，不覆盖
+if sys.platform == "win32":
+    try:
+        import ctypes
+        ctypes.windll.kernel32.SetErrorMode(0x0002)
+    except Exception:
+        pass
+
 # 流编码显式化（1.0.21，Windows 实机 P0-A）：宿主码页非 UTF-8 时 stdout 按该码页编码，两种后果
 #   按「该码页能否编出消息里的字」分岔（2026-09-17 双码页实测）：
 #   ①编不出 → blocked() 的 print 抛 UnicodeEncodeError，拦截 JSON **一字未出**即退出；hooks.json

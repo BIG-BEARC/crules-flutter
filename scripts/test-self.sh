@@ -7,7 +7,7 @@
 #     本包三脚本此类位置一律花括号隔离（v59 BSD grep 环境坑同款教训）
 set -uo pipefail
 SRC=$(cd "$(dirname "$0")/.." && pwd)
-# 环境守卫（1.0.13）：本脚本两条断言（draft / tag）依赖 git 历史，其余 43 条不依赖（1.0.34 断言 37→45 时同步——1.0.33 未同步此数，一并修）。在无 .git 的拷贝里
+# 环境守卫（1.0.13）：本脚本两条断言（draft / tag）依赖 git 历史，其余 45 条不依赖（1.0.35 断言 45→47 时同步）。在无 .git 的拷贝里
 # （典型：插件 cache = 全仓文件快照、非 clone）draft 吃 git 报错码 128 → **假红**；tag 则落到「读 HEAD 失败」
 # 分支 → **假绿**，其声称守护的「1.0.2 D2 防 tag 打在 bump 前旧树」版本比对从未执行。假绿比报错更贵——
 # 故显式拒绝，不静默变形。
@@ -116,31 +116,34 @@ else
   echo "SKIP  AO 内容断言（本机无 dart；CI setup-dart 步硬拦）"
 fi
 
-# 1.0.12 批D P1：孪生同文块生成闸——canonical 单一源与四文件同步。**在 /tmp 副本渲染后比对**
+# 1.0.12 批D P1：孪生同文块生成闸——canonical 单一源与六文件同步。**在 /tmp 副本渲染后比对**
 # （不原地改写被跟踪文件——方案 §4 R16）；render 内含双守卫（登记一致性 + 内容同步）。
 # P3 已行（1.0.15）：旧 byte 互锁 2 条删（试点两 minor〔1.0.13/1.0.14〕闸均绿）——覆盖差如实记：
 # 围栏外节内文本不再逐字比对，围栏内由本闸 + 锚串守卫全权。
 T6=$(mktemp -d)
-mkdir -p "$T6/scripts" "$T6/canonical" "$T6/app" "$T6/plugin" "$T6/commands"
+mkdir -p "$T6/scripts" "$T6/canonical" "$T6/app" "$T6/plugin" "$T6/commands" "$T6/agents"
 cp "$SRC/scripts/render-blocks.py" "$T6/scripts/"
 cp "$SRC"/canonical/*.md "$T6/canonical/"
 cp "$SRC/app/CLAUDE.md" "$T6/app/"; cp "$SRC/plugin/CLAUDE.md" "$T6/plugin/"
 cp "$SRC/commands/help.md" "$T6/commands/"; cp "$SRC/README.md" "$T6/"
+# agents/ 两卡随 1.0.35 aggregate-exception 块入扫描面（scan_targets 含 agents/——不拷则守卫①c 报缺围栏）
+cp "$SRC/agents/backend.md" "$SRC/agents/frontend.md" "$T6/agents/"
 rout=$(python3 "$T6/scripts/render-blocks.py" 2>&1); rrc=$?
 same=1
-for p in app/CLAUDE.md plugin/CLAUDE.md commands/help.md README.md; do cmp -s "$T6/$p" "$SRC/$p" || same=0; done
+for p in app/CLAUDE.md plugin/CLAUDE.md commands/help.md README.md agents/backend.md agents/frontend.md; do cmp -s "$T6/$p" "$SRC/$p" || same=0; done
 # 锚串守卫（review R2）：canonical 清空/截断时 render 双侧对称 → 比对仍绿；锚串**直查仓内**
-# 目标文件（不经比对），堵「整段静默消失」——P3 删旧 byte 断言后这是四块的关键防线之一
+# 目标文件（不经比对），堵「整段静默消失」——P3 删旧 byte 断言后这是五块的关键防线之一
 anchor_bad=0
 for a in "app/CLAUDE.md|轻量〔light〕" "plugin/CLAUDE.md|轻量〔light〕" \
          "app/CLAUDE.md|收尾时序**三档**" "plugin/CLAUDE.md|收尾时序**三档**" \
          "app/CLAUDE.md|.gate-exceptions" "plugin/CLAUDE.md|.gate-exceptions" \
-         "commands/help.md|收尾档按任务规模三档判定" "README.md|收尾档按任务规模三档判定"; do
+         "commands/help.md|收尾档按任务规模三档判定" "README.md|收尾档按任务规模三档判定" \
+         "agents/backend.md|判定线 = 是否引入第二个" "agents/frontend.md|判定线 = 是否引入第二个"; do
   af="${a%%|*}"; as="${a##*|}"
   grep -qF -- "$as" "$SRC/$af" || { anchor_bad=1; echo "  ↳ $af 缺锚串「$as」——canonical 疑似清空/截断"; }
 done
 if [ "$rrc" = "0" ] && [ "$same" = "1" ] && [ "$anchor_bad" = "0" ]; then
-  PASS=$((PASS+1)); echo "PASS  孪生同文块生成闸（canonical↔四文件同步 + 锚串在位）"
+  PASS=$((PASS+1)); echo "PASS  孪生同文块生成闸（canonical↔六文件同步 + 锚串在位）"
 else
   FAIL=$((FAIL+1)); echo "FAIL  同文块异常（render rc=$rrc / 同步 $same / 锚串 $anchor_bad）：$(printf '%s' "$rout" | head -3 | tr '\n' ' ')"
 fi
@@ -372,6 +375,86 @@ for f in hooks/deny-list.py hooks/pending-updates.py hooks/stop-reminder.py; do
   done
 done
 [ "${av_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  三 hook AV 弹框压制守卫在位（win32 判定 + SetErrorMode）"; } || { FAIL=$((FAIL+1)); echo "FAIL  AV 弹框压制守卫漂移（见上）"; }
+
+# 1.0.35 断言①：hooks.json 结构看守——注册面是 deny 闸的开关命门，此前全仓零断言（外部评审核实）。
+# matcher 集漂移 / 引用脚本改名 / async 位翻转（deny 判定转 async = 判定赶不上执行，闸失效；
+# pending-updates 转同步 = 每次编辑多一个前台等待）/ 路径缺 CLAUDE_PLUGIN_ROOT 前缀或 hooks/ 目录段
+# （消费工程 cwd 下必解析失败）/ 兜底链 || 被删——五类翻转任一即红。
+hjs=$(python3 - "$SRC" <<'PYEOF'
+import json, os, sys
+try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+except Exception: pass
+h = json.load(open(os.path.join(sys.argv[1], 'hooks', 'hooks.json'), encoding='utf-8'))['hooks']
+errs = []
+def handlers(event, matcher):
+    # matcher=None = 无 matcher 键的块（Stop 全事件触发）
+    if matcher is None:
+        return [x for b in h.get(event, []) if 'matcher' not in b for x in b['hooks']]
+    return [x for b in h.get(event, []) if b.get('matcher') == matcher for x in b['hooks']]
+mt = {e: sorted(str(b.get('matcher')) for b in h.get(e, [])) for e in h}
+if mt.get('PreToolUse') != ['Bash', 'PowerShell']: errs.append('PreToolUse matcher 集漂移: ' + str(mt.get('PreToolUse')))
+if 'Edit|Write|NotebookEdit' not in mt.get('PostToolUse', []): errs.append('PostToolUse 缺 Edit|Write|NotebookEdit')
+if 'None' not in mt.get('Stop', []): errs.append('Stop 缺无 matcher 全触发块')
+for ev, m, script, want_async in (('PreToolUse', 'Bash', 'deny-list.py', False),
+                                  ('PreToolUse', 'PowerShell', 'deny-list.ps1', False),
+                                  ('PostToolUse', 'Edit|Write|NotebookEdit', 'pending-updates.py', True),
+                                  ('Stop', None, 'stop-reminder.py', False)):
+    hs = handlers(ev, m)
+    if len(hs) != 1: errs.append(f'{ev}/{m} handler 数 {len(hs)} != 1'); continue
+    c = hs[0].get('command', '')
+    if ('${CLAUDE_PLUGIN_ROOT}/hooks/' + script) not in c:
+        errs.append(f'{ev}/{m} 未引用 $' + '{CLAUDE_PLUGIN_ROOT}/hooks/' + script + '（含目录段整体路径）: ' + c[:80])
+    if '||' not in c: errs.append(f'{ev}/{m} 兜底链 || 缺失')
+    if bool(hs[0].get('async', False)) != want_async:
+        errs.append(f'{ev}/{m} async 位翻转（应为 {str(want_async).lower()}）')
+print(len(errs)); [print('  ' + e) for e in errs]
+PYEOF
+)
+n_hjs=$(printf '%s' "$hjs" | head -1)
+if [ "${n_hjs:-1}" = "0" ]; then
+  PASS=$((PASS+1)); echo "PASS  hooks.json 结构看守（matcher 集 / 引用整体路径 / async 位 / 兜底链）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  hooks.json 结构漂移 ×${n_hjs:-?}："; printf '%s\n' "$hjs" | tail -n +2
+fi
+
+# 1.0.35 断言②：deny-list 双源对照表符号闸——锚点从行号改符号名（行号历史漂过两次：1.0.21 偏
+# ~37 行 / 1.0.33 偏 11 行），符号名须真在 deny-list.py 中；表头「锚点口径（1.0.35 起）」守卫
+# 防回写行号形（出现「# py L<数字>」即红）；py 侧 import 的 re 另核。
+tab=$(python3 - "$SRC" <<'PYEOF'
+import os, re, sys
+try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+except Exception: pass
+src = sys.argv[1]
+ps = open(os.path.join(src, 'hooks', 'deny-list.ps1'), encoding='utf-8').read()
+py = open(os.path.join(src, 'hooks', 'deny-list.py'), encoding='utf-8').read()
+errs = []
+if '锚点口径（1.0.35 起）' not in ps: errs.append('对照表锚点口径注缺失（防回写行号形的守卫被删）')
+if re.search(r'#\s*py\s+L\d', ps): errs.append('对照表出现行号形锚点「# py L<数字>」')
+pat = re.compile(r'#\s*py\s+(.+?)\s+↔')
+seen = set()
+for line in ps.splitlines():
+    m = pat.search(line)
+    if not m:
+        continue
+    for tok in re.split(r'[/、,，]|  +', m.group(1)):
+        tok = tok.strip()
+        if not tok or not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', tok):
+            continue
+        seen.add(tok)
+        if tok not in py:
+            errs.append('对照表符号在 py 中不存在: ' + tok)
+missing = {'GIT_SIG', 'RM_SIG', 'TMP_ROOTS', 'WARN_SIGS', 'parse_flags', 'strip_quotes',
+           'checkout_discards', 'force_switch', 'gate_self_failure', '_gate_excepthook', '_hook_utf8_streams'} - seen
+if missing: errs.append('对照表缺符号行（符号闸失明面）: ' + ', '.join(sorted(missing)))
+print(len(errs)); [print('  ' + e) for e in errs]
+PYEOF
+)
+n_tab=$(printf '%s' "$tab" | head -1)
+if [ "${n_tab:-1}" = "0" ]; then
+  PASS=$((PASS+1)); echo "PASS  deny-list 对照表符号闸（符号名在 py 可解析 + 无行号回写 + 表头注在位）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  对照表符号漂移 ×${n_tab:-?}："; printf '%s\n' "$tab" | tail -n +2
+fi
 
 # 1.0.34 分发工程批断言（外部评审对账三根因：验证清单多处复制 / 出错兜底继续走 / 落位状态机缺口）：
 # 未知参数即红 / 版本读不到即停 / --yes 无人值守 / 降级默认拒 / 双跑不变 / 伴生哨兵 / 双 json 相等 +

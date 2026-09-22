@@ -135,7 +135,15 @@ try:
     data = json.loads(raw)
 except Exception:
     sys.exit(0)   # F10① 原样保留：**非空**但非法 JSON 仍 fail-open（疑为探活/心跳，fail-closed 误伤正常流更糟）
-cmd = (data.get("tool_input") or {}).get("command") or ""
+# 合法 JSON、畸形形状（1.0.35 收口，与 ps 侧同判）：顶层非对象 / tool_input 非对象 / command
+#   非字符串，一律当「没送命令」走 fail-open——旧写法拿 str.get 解 tool_input="abc" 抛
+#   AttributeError → excepthook → ask，双源未声明漂移即此。理由同 F10①：宿主永远送
+#   tool_input 对象 + 字符串 command，畸形形状属探活族，弹窗打扰正常流比重放行更糟。
+cmd = ""
+if isinstance(data, dict):
+    _ti = data.get("tool_input")
+    if isinstance(_ti, dict) and isinstance(_ti.get("command"), str):
+        cmd = _ti["command"]
 if not cmd.strip():
     sys.exit(0)
 
@@ -174,7 +182,10 @@ def warned(why):
     sys.exit(0)
 
 GIT_SIG = re.compile(r"\bgit\b[^;|]*?\b(push|reset|clean|branch|checkout|restore|switch|stash)\b")
-RM_SIG = re.compile(r"(^|[\s(`$!])rm\b")
+# RM_SIG 边界类含 &（1.0.35）：`true &rm -rf /home` 里 & 只是结束前一条命令（bash 后台符），
+#   rm 照跑——原缺 & 时 py 侧漏拦、ps1 侧（边界类早有 &）拦，双源未声明漂移即此。
+#   `;rm` `|rm` 无需入类（分段先行切到独立段后 ^rm 即命中），& 不是 py 分段符故必须补。
+RM_SIG = re.compile(r"(^|[\s(`$!&])rm\b")
 
 def strip_quotes(tok):
     """剥配对引号：'"."'→'.'（带空格的引号路径 split 不开，属既有局限，头注声明）"""

@@ -2,10 +2,11 @@
 # 跑法：pwsh -NoProfile -File hooks/test_deny_list.ps1（或 Windows：powershell -NoProfile -ExecutionPolicy Bypass -File 同路径）
 # 结构（与 py 驱动的差异及理据）：
 #   ① 判据面 = **点源 in-process**（$DENYLIST_LIB_ONLY 短路入口段，直调 Get-DenyListDecision）——
-#      黑盒逐例 spawn powershell.exe 冷启 ≈0.4-1.0s × 138 例不可受；in-process <2s
-#   ② 契约面 = **黑盒 spawn 探针 ×6**（stdin JSON → stdout JSON / exit code 全链路）：
+#      黑盒逐例 spawn powershell.exe 冷启 ≈0.4-1.0s × 全量夹具（百例级）不可受；in-process <2s
+#   ② 契约面 = **黑盒 spawn 探针 ×7**（stdin JSON → stdout JSON / exit code 全链路）：
 #      deny JSON 形态、非法 JSON fail-open exit 0、ask JSON 形态、文案锁「不要尝试绕过」、
-#      **空 stdin / 纯空白 stdin → ask JSON（1.0.22 闸自身失效兜底，与 py 侧同判）**——
+#      **空 stdin / 纯空白 stdin → ask JSON（1.0.22 闸自身失效兜底，与 py 侧同判）**、
+#      **tool_input 非对象形状 → fail-open 零输出（1.0.35 双源同判，py 侧同批改崩溃为放行）**——
 #      契约在入口段、判据在 Get-Decision，两层各测其责（py 侧纯黑盒无所谓慢系冷启 ~30ms 的平台差）
 #   ③ 单调性变异（ps 集）：引号插 / 反引号续行插（D-a 无 \w 步故无反斜杠变异——cases.json
 #      monotonicity.mutators 单源声明）
@@ -122,9 +123,14 @@ if ($p5.code -ne 0 -or $p5.out -notmatch '"permissionDecision":"ask"' -or $p5.ou
 $p6 = Invoke-Blackbox "  `r`n`t "
 if ($p6.code -ne 0 -or $p6.out -notmatch '"permissionDecision":"ask"' -or $p6.out -notmatch 'crules-flutter') {
     $fails += ('黑盒探针6 纯空白 stdin 未改判 ask: code=' + $p6.code + ' out=' + $p6.out) }
+# 探针 7：合法 JSON、畸形形状（tool_input=字符串）→ fail-open 零输出（1.0.35 双源同判锁）。
+#   ps 侧系天然行为（取不到 .command 即空串放行）；py 侧同批从「AttributeError→ask」改齐。
+#   断言方向与探针 2 同型（非空但判不了的输入不弹窗不拦）——两版各钉一处防「一并收口成 ask」。
+$p7 = Invoke-Blackbox (@{tool_input = 'abc'} | ConvertTo-Json -Compress)
+if ($p7.code -ne 0 -or $p7.out.Trim().Length -gt 0) { $fails += ('黑盒探针7 畸形形状未 fail-open: code=' + $p7.code + ' out=' + $p7.out) }
 
 # ---- 汇总 ----
 foreach ($f in $fails) { Write-Out ('FAIL ' + $f) }
 $osNote = if ($isWin) { 'os=win 全跑' } else { ('os=win 跳过 ' + $skipOs) }
-Write-Out ('deny-list 测试(ps 驱动): ' + $nDeny + ' 拦 + ' + $nAllow + ' 放 + ' + $nAsk + ' warn + 单调性 ' + $mutTotal + ' 变异 + 黑盒探针 6, 失败 ' + $fails.Count + ' (' + $osNote + ')')
+Write-Out ('deny-list 测试(ps 驱动): ' + $nDeny + ' 拦 + ' + $nAllow + ' 放 + ' + $nAsk + ' warn + 单调性 ' + $mutTotal + ' 变异 + 黑盒探针 7, 失败 ' + $fails.Count + ' (' + $osNote + ')')
 if ($fails.Count -eq 0) { exit 0 } else { exit 1 }

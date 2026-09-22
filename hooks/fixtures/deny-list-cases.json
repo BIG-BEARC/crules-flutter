@@ -303,6 +303,11 @@
    "note": "整词引号（' 不在 RM_SIG 边界类，归一前漏拦）"
   },
   {
+   "cmd": "true &rm -rf /home",
+   "expect": "deny",
+   "note": "& 贴邻后台启动 rm（bash 语义：& 结束前命令、rm 照跑；ps 侧边界类早有 &，py 侧 1.0.35 收口）"
+  },
+  {
    "cmd": "git pu\\sh --force origin main",
    "expect": "deny",
    "note": "转义拼接命令词",

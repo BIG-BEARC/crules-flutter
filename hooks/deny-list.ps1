@@ -172,7 +172,7 @@ function Test-CheckoutDiscards([string]$after) {
         if ($tok -eq '--' -or $tok.StartsWith('-')) { continue }
         $t = Get-StripQuotes $tok
         $core = $t.TrimEnd('/', '\')
-        if ($core -eq '') { $core = $t }   # py L122 `or t` 语义镜像（bare / 不早退——py 现状放）
+        if ($core -eq '') { $core = $t }   # py checkout_discards `core or t` 语义镜像（bare / 不早退——py 现状放；1.0.35 起注释禁行号引用）
         if ($core -eq '.' -or $core -eq '*' -or $core -eq ':') { return $true }
         if ($t.StartsWith(':/')) { return $true }
     }
@@ -335,20 +335,28 @@ $DENYLIST_WARN_SIGS = @(
 )
 
 # ========== 双源对照表（维护义务：改判据两源同改 + 双驱夹具全绿） ==========
-# 锚点口径：**只钉函数/赋值行号**（不给区间），改 py 后重取行号——本表曾因 py 加段而整体漂移
-#   （1.0.21 加流编码段未同步，锚点已偏 ~37 行；1.0.22 已按 # grep -n "^def " 重取）
-# py L68  _hook_utf8_streams  ↔ 入口段 UTF8 流（R4）
-# py L94/L105 gate_self_failure/excepthook ↔ Invoke-DenyListSelfFailure（1.0.22 新，双源同判 ask）
-# py L135-137 归一      ↔ Normalize-DenyList（D-a：无 \<word> 步；反引号并入删除）
-# py L147/L155 blocked/warned ↔ $DENYLIST_TAIL + Write-DenyListDecision（手工模板 + \ " 转义）
-# py L164 GIT_SIG      ↔ $DENYLIST_GIT_SIG（IgnoreCase，D-b）
-# py L165 RM_SIG       ↔ $DENYLIST_CMDLET_SIG（别名域扩集，D-c）
-# py L167 strip_quotes ↔ Get-StripQuotes   py L173 parse_flags ↔ Get-GitFlags
-# py L183 checkout_discards ↔ Test-CheckoutDiscards（D-d）
-# py L211 force_switch ↔ Test-ForceSwitch；其后主循环/rm/白名单（至 L268）↔ Get-DenyListDecision /
-#                                Test-RmDestructive / Get-RmFlags / Resolve-PsPath /
-#                                Collapse-DenyListPath / Get-TempRoots（D-e）
-# py L270 WARN_SIGS    ↔ $DENYLIST_WARN_SIGS（D-f）
+# 锚点口径（1.0.35 起）：**只写 py 侧符号名、不写行号**——行号随任意插段漂移（历史漂过两次：
+#   1.0.21 加流编码段偏 ~37 行、1.0.33 加 AV 压制段偏 11 行），符号名 grep 恒可解析；
+#   「# py <符号> ↔」行由 test-self 的对照表符号闸机械校验（符号在 py 中不存在、或表回写
+#   行号形锚点即红）。
+# py _hook_utf8_streams ↔ 入口段 UTF8 流（R4）
+# py gate_self_failure / _gate_excepthook ↔ Invoke-DenyListSelfFailure（1.0.22 新，双源同判 ask）
+# py 归一段（re.sub×3 内联，无符号名）↔ Normalize-DenyList（D-a：无 \<word> 步；反引号并入删除）
+# py blocked / warned ↔ $DENYLIST_TAIL + Write-DenyListDecision（手工模板 + \ " 转义）
+# py GIT_SIG ↔ $DENYLIST_GIT_SIG（IgnoreCase，D-b）
+# py RM_SIG ↔ $DENYLIST_CMDLET_SIG（别名域扩集，D-c；边界类 & 1.0.35 双源对齐）
+# py strip_quotes ↔ Get-StripQuotes
+# py parse_flags ↔ Get-GitFlags
+# py checkout_discards ↔ Test-CheckoutDiscards（D-d）
+# py force_switch ↔ Test-ForceSwitch
+# py 主循环（分段判定体）↔ Get-DenyListDecision / Test-RmDestructive / Get-RmFlags
+# py TMP_ROOTS ↔ Get-TempRoots（D-e 白名单根）
+# py Resolve-PsPath 侧 ↔ Collapse-DenyListPath
+# py WARN_SIGS ↔ $DENYLIST_WARN_SIGS（D-f）
+# 1.0.35 双源同判收口（原系两处未声明漂移，夹具+契约锁钉死，不列 D-x）：
+#   - `true &rm`：py RM_SIG 边界类补 &（与 CMDLET_SIG 早有之对齐）→ 双源同 deny
+#   - tool_input 非对象（合法 JSON 畸形形状）：py 由「AttributeError→ask」改为判空放行 → 双源同 allow
+#     （入口段 isinstance 检查 ↔ ConvertFrom-Json 取不到 .command 即空串）
 # 有意差异全集：D-a / D-b（命令名折叠、git 旗标保区分）/ D-c / D-d / D-e / D-f——审读只查这六处。
 
 # ========== 入口段（驱动置 $global:DENYLIST_LIB_ONLY=$true 点源时短路） ==========

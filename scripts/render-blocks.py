@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """孪生同文块生成器（F3 · 1.0.12）
 
-把四块「逐字同文块」由 canonical/ 单一源生成进目标文件——防漂移从**检测**前移到**构造**。
+把五块「逐字同文块」由 canonical/ 单一源生成进目标文件——防漂移从**检测**前移到**构造**。
 方案：docs/方案-2026-09-15-孪生同文块生成化.md（v3，两轮独立评审消解）
 
 机制：
@@ -41,6 +41,9 @@ EXPECTED = {
     "closing-tiers": ["app/CLAUDE.md", "plugin/CLAUDE.md"],
     "gate-exception": ["app/CLAUDE.md", "plugin/CLAUDE.md"],
     "gear-note": ["commands/help.md", "README.md"],
+    # 1.0.35：backend/frontend 两卡共用的「例外 + 判定线」句收源（agents 孪生漂移入闸——
+    # 「底屽」错字级漂移实证后登记；围栏外各卡前缀语句保留手写，仅逐字同文核心进 canonical）
+    "aggregate-exception": ["agents/backend.md", "agents/frontend.md"],
 }
 
 
@@ -60,10 +63,11 @@ def scan_ids(text):
 
 
 def scan_targets():
-    """分发面候选文件：README + app/ plugin/ commands/ 下全部 .md——守卫①c 的扫描面
-    （含未登记文件，如 commands/init.md——堵「围栏落在未登记文件」的隐身，review R1）"""
+    """分发面候选文件：README + app/ plugin/ commands/ agents/ 下全部 .md——守卫①c 的扫描面
+    （含未登记文件，如 commands/init.md——堵「围栏落在未登记文件」的隐身，review R1；
+    agents/ 系 1.0.35 随 aggregate-exception 块扩入）"""
     files = ["README.md"]
-    for d in ("app", "plugin", "commands"):
+    for d in ("app", "plugin", "commands", "agents"):
         p = os.path.join(ROOT, d)
         if os.path.isdir(p):
             files += [f"{d}/{f}" for f in sorted(os.listdir(p)) if f.endswith(".md")]

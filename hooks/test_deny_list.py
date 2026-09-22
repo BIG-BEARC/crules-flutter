@@ -16,7 +16,7 @@ fixture 原则：该拦全拦（含 v37 外审 5 绕过、1.0.8 拼合绕过 10 
 （F10① 不变）——两条同测，防「一并收口」或「一并放开」的过度修正。
 启动失败（子进程没起来）与判定失败**分开处置、分开计数**（见 _spawn）：前者是环境故障
 （本机注入型终端管控 agent 所致），后者才是被测对象的失败——混成一团会让红无从下手。
-1.0.23 起**判定主体改进程内**（exec 闸源码，闸本体零改动；165 次 spawn → 7 次），保真锚点与
+1.0.23 起**判定主体改进程内**（exec 闸源码，闸本体零改动；165 次 spawn → 个位数），保真锚点与
 契约面仍走真子进程，`--diff` 可对全量用例两路并跑比对——改动 harness 或闸本体后须重跑一次。
 """
 import io, json, os, subprocess, sys
@@ -108,9 +108,9 @@ def _verdict(out: str) -> str:
 #   所需的机制**全部放在测试侧**，闸源码逐字节不被本改动触碰。
 # **保真边界（诚实声明，别高估本 harness）**：进程内只等价于闸的**判定语义**（deny/ask/allow 与
 #   输出文本），**不**等价于**进程契约**（退出码、真管道、空 stdin、`||` 兜底链、UTF-8 流重配）。
-#   故三处仍走真子进程：①契约锁 4 例（其被测对象正是进程契约本身）；②判定锚点 3 例（拦/放/ask 各一，
+#   故三处仍走真子进程：①契约锁 5 例（其被测对象正是进程契约本身；1.0.35 +形状契约 1 例）；②判定锚点 3 例（拦/放/ask 各一，
 #   两条路同判才过）；③`--diff`（对**全部**用例与变异两路并跑比对，是本 harness 的保真证明）。
-#   **改动本 harness 或闸本体后，须重跑一次 --diff**（一次性代价：全量 spawn 约 165 次）。
+#   **改动本 harness 或闸本体后，须重跑一次 --diff**（一次性代价：全量 spawn 约 170 次）。
 _CODE = compile(open(os.path.join(HERE, "deny-list.py"), encoding="utf-8").read(),
                 os.path.join(HERE, "deny-list.py"), "exec")
 
@@ -221,6 +221,13 @@ def main() -> int:
             fails.append(f"闸自身失效契约破（{label}）: rc={qrc} stdout={qout!r}")
         if want_ask and "crules-flutter" not in qout:
             fails.append(f"闸自身失效 ask 未带闸标识（{label}）: stdout={qout!r}")
+    # 1.0.35 形状契约锁：tool_input 非对象（合法 JSON、畸形形状）→ fail-open 零输出——
+    #   与 ps 侧同判（ps 的 ConvertFrom-Json 取不到 .command 即空串放行）。旧 py 写法
+    #   str.get 抛 AttributeError → excepthook → ask，双源未声明漂移即此。方向=放行：
+    #   宿主永远送 tool_input 对象，此形状属 F10① 探活族（fail-closed 弹窗打扰正常流更糟）。
+    frc, fout = _spawn(json.dumps({"tool_input": "abc"}))
+    if frc != 0 or fout.strip():
+        fails.append(f"形状契约破（tool_input=字符串）: rc={frc} stdout={fout!r}")
     # 1.0.23 判定锚点：拦 / 放 / ask 各一例**两路并跑**（进程内 vs 真子进程），同判才过——
     #   进程内 harness 的保真锚点（上头「保真边界」第②条）。三值各覆盖一条，防只看拦不看放。
     for label, case in (("拦", BLOCK_CASES[0]), ("放", ALLOW_CASES[0]), ("ask", WARN_CASES[0])):
@@ -236,14 +243,14 @@ def main() -> int:
         spawn_note = f"  子进程启动失败：重试 {SPAWN_RETRY} 次 / 仍失败 {SPAWN_FAIL} 次"
     # 判定路径构成一并入汇总行：进程内占比是本版的核心改动，**必须可见**（否则日后有人把
     #   decision() 改回 spawn，弹窗面悄悄回来而汇总行毫无变化 = 又一次无痕回归）。
-    print(f"deny-list 测试(py 驱动): {len(BLOCK_CASES)} 拦 + {len(ALLOW_CASES)} 放 + {len(WARN_CASES)} warn + 单调性 {mut_total} 变异 + 契约锁 4, 失败 {len(fails)}"
+    print(f"deny-list 测试(py 驱动): {len(BLOCK_CASES)} 拦 + {len(ALLOW_CASES)} 放 + {len(WARN_CASES)} warn + 单调性 {mut_total} 变异 + 契约锁 5, 失败 {len(fails)}"
           f"（判定路径：进程内 {INPROC} / 子进程 spawn {SPAWNS}{spawn_note}）")
     return 1 if fails else 0
 
 def diff_all() -> int:
     """`--diff`：对**全部**用例与单调性变异两路并跑比对，输出不一致清单。
     这是进程内 harness 的**保真证明**——只跑一次不够，改动 harness 或闸本体后须重跑。
-    代价 = 全量 spawn（约 165 次），故不进默认路径。"""
+    代价 = 全量 spawn（约 170 次），故不进默认路径。"""
     bad, n = [], 0
     for c in BLOCK_CASES + ALLOW_CASES + WARN_CASES:
         n += 1

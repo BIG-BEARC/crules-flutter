@@ -7,7 +7,7 @@
 #     本包三脚本此类位置一律花括号隔离（v59 BSD grep 环境坑同款教训）
 set -uo pipefail
 SRC=$(cd "$(dirname "$0")/.." && pwd)
-# 环境守卫（1.0.13）：本脚本两条断言（draft / tag）依赖 git 历史，其余 29 条不依赖（1.0.30 断言 29→31 时同步）。在无 .git 的拷贝里
+# 环境守卫（1.0.13）：本脚本两条断言（draft / tag）依赖 git 历史，其余 34 条不依赖（1.0.32 断言 31→36 时同步）。在无 .git 的拷贝里
 # （典型：插件 cache = 全仓文件快照、非 clone）draft 吃 git 报错码 128 → **假红**；tag 则落到「读 HEAD 失败」
 # 分支 → **假绿**，其声称守护的「1.0.2 D2 防 tag 打在 bump 前旧树」版本比对从未执行。假绿比报错更贵——
 # 故显式拒绝，不静默变形。
@@ -229,6 +229,138 @@ for s in '【切片包-免】' '派单前置条件'; do
   grep -qF -- "${s}" "${SRC}/进阶/Agent编排.md" || { pk_ok=0; echo "  ↳ 进阶/Agent编排.md 缺「${s}」"; }
 done
 [ "${pk_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  评审包自护条款在位（两卡缺包即停 + Agent编排 令牌/派单前置）"; } || { FAIL=$((FAIL+1)); echo "FAIL  评审包自护条款漂移（见上）"; }
+
+# 1.0.32 信息架构批断言（外部信息架构评审三弱项 + 核实发现同族漂移）：链接解析 / 坑库速查对账 /
+# memory 清单回潮 / checklist 指针限定与编号对账——共 5 条（31→36）
+# ① 链接解析闸：全仓 md 链接须指向真实存在的文件（CHANGELOG 豁免——历史流水账链到后来
+#    删除的文档属正常）。占位指引（指向按需创建的生成物）一律写纯文字、不写链接格式。
+link_bad=$(python3 - "$SRC" <<'PYEOF'
+import os, re, sys
+try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+except Exception: pass
+root = sys.argv[1]
+pat = re.compile(r'\[[^\]]*\]\(([^)]+)\)')
+bad = []
+for dirpath, dirnames, filenames in os.walk(root):
+    dirnames[:] = [d for d in dirnames if d not in ('.git', '__pycache__', '.claude', 'node_modules')]
+    for fn in filenames:
+        if not fn.endswith('.md'): continue
+        p = os.path.join(dirpath, fn)
+        rel = os.path.relpath(p, root).replace(os.sep, '/')
+        if rel == 'CHANGELOG.md': continue
+        for i, line in enumerate(open(p, encoding='utf-8').read().splitlines(), 1):
+            for m in pat.finditer(line):
+                t = m.group(1).strip()
+                if t.startswith(('http://', 'https://', '#', 'mailto:')): continue
+                path = t.split('#')[0]
+                if not path: continue
+                if not os.path.exists(os.path.normpath(os.path.join(os.path.dirname(p), path))):
+                    bad.append(rel + ':' + str(i) + ' -> ' + t)
+print(len(bad))
+for b in bad: print('  ' + b)
+PYEOF
+)
+n_dead=$(printf '%s' "$link_bad" | head -1)
+if [ "${n_dead:-1}" = "0" ]; then
+  PASS=$((PASS+1)); echo "PASS  链接解析闸（全仓 md 链接零死链，CHANGELOG 豁免）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  死链 ×${n_dead:-?}（占位改纯文字或补目标文件）："; printf '%s\n' "$link_bad" | tail -n +2
+fi
+
+# ② 坑库症状速查对账：每卡须带「关键词」行；「症状速查」表体须与全部卡（关键词/平台/卡题）
+#    的机械重排一字不差——改卡不同步表、加卡漏补、手改表即红
+idx_out=$(python3 - "$SRC/skills/flutter-rules/references/platform-pitfalls.md" <<'PYEOF'
+import re, sys
+try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+except Exception: pass
+lines = open(sys.argv[1], encoding='utf-8').read().splitlines()
+cards = []
+errs = []
+i = 0
+while i < len(lines):
+    m = re.match(r'^### \[([^]]+)\]\s*(.+)$', lines[i])
+    if m:
+        kw = None
+        j = i + 1
+        while j < len(lines) and not lines[j].startswith('### ') and not lines[j].startswith('## '):
+            km = re.match(r'^- 关键词：(.+)$', lines[j])
+            if km: kw = km.group(1).strip(); break
+            j += 1
+        if kw is None: errs.append('卡缺关键词行: ' + lines[i])
+        else: cards.append((kw, m.group(1).strip(), m.group(2).strip()))
+    i += 1
+exp = ['| ' + kw + ' | ' + plat + ' | ' + title + ' |' for kw, plat, title in cards]
+act = []
+in_sec = False
+seen_hdr = 0
+for ln in lines:
+    if ln.startswith('## 症状速查'): in_sec = True; continue
+    if in_sec and ln.startswith('## '): break
+    if in_sec and ln.startswith('|'):
+        seen_hdr += 1
+        if seen_hdr > 2: act.append(ln)
+if not in_sec: errs.append('缺 ## 症状速查 节')
+if not cards: errs.append('未解析到坑卡')
+if exp != act:
+    errs.append('表与卡不一致（期望 ' + str(len(exp)) + ' 行，实际 ' + str(len(act)) + ' 行）')
+    for k in range(max(len(exp), len(act))):
+        e = exp[k] if k < len(exp) else '(缺行)'
+        a = act[k] if k < len(act) else '(缺行)'
+        if e != a: errs.append('  第' + str(k+1) + '行 期望: ' + e + ' / 实际: ' + a)
+if errs:
+    print('BAD'); [print(x) for x in errs]
+else:
+    print('OK ' + str(len(cards)))
+PYEOF
+)
+if printf '%s' "$idx_out" | grep -q '^OK'; then
+  PASS=$((PASS+1)); echo "PASS  坑库症状速查对账（$(printf '%s' "$idx_out" | head -1 | cut -d' ' -f2) 卡，表逐字一致）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  坑库速查表与卡不一致："; printf '%s\n' "$idx_out"
+fi
+
+# ③ memory 清单回潮闸：进阶/ 各篇代码围栏内不得罗列 ≥3 个 memory 模板文件名——
+#    「哪个文件何时加载」单一权威在 memory/README.md 总表（抄即烂：记忆库体系.md 曾抄 5 漏 2）
+enum_bad=$(python3 - "$SRC/进阶" <<'PYEOF'
+import os, re, sys
+try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+except Exception: pass
+names = ('NAVIGATION.md', 'MAINTENANCE.md', 'patterns.md', 'business-rules.md', 'INVARIANTS.md', 'reference-map.md', 'platform-pitfalls.md')
+bad = []
+d = sys.argv[1]
+for fn in sorted(os.listdir(d)):
+    if not fn.endswith('.md'): continue
+    text = open(os.path.join(d, fn), encoding='utf-8').read()
+    for block in re.findall(r'```(.*?)```', text, re.S):
+        hits = {n for n in names if n in block}
+        if len(hits) >= 3: bad.append(fn + ' 围栏内罗列 ' + str(len(hits)) + ' 个 memory 文件名')
+print(len(bad))
+for b in bad: print('  ' + b)
+PYEOF
+)
+n_enum=$(printf '%s' "$enum_bad" | head -1)
+if [ "${n_enum:-1}" = "0" ]; then
+  PASS=$((PASS+1)); echo "PASS  memory 清单无回潮（进阶/ 围栏零罗列，单一权威在 memory/README.md）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  memory 清单回潮 ×${n_enum:-?}（改指针引用，不抄清单）："; printf '%s\n' "$enum_bad" | tail -n +2
+fi
+
+# ④ checklist 指针限定闸：skills 内提及 checklist 须带「项目根」——skill 随 plugin 缓存分发、
+#    与 checklist.md（装在消费工程根）不同目录，裸写不可解析
+ck_bad=$(grep -rn 'checklist' "$SRC/skills" | grep -v '项目根' || true)
+if [ -z "$ck_bad" ]; then
+  PASS=$((PASS+1)); echo "PASS  checklist 指针限定（skills 提及均带「项目根」）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  skills 内裸写 checklist（须「项目根 \`checklist.md\`）："; printf '%s\n' "$ck_bad"
+fi
+
+# ⑤ checklist 编号对账：通用条目 0–9 连续在位（自述「10 条·编号 0–9」与实际一致）
+ck_nums=$(grep -oE '^\*\*[0-9]+\.' "$SRC/checklist.md" | grep -oE '[0-9]+' | sort -nu | tr -d '\n')
+if [ "$ck_nums" = "0123456789" ]; then
+  PASS=$((PASS+1)); echo "PASS  checklist 编号 0–9 对账（连续无缺号）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  checklist 编号漂移（实得 ${ck_nums:-无}，期望 0123456789）"
+fi
 
 # 1.0.5 断言：gitignore 幂等落位——首装补四行（1.0.7 增 .gate-exceptions），重装不重复（取代 1.0.4 模板侧文字指引）
 T5=$(mktemp -d /tmp/cf-gi.XXXXXX)

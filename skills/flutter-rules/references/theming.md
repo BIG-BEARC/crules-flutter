@@ -6,7 +6,7 @@
 
 - `MaterialApp` 同时给 `theme` / `darkTheme`，`themeMode` 受控切换（`ThemeMode.light|dark|system`）
 - 组件级样式在 `ThemeData` 里用 `appBarTheme` / `elevatedButtonTheme` / `cardTheme` 等统一归口——不散落在组件内
-- 颜色 / 字号 / 间距**不硬编码**：归口主题或常量类（checklist「组件/视图」类硬门）
+- 颜色 / 字号 / 间距**不硬编码**：归口主题或常量类（项目根 `checklist.md`「组件/视图」类硬门）
 
 ## ColorScheme（Material 3）
 

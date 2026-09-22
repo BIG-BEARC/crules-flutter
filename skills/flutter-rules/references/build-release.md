@@ -26,13 +26,13 @@
 - [ ] `flutter analyze` 零 warning + 全量测试绿
 - [ ] 目标环境真机过关键路径（低配机型含——见 references/performance.md 实操序）
 - [ ] 混淆构架 + symbols 归档 + 崩溃监控钩子在线（`FlutterError.onError` / `PlatformDispatcher.onError` 见 performance.md）
-- [ ] 敏感信息扫描：硬编码 URL / 密钥 / 测试后门（checklist 条目 6 同源）
+- [ ] 敏感信息扫描：硬编码 URL / 密钥 / 测试后门（项目根 `checklist.md` 条目 6 同源）
 - [ ] Android：targetSdk 达商店当前要求（16KB / edge-to-edge 等区间看坑库 Android 基线卡）；iOS：隐私描述文案与实际权限对齐
 
 ## pub 包发布（Plugin 形态）
 
 - [ ] `flutter pub publish --dry-run` 零警告（CHANGELOG / 版本号 / description / homepage 一致）
 - [ ] 版本号语义化：破坏性 API 变更升 major；CHANGELOG 顶部版本与 pubspec 一致
-- [ ] 平台接口对等核验：Kotlin ↔ Swift 两侧能力清单逐条对（checklist「改了原生一侧，另一侧对等更新」同源）
+- [ ] 平台接口对等核验：Kotlin ↔ Swift 两侧能力清单逐条对（项目根 `checklist.md`「改了原生一侧，另一侧对等更新」同源）
 - [ ] example 工程可跑（consumer 视角首验——plugin 模板 §八 example 说明）；federated 插件确认 endorsed 平台包版本同步
 - [ ] 发布后 `flutter pub deps` 于净工程实测拉取（发布成功 ≠ 可解析）

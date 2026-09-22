@@ -3,13 +3,37 @@
 > 触发场景：引依赖 / 写平台代码 / 升级 SDK / 平台排障前 Read 本文件。来源：flutter-rules skill「平台坑库」节（B1 瘦身拆出，内容未改）。
 
 > **定位**：框架级通用坑住本节（跨项目复现）；项目相关坑住消费工程 `.claude/memory/platform-pitfalls.md`。项目坑跨项目复现后经 `/crules-flutter:distill` 提名进本节（fork 维护者裁决）。
-> **入预置门槛**（满足其一，防 stale 大杂烩）：①我们 / 同行实证踩过 ②官方 issue / release notes 明示版本区间 ③常见矩阵区间内高概率触发。每条带出处与「最后核验」；查不到出处不预置。首批 ≤10 条宁缺毋滥（Android 允许一卡多区间合并）。
+> **入预置门槛**（满足其一，防 stale 大杂烩）：①我们 / 同行实证踩过 ②官方 issue / release notes 明示版本区间 ③常见矩阵区间内高概率触发。每条带出处与「最后核验」；查不到出处不预置，宁缺毋滥（Android 允许一卡多区间合并）。每卡带「关键词」行（症状反查用）；下方「症状速查」表与卡一一对应，由 test-self 对账——改卡两处同步。
 > **维护义务**：Flutter / 平台大版本出现 → 扫本节标【待重验】→ 核验刷新——此后每次 minor 的例行内容（「技术栈相关 → 只进本包」查表逻辑）。
+
+## 症状速查（关键词 → 卡）
+
+> 本表 = 全部坑卡「关键词」行的机械汇总，与卡一一对应（test-self 对账：改卡不同步表、加卡漏补即红）。按症状词反查命中后再读整卡。
+
+| 关键词（症状 / 触发词） | 平台 | 卡 |
+|---|---|---|
+| Win7 升 SDK、3.22+ 无法运行、构建产物跑不起来、SDK 死线 | Windows 7 | Flutter SDK 版本上限——3.19 为最后支持线（升 SDK 前判死线） |
+| 低版本安卓装不上、minSdkVersion 漂移、API 24、存量设备安装失败 | Android 4.x | Flutter SDK 版本上限——3.22 起最低 API 21（KitKat 4.4 及更早同线阵亡） |
+| 启动闪退、完全无法启动、无日志、permission_handler | Windows 7 | permission_handler 初始化导致启动闪退 |
+| setState after dispose、ref after dispose、dispose 后崩溃、在途异步回调 | 全平台 | Riverpod Notifier dispose 后 defunct 崩溃三板斧 |
+| 启动白屏、channel-error、deviceId 漂移、换号、数据漂移 | Android/Windows | shared_preferences 初始化时序与文件损坏——启动白屏 / 数据漂移 |
+| LateInitializationError、_minTextAdapt、widget 测试构建期崩、.sp 求值 | 全平台 | flutter_screenutil：.sp 求值早于 ScreenUtilInit builder → LateInitializationError |
+| 扫码枪扫不出、keyLabel 空串、numpad 无输出、IME 吞字符 | Windows | 中文输入法吞 character 通道 × numpad 键 keyLabel 空串——扫码枪/按键监听纯数字全灭 |
+| iOS 26 黑屏、Liquid Glass、tab bar 渲染异常、debug 不可用 | iOS 26.x | tabbar / draw 渲染异常 |
+| 渲染异常、Skia 老办法失效、无 Vulkan 崩溃、Impeller 回退 | iOS/Android/Desktop | Impeller 渲染器换代——Skia 时代绕法失效 |
+| 字重只剩两档、中文渲染异常、字形缺失、OEM 字体裁剪 | Android/Windows/macOS | 系统字体回退不可信——跨端字重/字形异常 |
+| 下划线过短、下划线左缘缩进、title 未对齐、indicatorPadding | 全平台 | TabBar indicatorSize.label × 非零 indicatorPadding 双重内缩——下划线过短且左缘缩进 |
+| divider 撑满差异、同代码两版渲染不同、测试对真机错 | 全平台 | 滚动 TabBar dividerColor: transparent 跨 SDK 撑满 / 收缩差异——同代码两版渲染不同 |
+| textAlignVertical 无效、hint 不居中、输入框钉顶、几何断言红 | 全平台 | InputDecorator 垂直定位基线制——textAlignVertical 无杠杆、hint 盒居中几何断言不可达 |
+| 分区存储、photo picker、预测性返回、16KB page size、edge-to-edge、Play 上架被拦 | Android | 版本兼容基线（一卡多区间合并） |
+| 类找不到、UnmodifiableUint8ListView、dill 陈旧、测试载入即崩 | Windows | 页面级 widget test 载入即崩——「类找不到」先疑工具链损坏（dill 陈旧），勿急降依赖 |
+| 直调错误版本 SDK、报错文案取版本、fvm shim 缺失、验证结论作废 | Windows | 机械验证直调错误版本 SDK——逃生门二进制的版本取自报错文案而非钉定版本 |
 
 ## 三方依赖
 
 ### [Windows 7] Flutter SDK 版本上限——3.19 为最后支持线（升 SDK 前判死线）
 
+- 关键词：Win7 升 SDK、3.22+ 无法运行、构建产物跑不起来、SDK 死线
 - 归属：OS 平台（Windows 7/8）× Flutter SDK 桌面支持策略
 - 触发场景：目标机含 Win7/8 却把 Flutter SDK 升过 3.19 ｜ 症状：3.22+ 构建产物在 Win7 上无法运行（引擎依赖提升至 Win10 API 线）｜ 根因：官方将 Win7/8 移入 unsupported tier、最低要求提至 Windows 10 ｜ 规避：目标含 Win7 → SDK 钉 **3.19.x 末位 patch（3.19.6）**；或接受自维护成本走社区 fork（RustDesk 自改 engine 续命先例，有持续维护负担）；新项目直接放弃 Win7 目标
 - 区间：**3.19（2024-02，Dart 3.3）= 最后一个支持 Win7/8 的 stable**；3.22 起最低 Windows 10（3.19→3.22 间无其他 stable，3.19.6 即事实上限）；3.20/3.21 beta 线未查证
@@ -18,6 +42,7 @@
 
 ### [Android 4.x] Flutter SDK 版本上限——3.22 起最低 API 21（KitKat 4.4 及更早同线阵亡）
 
+- 关键词：低版本安卓装不上、minSdkVersion 漂移、API 24、存量设备安装失败
 - 归属：OS 平台（Android KitKat 4.4 / API 19 及更早）× Flutter SDK 支持策略
 - 触发场景：目标机含 Android 4.x / 5.x / 6.x（收银 / 门店平板存量设备常见）却把 Flutter SDK 升过对应死线 ｜ 症状：构建产物在低版本设备上**无法安装**（实证：saas-cashier master_new 以 3.38.10 构建，生产 Android <7.0 全部装不上——minSdkVersion 随 `flutter.minSdkVersion` 解析为 24）｜ 根因：官方分两步提下限：3.22 弃 4.x（→API 21）、**3.38 弃 5.x/6.x（→API 24）** ｜ 规避按目标钉版本：含 Android 6.x 及以下 → **3.35.x**；含 4.x → **3.19.6**（与 Win7 同钉法，混合存量可合并决策）；纯 7.0+ 目标 → 无约束。**注意**：`minSdkVersion = flutter.minSdkVersion` 会随构建机 SDK 漂移——多机 / CI 构建时下限不锁就会静默跳线，存量设备装不上往往到分发才发现
 - 区间（三段死线）：3.22 起最低 **API 21**（弃 KitKat 4.4 及更早）；**3.38 起最低 API 24**（弃 Android 5.0/5.1/6.x——3.35.x = 最后可跑 5/6 的 stable）；本机 SDK 源码实证：3.19.6=19、3.27.4=21、3.38.10=24。插件下限可高于本体（如部分一方插件随 3.38 对齐 API 24+，flutter_local_notifications 提至 26）——引依赖前查其 minSdk
@@ -26,6 +51,7 @@
 
 ### [Windows 7] permission_handler 初始化导致启动闪退
 
+- 关键词：启动闪退、完全无法启动、无日志、permission_handler
 - 归属：三方依赖（插件层 permission_handler Windows 实现 + Flutter 引擎层 Windows 桌面支持）
 - 触发场景：Win7 目标机上启动即崩（permission_handler 平台初始化路径） ｜ 症状：应用完全无法启动（issue 原文 "nothing, but app can't start"）、无有效日志 ｜ 根因：Flutter 本体仅支持 Windows 10+，维护者不为 Win7 投入支持；早期 Win10 版本同类崩溃源于插件静态链接新版 Win10 API（PR #1389 改动态加载修复「早期 Win10」区间，不覆盖 Win7） ｜ 规避：dependency_overrides 指向 no-op 实现（github.com/localsend/permission_handler_windows_noop）/ fork 插件剔除 Windows 实现 / 不将插件引入 Windows 构建
 - 区间：issue #1322 针对 v11.3.1 报告并 Closed as not planned；其他版本区间未查证（官方未声明 Win7 支持矩阵、未见修复版本）——倾向结论：全区间不受支持（官方口径 Win10+），精确闪退区间未查证
@@ -34,14 +60,16 @@
 
 ### [全平台] Riverpod Notifier dispose 后 defunct 崩溃三板斧
 
+- 关键词：setState after dispose、ref after dispose、dispose 后崩溃、在途异步回调
 - 归属：三方依赖（riverpod）× Flutter 框架层（Element 生命周期）
 - 触发场景：`Notifier`/`AsyncNotifier` 页面级状态，dispose 后仍有在途异步回调 / postFrame 回调触发 `ref` 写入或 setState ｜ 症状：`setState() called after dispose()` / 「cannot use 'ref' after the widget was disposed」断言崩溃（实证：delivery_order_notifier.dart:189） ｜ 根因：finalizeTree 先于 postFrameCallbacks；在途异步写入落在已 defunct 的 Element 上 ｜ 规避三板斧：①dispose 首行落存活闸门（bool）+ try-catch ②`postFrameCallback` 内 `if (!mounted) return` ③在途异步写入统一被闸门拦截（写前判活）
 - 区间：框架断言机制全区间；riverpod 特定版本区间**未查证**（无单一 canonical issue——[flutter#73000](https://github.com/flutter/flutter/issues/73000) 为框架层同类断言、[riverpod discussion #3043](https://github.com/rrousselGit/riverpod/discussions/3043) 为最接近的官方讨论；按入预置门槛①实证预置，区间字段如实标）
 - 状态：现行框架行为 ｜ 最后核验：2026-09-08
-- 出处：实证复盘（订单折算复盘吸收 C3，见 CHANGELOG 0.6.0 条）+ flutter#73000 + riverpod discussion #3043
+- 出处：实证复盘（订单折算复盘吸收 C3，见 plugin 仓根 `CHANGELOG.md` 0.6.0 条）+ flutter#73000 + riverpod discussion #3043
 
 ### [Android/Windows] shared_preferences 初始化时序与文件损坏——启动白屏 / 数据漂移
 
+- 关键词：启动白屏、channel-error、deviceId 漂移、换号、数据漂移
 - 归属：三方依赖（shared_preferences 及其平台实现）
 - 触发场景：`main()` 里 `await` SP 初始化后 `runApp`；SP 文件损坏 / 被旧版本改写；Android 冷启动 pigeon channel 未就绪即访问 ｜ 症状：**启动白屏**（SP init 挂起或抛错 → 首帧永不出——Windows 实证）；`channel-error: Unable to establish connection on channel`（Android 实证）；deviceId 等种子数据漂移、升级后「换号」（Windows 实证） ｜ 根因：SP 是启动路径上的单点阻塞且 Windows 实现文件易损；Android 侧 `shared_preferences_android` pigeon channel 初始化有窗口期 ｜ 规避四条：①**SP init 失败降级默认配置继续启动**（try-catch + 默认值，不阻塞首帧——`Global.init()` 同样包 try-catch 兜底）②SP 关键种子数据（deviceId 类）**冻结文件化**：文件 > SP 一次性迁移 > 现场采集，文件存在且非空永不覆盖 ③SP 读写封装带**备份恢复机制** ④Android 冷启动访问 SP 加**重试**（3 次 × 100ms 实证值）
 - 区间：实证于 saas-cashier（Windows / Android POS 双端，2025-11~2026-08）；插件官方版本区间**未查证**（按入预置门槛①实证预置）
@@ -50,6 +78,7 @@
 
 ### [全平台] flutter_screenutil：.sp 求值早于 ScreenUtilInit builder → LateInitializationError
 
+- 关键词：LateInitializationError、_minTextAdapt、widget 测试构建期崩、.sp 求值
 - 归属：三方依赖（flutter_screenutil ^5.9.3，ScreenUtilInit 机制）
 - 触发场景：widget 测试 pumpWidget 之前构造含 `.sp` / 样式常量（AppTextStyles 类）的 widget——参数默认值 / 探针直接 new 最常见 ｜ 症状：测试构建期抛 `LateInitializationError: Field '_minTextAdapt...' has not been initialized`，栈顶 ScreenUtil.setSp ← `.sp` 求值点 ｜ 根因：ScreenUtil 单例在 ScreenUtilInit builder 内才初始化，builder 外求值 `.sp` 触碰未初始化 LateInit 字段 ｜ 规避：`.sp` / 样式求值必须在 ScreenUtilInit builder 子树内——pump 前构造 widget 参数时惰性化（`() => _body()` 放 builder 内调用）；主套件未踩到只因样式恰在 build 阶段求值，**探针 / 临时测试最易中招**
 - 区间：ScreenUtilInit 机制（实证项目锁 ^5.9.3；其他版本未查证）
@@ -60,6 +89,7 @@
 
 ### [Windows] 中文输入法吞 character 通道 × numpad 键 keyLabel 空串——扫码枪/按键监听纯数字全灭
 
+- 关键词：扫码枪扫不出、keyLabel 空串、numpad 无输出、IME 吞字符
 - 归属：Flutter SDK（框架层 keyLabel 表 + 引擎 Windows 键盘管线）× OS 平台（Windows IME）
 - 触发场景：Windows 中文输入法激活时监听 HardwareKeyboard/KeyEvent 做扫码枪（HID 键盘模式）或按键采集 ｜ 症状：`KeyDownEvent.character` 为 null（IME 吞掉 WM_CHAR——不只字母，数字候选选词同样被吞）；字母靠 `logicalKey.keyLabel` 存活（大写单字符），**numpad0-9 的 keyLabel 为空串**（keyboard_key.g.dart 无条目）→ 纯数字条码（69码）两层提取全空、缓冲为空，日志只余「扫码结果为空」+ 偶发字母残骸 ｜ 根因：引擎 scancode 通道（WM_KEYDOWN lParam 位 16-23 → HID usage）与 IME 掐断的 WM_CHAR 字符通道是两条独立管线；采集层只做 character/keyLabel 两层提取时小键盘数字必死 ｜ 规避：提取链加第三层 **physicalKey 映射兜底**（USB HID usage，官方文档明示「ignores any modifiers, modes, or keyboard layouts」，与 IME 无关；52 字母 + 主行数字 + numpad 全覆盖映射表——实例 saas-cashier keyboard_util.dart）；边界：VK_PACKET（SendInput 文本注入）不走按键管线需过滤；NumLock 关闭时小键盘发导航键非数字
 - 区间：numpad keyLabel 空串为现行框架行为（3.x 全系核对至本地 SDK）；IME 吞 character 为 Windows 输入链现行行为（引擎 WM_IME_COMPOSITION return TRUE 反向印证双管线分离），无修复版本
@@ -68,6 +98,7 @@
 
 ### [iOS 26.x] tabbar / draw 渲染异常
 
+- 关键词：iOS 26 黑屏、Liquid Glass、tab bar 渲染异常、debug 不可用
 - 归属：Flutter SDK（引擎 / 框架层——iOS 26 Liquid Glass 新 UI 与 Flutter 渲染不匹配）
 - 触发场景：iOS 26 真机 / 模拟器上运行 Flutter 应用，涉及 CupertinoTabBar / 绘制类渲染 ｜ 症状：tab bar 样式与 iOS 26 Liquid Glass 不符（内容不延伸到底栏下方）、真机黑屏不渲染、debug 模式不可用等 ｜ 根因：iOS 26 引入 Liquid Glass 新 UI 范式，Flutter 未实现对应视觉 / 过渡特性（官方文档列 iPad 风格 tab bar #150590、liquid glass 支持 #170310 等为「尚未完全实现」；#186572 黑屏关联 Flutter 3.38 的 UISceneDelegate 迁移） ｜ 规避：等待官方实现（跟踪 #170310 / #150590）；社区方案 cupertino_native_better 提供 SwiftUI 原生 Liquid Glass tab bar
 - 区间：受影响 Flutter 版本区间 / 修复版本——官方未给数字（截至官方文档 3.47.2 快照未列 affected/fixed 版本），倾向全区间（iOS 26 上）；社区信息称 debug 模式问题自 3.35.x 改善、黑屏与 3.38 迁移相关，但无 issue 内里程碑确认
@@ -76,6 +107,7 @@
 
 ### [iOS/Android/Desktop] Impeller 渲染器换代——Skia 时代绕法失效
 
+- 关键词：渲染异常、Skia 老办法失效、无 Vulkan 崩溃、Impeller 回退
 - 归属：Flutter SDK（引擎层——渲染器自 Skia 换代 Impeller，分平台分批默认）
 - 触发场景：渲染异常 / 性能问题排查时套用 Skia 时代老绕法与性能 hack ｜ 症状：老绕法不生效或行为反转、渲染结果与 Skia 时期不一致 ｜ 根因：Impeller 已成默认引擎——**iOS 唯一支持引擎、无切回 Skia 能力**；Android API 29+ 默认（低版本或无 Vulkan 设备回退 legacy OpenGL；`--no-enable-impeller` 仅调试用）；macOS/Linux/Windows 自 **3.47** 默认（官方预告未来移除 opt-out）；Web 仍 Skia ｜ 规避：渲染问题按 Impeller 语境排查不套 Skia 经验；关注官方 migration 指南与 issue；Android 低端机注意 OpenGL 回退路径的行为差异
 - 区间：iOS 全区间（唯一引擎）；Android API 29+ 默认（起默认的引擎版本号未逐字核验，官方 availability 节只给现状）；desktop 自 3.47；Web 全区间 Skia
@@ -84,6 +116,7 @@
 
 ### [Android/Windows/macOS] 系统字体回退不可信——跨端字重/字形异常
 
+- 关键词：字重只剩两档、中文渲染异常、字形缺失、OEM 字体裁剪
 - 归属：Flutter SDK（引擎字体回退机制）× OS 平台（OEM ROM 字体裁剪 / 桌面缺中文字体）
 - 触发场景：未显式打包字体、依赖系统字体回退的跨端 App；OEM 机型（ColorOS 等）/ Windows POS 设备 ｜ 症状：部分 Android 机型字重只剩两档（实证 Flutter 3.24.3）；Windows 中文渲染异常（实证 2022 起） ｜ 根因：Android 端未指定 fontFamily 时走系统回退，OEM ROM 裁剪/替换 Roboto 与中文字体（#154166：3.22.x 起 ColorOS 非英文字体仅两档字重）；Windows 默认中文字体不可用 ｜ 规避四要素：①关键字体打包进 app（Android：Roboto 全字重；桌面：指定中文字体，pubspec 显式声明 family 与字重映射）②统一注入点（平台条件 fontFamily 走统一 TextStyle 工厂/getter，**禁内联 TextStyle**——内联即绕过注入）③`fontFamilyFallback` 显式声明兜底链 ④打印等设备无法渲染的字形（维语/阿拉伯语等）文字转图兜底
 - 区间：Android 自 Flutter 3.22.x（#154166 报告口径，实证 3.24.3）；桌面长期
@@ -92,6 +125,7 @@
 
 ### [全平台] TabBar indicatorSize.label × 非零 indicatorPadding 双重内缩——下划线过短且左缘缩进
 
+- 关键词：下划线过短、下划线左缘缩进、title 未对齐、indicatorPadding
 - 归属：Flutter SDK（Material TabBar）
 - 触发场景：TabBar 同时设 `indicatorSize: TabBarIndicatorSize.label` 与非零 `indicatorPadding` ｜ 症状：选中 Tab 下划线比文字短、左缘缩进 labelPadding.left——视觉即「title 未对齐 / 未靠左」，常被当布局 bug 排查 ｜ 根因：label 模式下划线定位已由 labelPadding 承担，indicatorPadding 同设必被二次内缩（3.27.4 tabs.dart:542-560 label 分支后 `insets.deflateRect(rect)`） ｜ 规避：indicatorSize.label 时 indicatorPadding 保持默认 zero 不设
 - 区间：已核验 3.19.6 / 3.27.4（跨版本逻辑相同）
@@ -100,6 +134,7 @@
 
 ### [全平台] 滚动 TabBar dividerColor: transparent 跨 SDK 撑满 / 收缩差异——同代码两版渲染不同
 
+- 关键词：divider 撑满差异、同代码两版渲染不同、测试对真机错
 - 归属：Flutter SDK（Material TabBar，版本行为差异）
 - 触发场景：滚动 TabBar 设 `dividerColor: transparent` 且需满宽承载 ｜ 症状：3.19.6 构建整条 Tab 右移 (列宽−条宽)/2（外层 Column 默认 center 居中收缩块），3.27.4 贴左——「测试对真机错」的探针矛盾 ｜ 根因：widthFactor 语义跨版本变更——3.19.6 `showDivider ? null : 1.0`（transparent → 收缩定宽）；3.27.4 改 `dividerHeight > 0 ? null : 1.0`（transparent 仍撑满）（3.19.6 tabs.dart:1698-1705 vs 3.27.4 tabs.dart:1890-1895 双源码核验） ｜ 规避：需满宽承载时显式撑满（Positioned.fill / 宽约束），不依赖 SDK 填充行为
 - 区间：Flutter 3.19.6 × 3.27.4（双源码核验）
@@ -108,6 +143,7 @@
 
 ### [全平台] InputDecorator 垂直定位基线制——textAlignVertical 无杠杆、hint 盒居中几何断言不可达
 
+- 关键词：textAlignVertical 无效、hint 不居中、输入框钉顶、几何断言红
 - 归属：Flutter SDK（Material InputDecorator）
 - 触发场景：对 hint 垂直居中写几何断言；或 input 被钉顶后调 textAlignVertical 想救 ｜ 症状：①InputBorder.none（非 outline）默认 textAlignVertical=top，定高容器内 input 子级被拉伸钉顶；②包 Row 松约束后残余偏差 = input(EditableText) 与 hint 段落盒的基线差（测试字体 2.25px）——「上下间隙差 ≤0.5」类断言任何结构变体下不可达，红断言随批进仓 ｜ 根因：装饰器按基线排版且恒被 input 子级填满（maxVerticalOffset=0），textAlignVertical 无杠杆（探针 A==B、C==D 实证；3.19.6 input_decorator.dart:800-802 默认 top / 1086-1137 基线公式 / 919-945 _layoutLineBox 字母基线） ｜ 规避：hint 垂直居中用「Row 松约束 + crossAxisAlignment.center」；几何断言写「间隙差 ≤5（实测可达值）+ 装饰器固有高结构锁」；勿再调 textAlignVertical
 - 区间：已核验 3.19.6（input_decorator.dart 行号）；跨版本稳定性未逐一核验
@@ -118,6 +154,7 @@
 
 ### [Android] 版本兼容基线（一卡多区间合并）
 
+- 关键词：分区存储、photo picker、预测性返回、16KB page size、edge-to-edge、Play 上架被拦
 - 归属：OS 平台（Android 平台 / 系统策略层）
 - 覆盖：
   1. **Scoped storage**：targetSdkVersion 29+（Android 10）起分区存储生效；API 29 可用 `requestLegacyExternalStorage` 临时豁免，Android 11 起强制
@@ -133,6 +170,7 @@
 
 ### [Windows] 页面级 widget test 载入即崩——「类找不到」先疑工具链损坏（dill 陈旧），勿急降依赖
 
+- 关键词：类找不到、UnmodifiableUint8ListView、dill 陈旧、测试载入即崩
 - 归属：工具链损坏（fvm 安装的 SDK platform dill 陈旧）——同族原始卡曾误判「三方依赖 win32 × SDK 组合」，经复盘推翻归因
 - 触发场景：页面级 widget 测试载入即崩（纯逻辑 / 共享 widget 测试不受影响） ｜ 症状：编译期类找不到（实例 `UnmodifiableUint8ListView not found`，win32 guid.dart） ｜ 根因：fvm 安装的 `vm_platform_strong.dill` 陈旧损坏（grep 损坏版 0 命中、健康版 11 命中）；降依赖 pin 证伪（win32 降 5.4.0 仍崩）、fvm clean + pub get 复验仍崩 ｜ 规避：**诊断序——编译报类找不到先 grep 实际参与编译的 dill**，勿急降依赖 pin、勿误判为被测代码缺陷；损坏安装重装修复
 - 区间：Windows × fvm 安装 × 测试编译（损坏实例 3.27.4 / 3.24.3）
@@ -141,6 +179,7 @@
 
 ### [Windows] 机械验证直调错误版本 SDK——逃生门二进制的版本取自报错文案而非钉定版本
 
+- 关键词：直调错误版本 SDK、报错文案取版本、fvm shim 缺失、验证结论作废
 - 归属：OS 工具链（多版本 SDK 共存：fvm shim 缺 PATH / 子包 .fvmrc 独立）
 - 触发场景：质量脚本失败后走「显式二进制」逃生门 ｜ 症状：直调了错误版本的 flutter 完成机械验证（实例：子包 UI 批 analyze 用了 3.27.4，与 Windows 钉定 3.19.6 失配），验证结论作废 ｜ 根因：①版本取自脚本报错文案（脚本读子包 .fvmrc 给安装建议——**报错文案不是版本依据**）②monorepo 子包自带 .fvmrc 不受根 .fvmrc 约束 ｜ 规避：机械验证 / 测试一律显式「平台钉定版本」的全路径二进制（含子包）；钉定版本以平台决策为准，不从脚本报错文案现场取
 - 区间：Windows × fvm 全版本 × Git Bash（shim 缺失为常驻诱因）

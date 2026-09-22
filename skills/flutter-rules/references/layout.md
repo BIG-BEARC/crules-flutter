@@ -6,7 +6,7 @@
 
 - **`Expanded`**：占满剩余空间（刚性）
 - **`Flexible`**：可收缩不强制占满（柔性）。与 Expanded 同 Row/Column 混用是**合法常见写法**（如一列占满 + 一列按内容收缩），但须明确各子项的弹性意图，避免无意识的约束竞争
-- **Row 内 `Text` 省略号须先包 `Flexible`/`Expanded`**：非弹性约束下 Text 取固有宽参与 Row 布局，裸 Text 加 `overflow: ellipsis` 不生效（实证：订单折算复盘吸收 C1，见 CHANGELOG 0.6.0 条）
+- **Row 内 `Text` 省略号须先包 `Flexible`/`Expanded`**：非弹性约束下 Text 取固有宽参与 Row 布局，裸 Text 加 `overflow: ellipsis` 不生效（实证：订单折算复盘吸收 C1，见 plugin 仓根 `CHANGELOG.md` 0.6.0 条）
 - **`Wrap`**：子项会溢出时换行（标签流 / 动态长度 chips）
 
 ## 滚动与溢出
@@ -62,4 +62,4 @@ class _MyDropdownState extends State<MyDropdown> {
 ## 通用纪律
 
 - 私有 `Widget` 子类优于「返回 Widget 的私有方法」（build 拆分同理——const 化与重建粒度都受益）
-- `build()` 内禁重活（请求 / 复杂计算）——自反馈死循环经典来源（见 checklist 反模式）
+- `build()` 内禁重活（请求 / 复杂计算）——自反馈死循环经典来源（见项目根 `checklist.md` 反模式节）

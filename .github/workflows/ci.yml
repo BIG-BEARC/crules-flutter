@@ -26,7 +26,7 @@ jobs:
         run: python3 hooks/test_deny_list.py
       - name: 语法编译
         if: always()
-        run: python3 -m py_compile hooks/deny-list.py hooks/test_deny_list.py hooks/pending-updates.py hooks/test_pending_updates.py hooks/stop-reminder.py hooks/test_stop_reminder.py scripts/render-blocks.py
+        run: python3 -m py_compile hooks/deny-list.py hooks/test_deny_list.py hooks/pending-updates.py hooks/test_pending_updates.py hooks/stop-reminder.py hooks/test_stop_reminder.py hooks/compliance-audit.py hooks/test_compliance.py scripts/render-blocks.py
       - name: deny-list.ps1 双驱 fixture（批F2；ubuntu runner 预装 pwsh）
         if: always()
         # 证据级声明：PS Core on Linux ≠ Windows PowerShell 行为全同——本步锁「语法 + 判据逻辑 +

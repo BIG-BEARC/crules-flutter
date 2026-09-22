@@ -3,7 +3,7 @@
 面向 **Flutter 工程**的 AI 协作规则 plugin：把「AI 怎么跟你安全地干活」固化成机制——危险命令硬拦、改动先过方案确认、交付必过审查、经验自动沉淀。
 独立自持（源自 crules fork，2026-09 起 1.0.0 独立演进，史见 [CHANGELOG](CHANGELOG.md)）；许可 **MIT**（[LICENSE](LICENSE)）。
 
-> 当前状态：1.0.35（版本编年史见 [CHANGELOG](CHANGELOG.md)）
+> 当前状态：1.0.37（版本编年史见 [CHANGELOG](CHANGELOG.md)）
 
 ---
 
@@ -11,7 +11,7 @@
 
 | 层 | 你得到 | 你要做的 |
 |---|---|---|
-| 守护 | hooks 自动生效：破坏性 git/rm 命令硬拦（强推/硬重置等，拦了就请你人工执行）、高危形态（下载执行 / sudo / chmod -R / filter-branch）弹窗由你裁夺、memory 漂移自动记队列、会话收尾提醒补索引 | 无（全自动；高危形态弹窗确认） |
+| 守护 | hooks 自动生效：破坏性 git/rm 命令硬拦（强推/硬重置等，拦了就请你人工执行）、高危形态（下载执行 / sudo / chmod -R / filter-branch）弹窗由你裁夺、memory 漂移自动记队列、会话收尾提醒补索引、会话结束落一行遵守度事实账（只记计数与布尔、不含对话内容） | 无（全自动；高危形态弹窗确认） |
 | 分工 | 7 个角色 agent 按职责自动挂载（写 UI → frontend、排障 → error、审查 → reviewer 只报不改…） | 无（自动触发） |
 | 规范 | 项目根协作规则（双 Gate 流程 / 证据分级 / 提交纪律）+ Flutter 审查清单 + lint 基线 + 方案骨架 | 接入时必填三处（见下） |
 | 沉淀 | 记忆库 8 模板（业务事实 / 技术不变量 / 平台坑库…）+ `/distill` 知识定稿闸 | 日常顺手更新，收尾过闸 |
@@ -96,7 +96,7 @@ sequenceDiagram
 | `CLAUDE.md`（App / Plugin 模板二选一 + 版本戳） | 项目根 | 协作规则本体 |
 | `checklist.md` | 项目根 | 审查清单（通用 10 条编号 0–9 + Flutter 专项） |
 | `analysis_options.yaml` | 项目根 | 三态落位：flutter 脚手架默认 → 升级替换（原文件留 `.scaffold-bak`）；已有自定义 → 落伴生文件待人工合并；无 → 写入 |
-| `.gitignore` 四行 | 项目根 | memory 本机生成物（索引 / 漂移队列 `.pending-updates*` / review 台账 / Gate 例外台账）自动排除出 git（幂等；1.0.30 起队列行改通配，升级时旧精确行自动迁移） |
+| `.gitignore` 五行 | 项目根 | memory 本机生成物（索引 / 漂移队列 `.pending-updates*` / review 台账 / Gate 例外台账 / 遵守度事实账 `.compliance-log`）自动排除出 git（幂等；1.0.30 起队列行改通配，升级时旧精确行自动迁移；1.0.37 起补 compliance-log 行） |
 | `进阶/` 6 篇 | 项目根 | 上手教程 / 工程化流程 / 审查纪律 / 方案评审闭环 / Agent 编排 / 记忆库体系 |
 | `memory/` 8 模板 | `.claude/memory/` | 制度资产（含 `reference-map.md` 分域参考系 / `platform-pitfalls.md` 平台坑库） |
 
@@ -182,4 +182,5 @@ bash "$SRC" <项目根> --app --upgrade    # 巡检版本差 → 确认 → --fo
 | 沉淀闸档位 | 分流（默认）/ 全闸 / 降级宽松——独立字段，AI 不得自行升降 | distill「档位」 |
 | 提速档 | standing instruction 走 Gate 例外，须圈死范围/规模/验证档三要素 | 双模板 §十二 |
 | 两类台账 | `.review-ledger`（裁决，供四数聚合）/ `.gate-exceptions`（豁免，供事后审计）——均不进 git | distill §7 / §三 Gate 例外 |
+| 遵守度事实账 | `.compliance-log`——SessionEnd hook 每会话落一行**事实**（计数/布尔，无正文），量化「宪法被遵守几成」；记而不判，聚合裁决未接线（批3 裁） | hooks/compliance-audit.py / docs/普查-2026-09-22 |
 | 观测带数 | 每次 minor 的 CHANGELOG 必带：常驻基线快照 + distill 四数 | README「每次 minor 例行」 |

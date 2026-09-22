@@ -1,5 +1,18 @@
 # crules-flutter CHANGELOG
 
+## 1.0.37 · 遵守度测量批2——SessionEnd 事实账落盘（.compliance-log）：「宪法被遵守几成」从此有数
+
+> 依据链：2026-09-22 治理外评「测量体系给自己没建测量」诊断 → docs/普查-2026-09-22（规则执法点普查 + 三原则：记事实不出结论 / 转录只作采料场 / 窗口口径钉死）→ 批1 探针 `scripts/closing-audit.py` dry-run 实测 8684 行零坏行（解析率 100%，schema 假设全成立，hook 化最大风险解除）。本批 = 把校过判据包成 SessionEnd hook 持久落盘。设计裁决四项均需求方拍板（开工／三件套配甄别列启发式而非定罪／弱签名三项全带只记／自动提交检查降级只记——坑③窗口外授权实证）。执法点选址教训随批：Stop 每轮触发不能当收尾点（会话语义实核自 stop-reminder 头注「自然停轮后队列仍非空会再提醒一次」），记账落 SessionEnd、提醒留 Stop。
+
+- **hooks/compliance-audit.py（新）**：每会话终结读 transcript_path 流式扫转录，向 `.claude/memory/.compliance-log` **append 一行 JSONL 事实**——宣约档 3 项（三件套 markers／commit msg 格式率／派单切片包令牌）+ 世界侧计数（edits/commits×触发词/声明×执行/deny 命中/权限拒/ledger 快照）+ 弱签名三项只记（后台派单×diff 跟随/裁决回填×ledger/纯文本列选项×选项卡调用）+ 解析率自身入账（bad_lines——「解析静默归零被读成全遵守」的构造锁）。**隐私红线**：只落计数/布尔，对话正文/命令/路径永不进账（fixture 有断言、真转录抽检 0 泄漏）。判据常量与 closing-audit.py 同源两文件同步纪律；sidechain 行跳过（宣约对象=主控输出物）；markers/closing_q 为**独立事实位**、组合判读留聚合侧
+- **SessionEnd 预算边界（契约实核）**：该事件默认各 hook 共享 1.5s、per-hook timeout 可上调——hooks.json 登记 timeout 30 + 内部 BUDGET_S 10s 时间闸，到点截断扫描带 `truncated:true` 落账（截断是事实≠零违反）；转录滞后（终结瞬间尾部行未落盘）注记聚合侧勿定罪；输出 fire-and-forget 故不打印只写文件；轻量档（无 NAVIGATION.md）静默、fail-open 全路径与三同族 hook 同款（AV SetErrorMode／UTF-8 三流／形状守卫 N1／sid 截断）
+- **接线全套**：hooks.json SessionEnd 段；install.sh gitignore 四行→**五行**（增 `.compliance-log`，老存量幂等补行）＋「三/四 python hooks」文案随批；MAINTENANCE git 分层、README 装完表守护列 + 概念地图「遵守度事实账」行 + init 落位表、help.md hooks ×3→×4（孪生语义闸当场逼改——钩子数写进对外口径自此有闸）；CI py_compile 清单 + 本文件入列
+- **test-self 断言 47→48**（净增 = compliance fixture 挂载；AV 守卫三→四、gitignore 4→5 为改造非新增）＋ hooks.json 结构看守扩 SessionEnd 行（含 **timeout≥15 预算契约锁**——低于它 = 宿主先 kill、10s 扫描闸形同虚设）；新 fixture `hooks/test_compliance.py` **22 检查全绿**（静默五态/计数全谱/末条才计 markers/坏行与截断/append 多次触发/ledger 两态/plugin_ver 读回/隐私红线）
+- **验证**：test-self **48/0**（Windows 实机 Git Bash，本批断言先红后绿——help ×4 断言在改 help 前红）；真转录端到端（隔离临时项目+1725 行真实会话）：rc0、0.16s、解析率 100%、泄漏抽检 0；fixture 覆盖 env 覆写口测截断（真机无人设、float 失败退默认）；**消费工程野外验证**（需求方指定 saas-cashier 真转录 4505 行真宪法层）：rc0 / 0.16s / 解析率 100% / 字符串字段仅 ts+sid+reason（构造性隐私实锤）/ 账落盘后已清恢复原态——并首采到坑⓪实据：该仓宪法层戳 **1.0.25**（早于 1.0.27 契约），其 13/13 无包读数为**预期缺位非无视条款**，普查表 §3 已按实更新
+- **诚实边界**：账本**聚合侧未接线**（distill 读 .compliance-log 出遵守度报表 = 批3 待裁）；窗口自装 1.0.37 起算非全历史；resume 型会话同 sid 多行、聚合按 sid 归并；消费仓实测「派单无包 14/14」类读数须先核版本送达态（坑⓪）——账带 plugin_ver 列即为分层判读留的把手
+- **观测带数**：①常驻基线零变化（hook 属调用期执行面，非上下文常驻；SessionEnd 仅终结瞬间运行）②distill 四数：消费工程样本 8/30 · 比率按规则不输出（悬空态显式，同 1.0.31–1.0.35 口径）
+- 双 json 1.0.37 + README 横幅同步
+
 ## 1.0.35 · deny-list 双源漂移收口 + agents 孪生入闸 + hooks.json / 对照表看守——外部评审核实五处机器缺口
 
 > 依据链：2026-09-22 机制化程度外部评审逐条实测——「闸是真的」成立（deny-list 活闸在生产宿主当场拦截本轮评审代理的 Bash 调用）；实抓五处缺口全部复现：① `true &rm -rf /home` py 侧放行 / ps1 侧拦截（RM_SIG 边界类缺 `&`，真漏拦非方向安全）② `{"tool_input":"abc"}` py 落 ask（str.get 抛 AttributeError 走兜底）/ ps 落 allow（未声明形状漂移）③ hooks.json 注册面全仓零断言 ④ backend/frontend 聚合铁律近逐字重复不在任何闸内、已现「底屽」错字漂移 ⑤ ps1 对照表行号锚第三次漂移（1.0.33 加 AV 段后未重取，评审引用 165 行实为 176）。处置哲学同 F3：先加会红的测试再修（五处全部红→绿留痕）、锚点换成不会漂的形态、重复内容收进生成器。

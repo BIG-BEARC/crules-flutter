@@ -7,7 +7,7 @@
 #     本包三脚本此类位置一律花括号隔离（v59 BSD grep 环境坑同款教训）
 set -uo pipefail
 SRC=$(cd "$(dirname "$0")/.." && pwd)
-# 环境守卫（1.0.13）：本脚本两条断言（draft / tag）依赖 git 历史，其余 45 条不依赖（1.0.35 断言 45→47 时同步）。在无 .git 的拷贝里
+# 环境守卫（1.0.13）：本脚本两条断言（draft / tag）依赖 git 历史，其余 46 条不依赖（1.0.37 断言 47→48 时同步——净增仅 compliance fixture 挂载，AV/gitignore 为改造非新增；计数以实跑为准）。在无 .git 的拷贝里
 # （典型：插件 cache = 全仓文件快照、非 clone）draft 吃 git 报错码 128 → **假红**；tag 则落到「读 HEAD 失败」
 # 分支 → **假绿**，其声称守护的「1.0.2 D2 防 tag 打在 bump 前旧树」版本比对从未执行。假绿比报错更贵——
 # 故显式拒绝，不静默变形。
@@ -36,6 +36,7 @@ else
 fi
 t 0 "python3 $SRC/hooks/test_stop_reminder.py"            "stop-reminder fixture 应全绿（A3 读侧闭环）"
 t 0 "python3 $SRC/hooks/test_pending_updates.py"          "pending-updates 写侧 fixture 应全绿（1.0.30 队列分文件）"
+t 0 "python3 $SRC/hooks/test_compliance.py"               "compliance-audit fixture 应全绿（1.0.37 批2 遵守度事实账）"
 t 1 "bash $SRC/scripts/release.sh tag 9.9.9"               "release tag 版本不匹配应报错（1.0.2 D2——防 tag 打在 bump 前旧树）"
 # 非 git 树守卫的反向断言（1.0.13）：把脚本本身拷进非 git 目录跑，须**显式拒绝**。判据三条件缺一不可——
 # rc≠0 单独不成立：守卫缺失时该拷贝会跑完全套，并因既有 FAIL>0 同样退出非零（又一个假绿）；故另须确认
@@ -368,13 +369,14 @@ fi
 # 1.0.33 断言：三 hook AV 弹框压制守卫防删改（36→37）——Windows 注入型管控 agent 会使 hook 进程期
 # 访问违例弹模态框、挂起等点击直至超时；守卫（win32 判定 + SetErrorMode(0x2)）被删/改时此处变红。
 # 必须落在脚本内部（CPython 启动覆写继承 error mode，父进程预设无效）；实测依据见 CHANGELOG 1.0.33。
+# 1.0.37：compliance-audit.py 入列（同款守卫，第四位）——「三 hook 同款同改」自此为四。
 av_ok=1
-for f in hooks/deny-list.py hooks/pending-updates.py hooks/stop-reminder.py; do
+for f in hooks/deny-list.py hooks/pending-updates.py hooks/stop-reminder.py hooks/compliance-audit.py; do
   for s in 'sys.platform == "win32"' 'SetErrorMode(0x0002)'; do
     grep -qF -- "${s}" "${SRC}/${f}" || { av_ok=0; echo "  ↳ ${f} 缺「${s}」"; }
   done
 done
-[ "${av_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  三 hook AV 弹框压制守卫在位（win32 判定 + SetErrorMode）"; } || { FAIL=$((FAIL+1)); echo "FAIL  AV 弹框压制守卫漂移（见上）"; }
+[ "${av_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  四 hook AV 弹框压制守卫在位（win32 判定 + SetErrorMode）"; } || { FAIL=$((FAIL+1)); echo "FAIL  AV 弹框压制守卫漂移（见上）"; }
 
 # 1.0.35 断言①：hooks.json 结构看守——注册面是 deny 闸的开关命门，此前全仓零断言（外部评审核实）。
 # matcher 集漂移 / 引用脚本改名 / async 位翻转（deny 判定转 async = 判定赶不上执行，闸失效；
@@ -398,7 +400,8 @@ if 'None' not in mt.get('Stop', []): errs.append('Stop 缺无 matcher 全触发�
 for ev, m, script, want_async in (('PreToolUse', 'Bash', 'deny-list.py', False),
                                   ('PreToolUse', 'PowerShell', 'deny-list.ps1', False),
                                   ('PostToolUse', 'Edit|Write|NotebookEdit', 'pending-updates.py', True),
-                                  ('Stop', None, 'stop-reminder.py', False)):
+                                  ('Stop', None, 'stop-reminder.py', False),
+                                  ('SessionEnd', None, 'compliance-audit.py', False)):
     hs = handlers(ev, m)
     if len(hs) != 1: errs.append(f'{ev}/{m} handler 数 {len(hs)} != 1'); continue
     c = hs[0].get('command', '')
@@ -407,6 +410,12 @@ for ev, m, script, want_async in (('PreToolUse', 'Bash', 'deny-list.py', False),
     if '||' not in c: errs.append(f'{ev}/{m} 兜底链 || 缺失')
     if bool(hs[0].get('async', False)) != want_async:
         errs.append(f'{ev}/{m} async 位翻转（应为 {str(want_async).lower()}）')
+# 1.0.37：SessionEnd 预算契约——官方口径该事件默认共享 1.5s，per-hook timeout 须显式上调
+# （内部 BUDGET_S=10 的截断闸假设 timeout≥15；低于它 = 大转录在写完账前就被宿主 kill）
+for b in h.get('SessionEnd', []):
+    for x in b.get('hooks', []):
+        if not isinstance(x.get('timeout'), (int, float)) or x['timeout'] < 15:
+            errs.append('SessionEnd hook timeout 缺失或 <15（1.5s 默认预算下 10s 扫描闸形同虚设）')
 print(len(errs)); [print('  ' + e) for e in errs]
 PYEOF
 )
@@ -532,25 +541,27 @@ oci=$(bash "$GCI/scripts/check-imports.sh" "$D/citgt" 2>&1); circ=$?
   || { FAIL=$((FAIL+1)); echo "FAIL  check-imports 方向（rc=$circ）"; }
 
 # 1.0.5 断言：gitignore 幂等落位——首装补四行（1.0.7 增 .gate-exceptions），重装不重复（取代 1.0.4 模板侧文字指引）
+# 1.0.37：行数 4→5（增 .compliance-log——SessionEnd 遵守度事实账）
 T5=$(mktemp -d /tmp/cf-gi.XXXXXX)
 bash $SRC/scripts/install.sh "$T5" --app >/dev/null 2>&1
 gi1=$(grep -c '^\.claude/memory' "$T5/.gitignore" 2>/dev/null) || gi1=0
 bash $SRC/scripts/install.sh "$T5" --app --force >/dev/null 2>&1
 gi2=$(grep -c '^\.claude/memory' "$T5/.gitignore" 2>/dev/null) || gi2=0
-[ "${gi1}" = "4" ] && [ "${gi2}" = "4" ] && { PASS=$((PASS+1)); echo "PASS  gitignore 幂等落位（首装 4 行，force 重装仍 4 行）"; } || { FAIL=$((FAIL+1)); echo "FAIL  gitignore 落位（首装 ${gi1} 行 / 重装 ${gi2} 行，期望 4/4）"; }
+[ "${gi1}" = "5" ] && [ "${gi2}" = "5" ] && { PASS=$((PASS+1)); echo "PASS  gitignore 幂等落位（首装 5 行，force 重装仍 5 行）"; } || { FAIL=$((FAIL+1)); echo "FAIL  gitignore 落位（首装 ${gi1} 行 / 重装 ${gi2} 行，期望 5/5）"; }
 rm -rf "$T5"
 
 # 1.0.30 断言：gitignore entry 精确名 → 通配名（.pending-updates → .pending-updates*，队列按会话分文件）。
 # 升级用户旧 gitignore 已有精确行——须迁移旧行而非留下双行近似重复（install.sh 精确行比对不会命中通配 entry）。
+# 1.0.37：老存量 4 行 seed 经升级 = 迁移通配 + 补 .compliance-log → 5 行。
 T5B=$(mktemp -d /tmp/cf-gi2.XXXXXX)
 printf '.claude/memory/indexes/\n.claude/memory/.pending-updates\n.claude/memory/.review-ledger\n.claude/memory/.gate-exceptions\n' > "$T5B/.gitignore"
 bash $SRC/scripts/install.sh "$T5B" --app >/dev/null 2>&1
 gi3=$(grep -c '^\.claude/memory' "$T5B/.gitignore" 2>/dev/null) || gi3=0
 gi_old=$(grep -cxF '.claude/memory/.pending-updates' "$T5B/.gitignore" 2>/dev/null) || gi_old=0
 gi_new=$(grep -cxF '.claude/memory/.pending-updates*' "$T5B/.gitignore" 2>/dev/null) || gi_new=0
-[ "${gi3}" = "4" ] && [ "${gi_old}" = "0" ] && [ "${gi_new}" = "1" ] \
-  && { PASS=$((PASS+1)); echo "PASS  gitignore 升级迁移（旧精确行已换通配新行，仍 4 行）"; } \
-  || { FAIL=$((FAIL+1)); echo "FAIL  gitignore 升级迁移（${gi3} 行 / 旧行 ${gi_old} / 新行 ${gi_new}，期望 4/0/1）"; }
+[ "${gi3}" = "5" ] && [ "${gi_old}" = "0" ] && [ "${gi_new}" = "1" ] \
+  && { PASS=$((PASS+1)); echo "PASS  gitignore 升级迁移（旧精确行已换通配新行 + 补 compliance-log，共 5 行）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  gitignore 升级迁移（${gi3} 行 / 旧行 ${gi_old} / 新行 ${gi_new}，期望 5/0/1）"; }
 rm -rf "$T5B"
 
 # 幂等断言：同输入两次运行结论一致且均 deny（双 plugin 共存的可测背书；1.0.9 输出契约

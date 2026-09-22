@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # crules-flutter plugin 发布辅助（fork 自 crules v74-fork-base，批 2c）——把 v31「bump 必 update + cache grep」机械步骤脚本化
 # 用法：
-#   scripts/release.sh <new-version>        同步双 json 版本号 + verify 三命令（任一失败即退出非零）
+#   scripts/release.sh <new-version>        同步双 json 版本号 + 双 json 读回断言 + 全套 test-self（任一失败即退出非零）
 #   scripts/release.sh verify-cache <特征串>  在 cache 最大版本目录 grep 特征串（update 后的生效验证）
 #   scripts/release.sh draft                CHANGELOG 建议段草稿（自顶部段日期后的 commits，stdout 人工过滤）
-#   scripts/release.sh tag <ver>            校验 HEAD 双 json 版本一致后打 tag 并推 origin（幂等；防 tag 指向 bump 前旧树）
+#   scripts/release.sh tag <ver>            校验 HEAD 双 json 版本一致 + 工作树干净 + 全套 test-self 后打 tag 并推 origin（幂等；防 tag 指向 bump 前旧树 / bump 后偷改树）
 # 说明：**bump 最后跑**——cache 是全仓库快照（含 README/docs/scripts），务必全部改动收尾后再
 #       release.sh <ver>，中途再改文件则同版本不刷新（v31 W2：update 按版本号刷 cache），须再 bump；
 #       plugin update 本脚本不代跑（完整形态实测为 `claude plugin update crules-flutter@crules-flutter-market`，
@@ -45,6 +45,11 @@ case "$1" in
     #   plugin.json 失败」把 tag 卡死在第一步。改走 buffer + 显式 UTF-8。
     head_ver=$(git show HEAD:.claude-plugin/plugin.json 2>/dev/null | python3 -c 'import json,sys;print(json.loads(sys.stdin.buffer.read().decode("utf-8"))["version"])' 2>/dev/null) || { echo "❌ 读 HEAD plugin.json 失败（非 git 仓 / 无提交？）"; exit 1; }
     [ "${ver}" = "${head_ver}" ] || { echo "❌ HEAD 提交内 plugin.json 为 v${head_ver} ≠ v${ver}——先 commit 含 bump 的改动再打 tag（防 tag 指向旧树；注意读的是提交内版本，工作区未提交的 bump 不算）"; exit 1; }
+    # 1.0.34：tag 是消费者实际拿到的工件（check-imports 演进比对靠 tag）——打 tag 前两道硬闸：
+    #   工作树干净（堵 bump 后偷改：bump 步的 test-self 验的是当时工作树，bump→commit→tag 之间仍可改文件）
+    #   + 全套 test-self（堵改坏树出库）。执法点必须在 tag，不在 bump。
+    git diff --quiet && git diff --cached --quiet || { echo "❌ 工作树不干净——tag 须打在已提交树上（先 commit 或 stash）"; exit 1; }
+    bash scripts/test-self.sh
     if git rev-parse -q --verify "refs/tags/v${ver}" >/dev/null; then
       echo "🟡 tag v${ver} 已存在，跳过（幂等）"
     else
@@ -86,10 +91,15 @@ for path, set_ver in (
         f.write("\n")
     print(f"已同步 {path} -> {ver}")
 PY
-    echo "== verify 三命令 =="
-    echo "== （fork 无 check-consistency，跳过——deny-list fixture 与编译即验证）"
-    python3 hooks/test_deny_list.py
-    python3 -m py_compile hooks/deny-list.py hooks/test_deny_list.py hooks/pending-updates.py
+    echo "== verify：双 json 读回断言 + 全套 test-self =="
+    # 1.0.34：写后必读回（原只写不验，一次手工改动 marketplace.json 即静默漂移、无人拦）
+    for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json; do
+      got=$(grep -m1 -oE '"version":[[:space:]]*"[0-9]+\.[0-9]+\.[0-9]+"' "$f" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+      [ "${got:-x}" = "$ver" ] || { echo "❌ $f 读回为 v${got:-无} ≠ v${ver}"; exit 1; }
+    done
+    # 1.0.34：删手工验证清单（原 py_compile 枚举 3/7 漂移实锤）——发版路径与 CI 跑同一个 test-self：
+    # 三 fixture 子进程实跑 6 个 py + 生成闸实跑 render-blocks，7 个 py 全被真实执行，强于 py_compile 枚举
+    bash scripts/test-self.sh
     echo "== 下一步（手工）== claude plugin update crules-flutter@crules-flutter-market && scripts/release.sh verify-cache '<本轮改动特征串>'"
     ;;
 esac

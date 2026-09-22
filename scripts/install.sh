@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # crules-flutter 安装器（fork 自 crules install.sh 思路）——模板为「复制后必填」型（含技术栈三选一交互），故只有完整模式（无轻装 @ 导入）
-# 用法：bash scripts/install.sh <目标项目根> --app | --plugin [--dry-run] [--force] [--upgrade]
+# 用法：bash scripts/install.sh <目标项目根> --app | --plugin [--dry-run] [--force] [--upgrade] [--yes] [--allow-downgrade]
 #       --upgrade = 升级三步打包：版本差巡检（check-imports.sh）→ 确认 → 自调 --force（.new 伴生，memory 永不覆盖）
+#       --yes = 升级免确认（无人值守正门——EOF/关闭 stdin 下默认保守取消，AI/脚本驱动用此档，1.0.34）
+#       --allow-downgrade = 源旧于项目戳时显式放行降级（默认拒，防源错/手误把旧模板铺进新工程，1.0.34）
 # 行为：模板（app|plugin/CLAUDE.md → 目标 CLAUDE.md + 版本戳）+ checklist/进阶/analysis_options → 项目根 + memory → .claude/memory/
 #       agents 不复制——plugin 自动挂载 7 角色（plugin-only）
 # 三态写入（v0.2.2，外审 N2/N3/N5）：
@@ -14,27 +16,51 @@
 # 护栏：目标已有 CLAUDE.md 且无 crules-flutter 戳 → 中止（老项目人工合并）；有戳 → 按 --force 语义升级
 set -uo pipefail
 SRC=$(cd "$(dirname "$0")/.." && pwd)
-# 1.0.21 Windows 实机 P0-A 同族：open() 原缺 encoding → 按宿主码页解，而 plugin.json 的 description
-#   含中文（UTF-8 字节）→ cp950 等码页下 UnicodeDecodeError → stderr 被 2>/dev/null 吞掉、|| 兜到
-#   VER="unknown" → 戳写成 `vunknown` → 下方 v[0-9] 守卫认不出「本包装的工程」，--force/--upgrade
-#   全部误走「老项目无戳」分支中止（本机实测 force 安全升级红）。显式 UTF-8 即通。
-VER=$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1],encoding="utf-8"))["version"])' "$SRC/.claude-plugin/plugin.json" 2>/dev/null) || VER="unknown"
+# 1.0.34：取版本去 python 化 + 读不到即停。原 python3 单行在「无 python / 码页异常（1.0.21 P0-A 族，
+#   显式 UTF-8 只堵了码页一条）/ 进程首启失败（2026-09-22 本机注入型管控偶发再证实状）」三态下都落
+#   || VER="unknown" 兜底 → 照写 vunknown 戳 + 空模板半落盘 → 戳守卫（v[0-9]）认不出 → 此后升级
+#   全被拦成「老项目无戳」。版本号纯 ASCII、码页无关，grep 直读（test-self 语义闸同 idiom）；
+#   坏值不流进后续决策——读不到就停。
+VER=$(grep -m1 -oE '"version":[[:space:]]*"[0-9]+\.[0-9]+\.[0-9]+"' "$SRC/.claude-plugin/plugin.json" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+[ -n "$VER" ] || { echo "❌ 读不到版本（$SRC/.claude-plugin/plugin.json）——中止，不写无版本戳"; exit 1; }
 STAMP="<!-- crules-flutter: v$VER @ $(date +%Y-%m-%d) -->"
-[ $# -ge 1 ] || { echo "用法: bash scripts/install.sh <目标项目根> --app|--plugin [--dry-run] [--force] [--upgrade]"; exit 2; }
-TARGET=$1; KIND=""; DRYRUN=0; FORCE=0; UPGRADE=0
-for a in "$@"; do case "$a" in --app) KIND=app;; --plugin) KIND=plugin;; --dry-run) DRYRUN=1;; --force) FORCE=1;; --upgrade) UPGRADE=1;; esac; done
+[ $# -ge 1 ] || { echo "用法: bash scripts/install.sh <目标项目根> --app|--plugin [--dry-run] [--force] [--upgrade] [--yes] [--allow-downgrade]"; exit 2; }
+TARGET=$1; KIND=""; DRYRUN=0; FORCE=0; UPGRADE=0; YES=0; ALLOW_DOWN=0
+# 1.0.34：未知参数即红（原 for-case 缺默认分支，--forc 手误=静默普通安装）；循环跳过 $1（目标路径非开关）
+for a in "${@:2}"; do case "$a" in
+  --app) KIND=app;; --plugin) KIND=plugin;; --dry-run) DRYRUN=1;; --force) FORCE=1;;
+  --upgrade) UPGRADE=1;; --yes) YES=1;; --allow-downgrade) ALLOW_DOWN=1;;
+  *) echo "❌ 未知参数: $a（用法见脚本头注）"; exit 2;; esac; done
 [ "$KIND" = "app" ] || [ "$KIND" = "plugin" ] || { echo "❌ 须指定 --app 或 --plugin"; exit 2; }
 [ -d "$TARGET" ] || { echo "❌ 目标目录不存在: $TARGET"; exit 2; }
+
+# 降级守卫（1.0.34）：戳带版本且源更旧 → 默认拒，--allow-downgrade 显式放行。防源错/手误把旧模板
+#   铺进新工程——.new 伴生只护「已存在文件」，AO 伴生/gitignore 仍直接写盘，方向须在入口拦。
+#   sort -V 与 release.sh verify-cache 同 idiom（BSD/GNU 均认，仓库已验证先例）
+guard_downgrade() { # $1=项目戳版本（空则过）
+  [ -n "$1" ] || return 0
+  [ "$VER" != "$1" ] || return 0
+  [ "$(printf '%s\n%s\n' "$1" "$VER" | sort -V | head -1)" = "$VER" ] || return 0
+  if [ "$ALLOW_DOWN" != "1" ]; then echo "❌ 源 v$VER 旧于项目 v$1——降级须 --allow-downgrade 显式放行"; exit 1; fi
+  echo "🟡 显式降级放行（--allow-downgrade）：项目 v$1 → 源 v$VER"
+}
 
 # --upgrade 模式（1.0.6，D3）：巡检 → 确认 → 自调 --force；.new 合并仍人工（有意边界：合并判断不自动化）
 if [ "$UPGRADE" = "1" ]; then
   [ -f "$TARGET/CLAUDE.md" ] && grep -qE '<!-- crules-flutter: v[0-9]' "$TARGET/CLAUDE.md" \
     || { echo "❌ 目标无 crules-flutter 戳——非本包装载工程，升级中止（老项目走人工合并）"; exit 1; }
+  guard_downgrade "$(grep -oE '<!-- crules-flutter: v[0-9]+\.[0-9]+\.[0-9]+' "$TARGET/CLAUDE.md" | head -1 | sed 's/.*v//')"
   echo "== 升级巡检（源 v$VER → $TARGET）=="
   bash "$SRC/scripts/check-imports.sh" "$TARGET" || true
-  printf '应用升级？（--force：已存在文件出 .new 伴生供对照合并；memory/ 永不覆盖）[y/N] '
-  read -r REPLY
-  case "$REPLY" in y|Y|yes) exec bash "$0" "$TARGET" "--$KIND" --force ;; *) echo "已取消——未做任何改动"; exit 0 ;; esac
+  if [ "$YES" = "1" ]; then REPLY=y
+  else
+    printf '应用升级？（--force：已存在文件出 .new 伴生供对照合并；memory/ 永不覆盖）[y/N] '
+    REPLY=; read -r REPLY || true   # 1.0.34：预置空串+吞 rc——EOF 与关闭 stdin 均落取消分支（无人值守默认保守取消，正门是 --yes）
+  fi
+  case "$REPLY" in
+    y|Y|yes) if [ "$ALLOW_DOWN" = "1" ]; then exec bash "$0" "$TARGET" "--$KIND" --force --allow-downgrade
+             else exec bash "$0" "$TARGET" "--$KIND" --force; fi ;;
+    *) echo "已取消——未做任何改动"; exit 0 ;; esac
 fi
 W=0; S=0; N=0; E=0
 
@@ -61,25 +87,39 @@ if [ -f "$TARGET/CLAUDE.md" ]; then
     echo "❌ 目标已有 CLAUDE.md（无 crules-flutter 戳）——老项目请人工合并（禁静默覆盖）"; exit 1
   fi
   echo "🟢 检出 crules-flutter 戳——按重装/升级处理（默认跳过已存在；--force 出 .new 伴生；memory 永不覆盖）"
+  guard_downgrade "$(grep -oE '<!-- crules-flutter: v[0-9]+\.[0-9]+\.[0-9]+' "$TARGET/CLAUDE.md" | head -1 | sed 's/.*v//')"
 fi
 do_write "CLAUDE.md（$KIND 模板+戳）" "$TARGET/CLAUDE.md" "$(cat "$SRC/$KIND/CLAUDE.md")
 
 $STAMP"
 do_write "checklist.md" "$TARGET/checklist.md" "" "$SRC/checklist.md"
 
-# analysis_options 智能落位（N3）
-AO="$TARGET/analysis_options.yaml"
+# analysis_options 智能落位（N3；1.0.34 补幂等与 --force 语义：原两分支无条件写盘——脚手架被替换成
+#   基线后二次运行即被判「自定义」翻进 SIDE-CAR、多出重复伴生；伴生每次重拷冲掉用户已合并改动）
+AO="$TARGET/analysis_options.yaml"; SC="$TARGET/analysis_options.crules-flutter.yaml"
 if [ -f "$AO" ]; then
-  # 剥注释/空行后签名判定（F1：真机 flutter create 是 28 行注释版，行数判定是死代码）——
-  # 剩余非空行 ⊆ {flutter_lints include, linter:, rules:} 即脚手架默认（无自定义规则）
-  stripped=$(grep -vE '^[[:space:]]*#|^[[:space:]]*$' "$AO")   # [[:space:]]：BSD grep 不认 \s（v59 探针同款坑）
-  if printf '%s\n' "$stripped" | grep -qvE '^[[:space:]]*(include: package:flutter_lints/flutter.yaml|linter:|rules:)?[[:space:]]*$'; then
-    if [ "$DRYRUN" != "1" ]; then cp "$SRC/analysis_options.yaml" "$TARGET/analysis_options.crules-flutter.yaml"; fi
-    echo "  SIDE-CAR（项目已有自定义 lint，基线落伴生文件，请人工合并）  $TARGET/analysis_options.crules-flutter.yaml"
+  if cmp -s "$SRC/analysis_options.yaml" "$AO"; then
+    echo "  SKIP（已是本包基线）  $AO"
   else
-    # 脚手架默认（无决策价值）→ 升级替换为基线，原文件留 .scaffold-bak
-    if [ "$DRYRUN" != "1" ]; then cp "$AO" "$AO.scaffold-bak"; cp "$SRC/analysis_options.yaml" "$AO"; fi
-    echo "  UPGRADE（脚手架默认 → lint 基线，原文件留 .scaffold-bak）  $AO"
+    # 剥注释/空行后签名判定（F1：真机 flutter create 是 28 行注释版，行数判定是死代码）——
+    # 剩余非空行 ⊆ {flutter_lints include, linter:, rules:} 即脚手架默认（无自定义规则）
+    stripped=$(grep -vE '^[[:space:]]*#|^[[:space:]]*$' "$AO")   # [[:space:]]：BSD grep 不认 \s（v59 探针同款坑）
+    if printf '%s\n' "$stripped" | grep -qvE '^[[:space:]]*(include: package:flutter_lints/flutter.yaml|linter:|rules:)?[[:space:]]*$'; then
+      # 项目自定义 → 伴生三态（与 do_write 同语义）：缺失才写 / 已在默认 SKIP / --force 出 .new
+      if [ -e "$SC" ] && [ "$FORCE" != "1" ]; then
+        echo "  SKIP（伴生已在，防重拷冲掉已合并改动）  $SC"
+      elif [ "$DRYRUN" = "1" ]; then
+        echo "  DRY  伴生基线  $SC"
+      elif [ -e "$SC" ] && [ "$FORCE" = "1" ]; then
+        cp "$SRC/analysis_options.yaml" "$SC.new"; echo "  UPDATE-NEW（伴生对照合并后替换）  $SC.new"
+      else
+        cp "$SRC/analysis_options.yaml" "$SC"; echo "  SIDE-CAR（项目已有自定义 lint，基线落伴生文件，请人工合并）  $SC"
+      fi
+    else
+      # 脚手架默认（无决策价值）→ 升级替换为基线，原文件留 .scaffold-bak
+      if [ "$DRYRUN" != "1" ]; then cp "$AO" "$AO.scaffold-bak"; cp "$SRC/analysis_options.yaml" "$AO"; fi
+      echo "  UPGRADE（脚手架默认 → lint 基线，原文件留 .scaffold-bak）  $AO"
+    fi
   fi
 else
   do_write "analysis_options.yaml（lint 基线）" "$AO" "" "$SRC/analysis_options.yaml"

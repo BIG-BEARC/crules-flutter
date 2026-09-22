@@ -3,7 +3,7 @@
 面向 **Flutter 工程**的 AI 协作规则 plugin：把「AI 怎么跟你安全地干活」固化成机制——危险命令硬拦、改动先过方案确认、交付必过审查、经验自动沉淀。
 独立自持（源自 crules fork，2026-09 起 1.0.0 独立演进，史见 [CHANGELOG](CHANGELOG.md)）；许可 **MIT**（[LICENSE](LICENSE)）。
 
-> 当前状态：1.0.33（版本编年史见 [CHANGELOG](CHANGELOG.md)）
+> 当前状态：1.0.34（版本编年史见 [CHANGELOG](CHANGELOG.md)）
 
 ---
 
@@ -110,6 +110,8 @@ agents 不复制——plugin 已自动挂载 7 角色（`crules-flutter:frontend
 SRC=$(ls -d ~/.claude/plugins/cache/*/crules-flutter/*/scripts/install.sh 2>/dev/null | sort -V | tail -1)
 [ -n "$SRC" ] || { echo "❌ 未找到 plugin cache——先装 plugin，或把 SRC 手动指向本仓克隆路径"; exit 1; }
 bash "$SRC" <项目根> --app --upgrade    # 巡检版本差 → 确认 → --force 升级（.new 伴生，memory 永不覆盖）
+# 无人值守加 --yes（跳过 y/N 确认；不给则 EOF/关闭 stdin 默认保守取消）
+# 源旧于项目戳时默认拒（防误降级），确要降级加 --allow-downgrade 显式放行
 ```
 
 手动等价：`check-imports.sh <项目根>` 查版本差 → `install.sh <项目根> --app --force`。

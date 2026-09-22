@@ -7,7 +7,7 @@
 #     本包三脚本此类位置一律花括号隔离（v59 BSD grep 环境坑同款教训）
 set -uo pipefail
 SRC=$(cd "$(dirname "$0")/.." && pwd)
-# 环境守卫（1.0.13）：本脚本两条断言（draft / tag）依赖 git 历史，其余 34 条不依赖（1.0.32 断言 31→36 时同步）。在无 .git 的拷贝里
+# 环境守卫（1.0.13）：本脚本两条断言（draft / tag）依赖 git 历史，其余 43 条不依赖（1.0.34 断言 37→45 时同步——1.0.33 未同步此数，一并修）。在无 .git 的拷贝里
 # （典型：插件 cache = 全仓文件快照、非 clone）draft 吃 git 报错码 128 → **假红**；tag 则落到「读 HEAD 失败」
 # 分支 → **假绿**，其声称守护的「1.0.2 D2 防 tag 打在 bump 前旧树」版本比对从未执行。假绿比报错更贵——
 # 故显式拒绝，不静默变形。
@@ -372,6 +372,81 @@ for f in hooks/deny-list.py hooks/pending-updates.py hooks/stop-reminder.py; do
   done
 done
 [ "${av_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  三 hook AV 弹框压制守卫在位（win32 判定 + SetErrorMode）"; } || { FAIL=$((FAIL+1)); echo "FAIL  AV 弹框压制守卫漂移（见上）"; }
+
+# 1.0.34 分发工程批断言（外部评审对账三根因：验证清单多处复制 / 出错兜底继续走 / 落位状态机缺口）：
+# 未知参数即红 / 版本读不到即停 / --yes 无人值守 / 降级默认拒 / 双跑不变 / 伴生哨兵 / 双 json 相等 +
+# release 闸锚 / check-imports 方向三态——共 8 条（37→45）
+# ① 未知参数应报错（原 for-case 无 *）分支，--forc 手误=静默普通安装）
+t 2 "bash $SRC/scripts/install.sh $D/old --app --forc"  "install 未知参数应报错（1.0.34）"
+# ② 版本读不到必须当场停：原 || VER=unknown 兜底照写 vunknown 戳 → 戳守卫（v[0-9]）认不出 →
+#   此后升级全被拦成「老项目无戳」（1.0.21 P0-A 同族，2026-09-22 本机偶发再证实状）。判据 =
+#   rc≠0 + 提示语命中 + 零落盘（rc=1 亦可能来自收尾 E>0，防假红须三条件）
+GVB="$D/verbroke"; rm -rf "$GVB"; mkdir -p "$GVB/scripts" "$GVB/.claude-plugin" "$D/fresh"
+cp "$SRC/scripts/install.sh" "$GVB/scripts/"; printf 'not-json' > "$GVB/.claude-plugin/plugin.json"
+o=$(bash "$GVB/scripts/install.sh" "$D/fresh" --app 2>&1); vrc=$?
+[ "$vrc" != "0" ] && echo "$o" | grep -q "读不到版本" && ! ls "$D/fresh/checklist.md" >/dev/null 2>&1 \
+  && { PASS=$((PASS+1)); echo "PASS  版本读不到显式中止（不写 vunknown 戳，零落盘）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  版本读不到应中止（rc=$vrc）"; }
+# ③ --yes 无人值守升级正门：原 EOF stdin 下 read 落空串静默自动取消（AI 调用场景常态）
+UY=$(mktemp -d /tmp/cf-yes.XXXXXX)
+printf '<!-- crules-flutter: v0.0.1 @ 2026-01-01 -->\n' > "$UY/CLAUDE.md"
+oy=$(printf '' | bash $SRC/scripts/install.sh $UY --app --upgrade --yes 2>&1); yrc=$?
+[ "$yrc" = "0" ] && [ -f "$UY/checklist.md" ] \
+  && { PASS=$((PASS+1)); echo "PASS  --yes 无人值守升级照常执行（EOF stdin 不再静默取消）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  --yes 升级路径（rc=$yrc）"; }
+rm -rf "$UY"
+# ④⑤ 降级默认拒、--allow-downgrade 显式放行：原版本戳只是布尔标志，源旧于戳照样 --force 铺开
+DG=$(mktemp -d /tmp/cf-down.XXXXXX)
+printf '<!-- crules-flutter: v9.9.9 @ 2026-01-01 -->\n' > "$DG/CLAUDE.md"
+od=$(bash $SRC/scripts/install.sh $DG --app --force 2>&1); drc=$?
+og=$(bash $SRC/scripts/install.sh $DG --app --force --allow-downgrade 2>&1); grc=$?
+[ "$drc" = "1" ] && echo "$od" | grep -q "降级须 --allow-downgrade" && [ "$grc" = "0" ] && echo "$og" | grep -q "显式降级放行" \
+  && { PASS=$((PASS+1)); echo "PASS  降级默认拒 + --allow-downgrade 放行（方向盲收口）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  降级守卫（拒 rc=$drc / 放行 rc=$grc）"; }
+rm -rf "$DG"
+# ⑥ 双跑不变闸：同一目标连跑两次 install，第二次后文件树与第一次后逐字节一致——一把伞盖全部
+#   落位文件（含未来新增），替代逐文件幂等断言。原红因：AO 非幂等（首装写基线 → 二次运行被判
+#   「自定义」翻进 SIDE-CAR 分支、多出重复伴生——2026-09-22 实测固化）
+T7=$(mktemp -d /tmp/cf-dbl.XXXXXX)
+bash $SRC/scripts/install.sh "$T7" --app >/dev/null 2>&1
+cp -R "$T7" "$T7.snap"
+bash $SRC/scripts/install.sh "$T7" --app >/dev/null 2>&1
+if diff -r "$T7.snap" "$T7" >/dev/null 2>&1; then
+  PASS=$((PASS+1)); echo "PASS  双跑不变（二次安装零增量——幂等一把伞）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  双跑有增量（幂等破口）："; diff -r "$T7.snap" "$T7" 2>&1 | head -3
+fi
+rm -rf "$T7" "$T7.snap"
+# ⑦ 伴生哨兵：SIDE-CAR 已存在时默认 SKIP（原每次无条件重拷，冲掉用户已合并的伴生改动）、--force 出 .new
+T8=$(mktemp -d /tmp/cf-sc.XXXXXX)
+printf 'include: package:flutter_lints/flutter.yaml\nlinter:\n  rules:\n    - always_use_package_imports\n' > "$T8/analysis_options.yaml"
+bash $SRC/scripts/install.sh "$T8" --app >/dev/null 2>&1
+printf 'SC-SENTINEL\n' > "$T8/analysis_options.crules-flutter.yaml"
+bash $SRC/scripts/install.sh "$T8" --app >/dev/null 2>&1
+bash $SRC/scripts/install.sh "$T8" --app --force >/dev/null 2>&1
+grep -q 'SC-SENTINEL' "$T8/analysis_options.crules-flutter.yaml" && [ -f "$T8/analysis_options.crules-flutter.yaml.new" ] \
+  && { PASS=$((PASS+1)); echo "PASS  伴生三态（默认 SKIP 保哨兵 / force 出 .new）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  伴生被重拷或无 .new（1.0.34）"; }
+rm -rf "$T8"
+# ⑧ 双 json 版本相等（原只锁 README 横幅==plugin.json，marketplace 侧写后不验）+ release 闸防删改锚
+#   （bump 读回断言 / bump·tag 跑 test-self / tag 树干净检查——tag 是消费者实际拿到的工件）
+mk_ver=$(grep -m1 -oE '"version":[[:space:]]*"[0-9]+\.[0-9]+\.[0-9]+"' "${SRC}/.claude-plugin/marketplace.json" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+rl_ok=1
+[ -n "${mk_ver}" ] && [ "${mk_ver}" = "${pj_ver}" ] || { rl_ok=0; echo "  ↳ marketplace.json(${mk_ver:-无}) ≠ plugin.json(${pj_ver})"; }
+for s in '读回为' 'bash scripts/test-self.sh' 'git diff --quiet'; do
+  grep -qF -- "$s" "${SRC}/scripts/release.sh" || { rl_ok=0; echo "  ↳ release.sh 缺闸锚「${s}」"; }
+done
+[ "${rl_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  双 json 相等 + release 闸锚在位（读回断言/test-self/树干净）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  分发口径（见上）"; }
+# ⑨ check-imports 方向三态：原只打「版本差」不分方向；SRC_VER 读不到原兜「?」伪装成「未检出戳」假绿
+GCI="$D/cifake"; rm -rf "$GCI"; mkdir -p "$GCI/scripts" "$GCI/.claude-plugin" "$D/citgt"
+cp "$SRC/scripts/check-imports.sh" "$GCI/scripts/"
+printf '{\n  "version": "0.0.1"\n}\n' > "$GCI/.claude-plugin/plugin.json"
+printf '<!-- crules-flutter: v9.9.9 @ 2026-01-01 -->\n' > "$D/citgt/CLAUDE.md"
+oci=$(bash "$GCI/scripts/check-imports.sh" "$D/citgt" 2>&1); circ=$?
+[ "$circ" = "0" ] && echo "$oci" | grep -q "源更旧" \
+  && { PASS=$((PASS+1)); echo "PASS  check-imports 报降级方向（三态收口）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  check-imports 方向（rc=$circ）"; }
 
 # 1.0.5 断言：gitignore 幂等落位——首装补四行（1.0.7 增 .gate-exceptions），重装不重复（取代 1.0.4 模板侧文字指引）
 T5=$(mktemp -d /tmp/cf-gi.XXXXXX)

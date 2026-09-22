@@ -36,7 +36,8 @@
 #     维持 fail-open（F10① 未变）。
 #   - 诚实边界（1.0.22 仍开口）：①首解释器被中途 kill（超时）→ 管道剩半截 JSON（非空非法）→
 #     落 F10① 放行；②本文件语法错误 → 解释器根本没跑起来、excepthook 未安装 → exit 1 放行
-#     （release.sh 的 py_compile + 夹具步是此路线的发行前闸）；③两解释器皆缺 → exit 127 放行
+#     （release.sh 的 test-self 全套是此路线的发行前闸——1.0.34 起由「py_compile+夹具」升级为本 fixture
+#      子进程实跑本 hook，语法错误连 fixture 一起红；CI py_compile 步为编译层二次覆盖）；③两解释器皆缺 → exit 127 放行
 #     （README 声明：终极防线回 Claude Code 原生权限确认）；④宿主超时的 hook 按官方口径本就不拦
 # 边界与局限（诚实声明）：
 #   - 非锚定搜索会把字符串里的破坏命令（含引号内原文——1.0.8 归一后成立）一并拦下——

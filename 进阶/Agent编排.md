@@ -1,6 +1,6 @@
 # Agent 编排
 
-> **启用条件**：使用多 agent 协作时复制本篇 + 配套 `agents/` 目录（部署位 `.claude/agents/`）。单人单 agent 工作不需要本篇。
+> **启用条件**：使用多 agent 协作时按本篇调度（本篇已随 init 落位项目根 `进阶/`；角色卡由 plugin 自动挂载，无需复制任何目录）。单人单 agent 工作不需要本篇。
 > 配套根规则：项目根 `CLAUDE.md`。本篇不重复根规则（提交、范围、后台 diff 展示等），只定义角色分工与调度。
 > 启用 superpowers / spec-kit 时，多 agent 阶段的 skill 映射（如 `subagent-driven-development`）见 项目根 CLAUDE.md §九（superpowers + dart-flutter 协作）。
 >
@@ -32,7 +32,7 @@
 
 ## 可用 Agent 模板
 
-**通用角色**（`agents/`，部署位 `.claude/agents/`，任意技术栈）：
+**通用角色**（`agents/`，plugin 挂载后以 `crules-flutter:error` 等命名空间形式可用，任意技术栈）：
 
 | Agent | 任务难度 | 主责 |
 |---|---|---|

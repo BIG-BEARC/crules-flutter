@@ -465,6 +465,92 @@ else
   FAIL=$((FAIL+1)); echo "FAIL  对照表符号漂移 ×${n_tab:-?}："; printf '%s\n' "$tab" | tail -n +2
 fi
 
+# 易用性/信息架构批断言（外部易用性评审核实 + 死指针普查实证同族二实例）：
+# ① 消费面黑话禁令闸（宪法 §一 机械执法点）② 文件锚定散文指针闸（1.0.32 链接闸的散文态补全）
+jargon_bad=$(python3 - "$SRC" <<'PYEOF'
+import os, re, sys
+try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+except Exception: pass
+root = sys.argv[1]
+skip_dirs = {'.git', '__pycache__', '.claude', 'node_modules'}
+BAN = re.compile(r'批[A-F][0-9]?|[（(]\s*[A-F]\d{1,2}\s*[)）]|销案|金丝雀|撞号|外审\s*[#🟠🔴🟡]\d?|评审\s*[A-Z]\d|裁决单')
+bad = []
+for dp, dn, fn in os.walk(root):
+    dn[:] = [d for d in dn if d not in skip_dirs]
+    rel_dp = os.path.relpath(dp, root).replace(os.sep, '/')
+    if rel_dp == 'docs' or rel_dp.startswith('docs/') or rel_dp == 'canonical': continue
+    for f in fn:
+        if not f.endswith('.md') or f == 'CHANGELOG.md': continue
+        p = os.path.join(dp, f).replace(os.sep, '/')
+        rel = os.path.relpath(p, root).replace(os.sep, '/')
+        text = open(p, encoding='utf-8').read()
+        if rel == 'README.md':
+            cut = text.find('## 维护（以下面向本仓维护者）')
+            if cut > 0: text = text[:cut]
+        for i, line in enumerate(text.splitlines(), 1):
+            if '<!--' in line: continue
+            m = BAN.search(line)
+            if m: bad.append(rel + ':' + str(i) + ' [' + m.group() + '] ' + line.strip()[:60])
+print(len(bad)); [print('  ' + b) for b in bad]
+PYEOF
+)
+n_jar=$(printf '%s' "$jargon_bad" | head -1)
+if [ "${n_jar:-1}" = "0" ]; then
+  PASS=$((PASS+1)); echo "PASS  消费面黑话禁令闸（分发 md 零内部代号，HTML 注释/维护者面豁免）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  消费面黑话命中 ×${n_jar:-?}（宪法 §一——内部代号移 CHANGELOG 或改大白话）："; printf '%s\n' "$jargon_bad" | tail -n +2
+fi
+
+ptr_bad=$(python3 - "$SRC" <<'PYEOF'
+import os, re, sys
+try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+except Exception: pass
+root = sys.argv[1]
+skip_dirs = {'.git', '__pycache__', '.claude', 'node_modules'}
+ANCHOR = {'README': ['README.md'], 'CHANGELOG': ['CHANGELOG.md'], 'MAINTENANCE': ['memory/MAINTENANCE.md'],
+          'NAVIGATION': ['memory/NAVIGATION.md'], 'skill': ['skills/flutter-rules/SKILL.md'],
+          'SKILL': ['skills/flutter-rules/SKILL.md'], '双模板': ['app/CLAUDE.md', 'plugin/CLAUDE.md'],
+          '模板': ['app/CLAUDE.md', 'plugin/CLAUDE.md'], '上手教程': ['进阶/上手教程.md'],
+          'Agent编排': ['进阶/Agent编排.md'], '记忆库体系': ['进阶/记忆库体系.md'],
+          '工程化流程': ['进阶/工程化流程.md'], '审查与复核纪律': ['进阶/审查与复核纪律.md'],
+          '方案评审闭环': ['进阶/方案评审闭环.md']}
+pat = re.compile(r'(README|CHANGELOG|MAINTENANCE|NAVIGATION|双模板|skill|SKILL|上手教程|Agent编排|记忆库体系|工程化流程|审查与复核纪律|方案评审闭环|模板)[^\n「」]{0,8}[『「]([^』」]{2,25})[』」]\s*节')
+def headings(fp):
+    try: lines = open(fp, encoding='utf-8').read().splitlines()
+    except OSError: return None
+    return [re.sub(r'^#+\s*', '', l).strip(' `*') for l in lines if re.match(r'^#{1,6}\s', l)]
+bad = []
+for dp, dn, fn in os.walk(root):
+    dn[:] = [d for d in dn if d not in skip_dirs]
+    rel_dp = os.path.relpath(dp, root).replace(os.sep, '/')
+    if rel_dp == 'docs' or rel_dp.startswith('docs/') or rel_dp == 'canonical': continue
+    for f in fn:
+        if not f.endswith('.md') or f == 'CHANGELOG.md': continue
+        p = os.path.join(dp, f).replace(os.sep, '/')
+        for i, line in enumerate(open(p, encoding='utf-8').read().splitlines(), 1):
+            # 溯源豁免：「来源：X『Y』节（…拆出）」句指向拆分前的旧标题，改指即篡改历史
+            if re.search(r'来源|出处|前身|拆出', line): continue
+            for m in pat.finditer(line):
+                hs = []
+                miss = False
+                for fp in [os.path.join(root, a.replace('/', os.sep)) for a in ANCHOR[m.group(1)]]:
+                    h = headings(fp)
+                    if h is None: miss = True; break
+                    hs += h
+                if miss:
+                    bad.append(p + ':' + str(i) + ' 锚文件缺失 ' + m.group(1))
+                elif not any(m.group(2) in h or h in m.group(2) for h in hs):
+                    bad.append(os.path.relpath(p, root).replace(os.sep, '/') + ':' + str(i) + ' ' + m.group(1) + '「' + m.group(2) + '」节 → 目标标题不存在')
+print(len(bad)); [print('  ' + b) for b in bad]
+PYEOF
+)
+n_ptr=$(printf '%s' "$ptr_bad" | head -1)
+if [ "${n_ptr:-1}" = "0" ]; then
+  PASS=$((PASS+1)); echo "PASS  文件锚定散文指针闸（「X『Y』节」的 Y 须为 X 真实标题——实证死指针 help.md:7/:76 同族封闸）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  散文死指针 ×${n_ptr:-?}（补目标标题或改指针口径）："; printf '%s\n' "$ptr_bad" | tail -n +2
+fi
+
 # 1.0.34 分发工程批断言（外部评审对账三根因：验证清单多处复制 / 出错兜底继续走 / 落位状态机缺口）：
 # 未知参数即红 / 版本读不到即停 / --yes 无人值守 / 降级默认拒 / 双跑不变 / 伴生哨兵 / 双 json 相等 +
 # release 闸锚 / check-imports 方向三态——共 8 条（37→45）

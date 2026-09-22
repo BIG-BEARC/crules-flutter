@@ -128,6 +128,13 @@ fi
 for f in "$SRC"/进阶/*.md; do do_write "进阶/$(basename "$f")" "$TARGET/进阶/$(basename "$f")" "" "$f"; done
 for f in "$SRC"/memory/*.md; do do_write ".claude/memory/$(basename "$f")" "$TARGET/.claude/memory/$(basename "$f")" "" "$f" "never"; done
 
+# 骨架目录兜底（易用性批）：indexes/ 与 decisions/ 多文档引用为写入目标但无预建方——
+#   功能从未坏（Claude Code Write 自动建父目录），坏的是首用者核对清单时把「目录暂不存在」
+#   读成死引用（NAVIGATION「按需创建」是设计契约，此两行让目标树形状与文档一致）。dry-run 不建（只读承诺）
+if [ "$DRYRUN" != "1" ]; then
+  mkdir -p "$TARGET/.claude/memory/indexes" "$TARGET/.claude/memory/decisions"
+fi
+
 # 本机生成物 gitignore 幂等落位（1.0.5——取代 1.0.4 的模板侧文字指引：MAINTENANCE git 分层政策由安装器落成默认；1.0.7 增 .gate-exceptions）
 # 五行缺失才追加，已有跳过；与 --force 无关（重复追加无意义）；dry-run 只报告
 # 1.0.30：队列 entry 由精确名 `.pending-updates` 改通配 `.pending-updates*`（按会话分文件后同名多份）——

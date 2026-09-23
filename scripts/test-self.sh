@@ -672,6 +672,10 @@ except Exception:
     print('SKIP'); sys.exit(0)
 tags = {t.lstrip('v') for t in r.stdout.split() if re.match(r'^v?\d+\.\d+\.\d+$', t)}
 heads = set(re.findall(r'^## (1\.0\.\d+)', open(os.path.join(root, 'CHANGELOG.md'), encoding='utf-8').read(), re.M))
+# 当前版本豁免：release 链路 = bump（CHANGELOG 头先落）→ commit → tag 后打——
+# tag 未打的当轮被扫即红是时序假缺口非登记缺口（1.0.41 首咬自证）；tag 必达闸兜其后
+mver = re.search(r'"version":\s*"(\d+\.\d+\.\d+)"', open(os.path.join(root, '.claude-plugin', 'plugin.json'), encoding='utf-8').read())
+if mver: heads.discard(mver.group(1))
 reg_txt = open(os.path.join(root, 'docs', '清单-版本缺口与欠账.md'), encoding='utf-8').read()
 sec1 = reg_txt.split('## 一、')[1].split('## 二、')[0] if '## 一、' in reg_txt else ''
 reg = set(re.findall(r'^\| (1\.0\.\d+) \|', sec1, re.M))
@@ -705,6 +709,7 @@ if not ver: print('SKIP'); sys.exit(0)
 cur = int(ver.group(3))
 txt = open(os.path.join(root, 'docs', '清单-版本缺口与欠账.md'), encoding='utf-8').read()
 sec2 = txt.split('## 二、')[1] if '## 二、' in txt else ''
+sec2 = sec2.split('\n## ')[0]   # 只扫在册节——「三、已销账」读数留档行不得再数龄
 errs = []
 rows = 0
 for line in sec2.splitlines():

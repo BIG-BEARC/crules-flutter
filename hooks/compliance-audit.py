@@ -8,7 +8,7 @@
 #   本账自装版起算、非全历史（「无数≠零样本」同族病的构造性预防）。
 # 判据常量与 scripts/closing-audit.py（批1 探针 = 本 hook 前稿）同源——**改判据两处同步**；
 #   找根/截断长/三流编码系 hooks/_common.py 共享实现（1.0.39 收编，本文件曾为第三例拷贝）。
-# SessionEnd 契约边界（1.0.36 实核官方文档）：
+# SessionEnd 契约边界（1.0.37 实核官方文档）：
 #   - 每会话终结触发一次，reason ∈ clear|resume|logout|prompt_input_exit|other；多次终结多次触发
 #     （resume 场景）——账本 append-only，重复触发是事实不是重复记账错误，聚合侧按 sid 归并。
 #   - 输出 fire-and-forget（stdout 无人读）→ 本 hook 不打印，只写文件。
@@ -24,10 +24,11 @@
 # 并发落盘：单行 <4KB，POSIX O_APPEND 原子；Windows 无 flock 沿 pending-updates D3 口径（窗口远小于不记）。
 # 编码/AV 纪律：1.0.21 P0-A 三流钉 UTF-8；1.0.33 SetErrorMode——**四 hook 同款同改**（本文件为第四位）。
 import json, os, re, sys, time
-from _common import (MAX_SID, find_project_root,
-                     _hook_utf8_streams)  # 1.0.39 共享实现收编（hooks/_common.py）
+from _common import (MAX_SID, constitution_stamp, find_project_root, plugin_version,
+                     version_key,
+                     _hook_utf8_streams)  # 1.0.39 共享实现收编 / 1.0.40 陈旧检测共用（hooks/_common.py）
 
-# 进程期 AV 弹框压制（1.0.33 同款，1.0.36 起四 hook 同款同改）：Windows 注入型管控 agent
+# 进程期 AV 弹框压制（1.0.33 同款，1.0.37 起四 hook 同款同改）：Windows 注入型管控 agent
 #   会使进程中途访问违例并弹模态框——hook 挂起等点击直至超时；脚本内 SetErrorMode(0x2) 即无框
 #   静默死。父进程预设会被 CPython 启动覆写，故必须脚本内设；压框失败仅退回原状
 if sys.platform == "win32":
@@ -55,7 +56,7 @@ CLAIM_RE = re.compile(r"(全绿|测试通过|0 失败|失败 0|PASS=|全部通�
 MSG_TYPE_RE = re.compile(r"^(feat|fix|refactor|perf|build|ci|docs|style|test|chore): \S")
 DENIAL_MARKS = ("请需求方人工执行", "crules-flutter 安全闸", "warn 层")
 REVIEW_SUB_RE = re.compile(r"(reviewer|plan-reviewer)$")
-# —— 弱签名三项（1.0.36 裁决：全带·只记）配套常量 ——
+# —— 弱签名三项（1.0.37 裁决：全带·只记）配套常量 ——
 DIFF_RE = re.compile(r"\bgit\b[^;|]*\b(status|diff)\b")            # §六 后台 agent 展示 diff 的跟随面
 CLOSING_Q_RE = re.compile(r"(授权提交|是否提交|可以提交|要提交|确认提交)")  # 三件套甄别列（坑①）
 OPT_LINE_RE = re.compile(r"(?m)^\s*[1-9][)）.、:：]")               # §一 选项卡：纯文本列选项的形态
@@ -198,19 +199,7 @@ def ledger_lines(mem):
             out[name] = None
     return out
 
-
-def plugin_version():
-    """账行打标产生它的 plugin 版本（窗口口径的另一半：不同版本判据不同，聚合须可分层）"""
-    root = os.environ.get("CLAUDE_PLUGIN_ROOT")
-    if not isinstance(root, str) or not root:
-        return None
-    try:
-        with open(os.path.join(root, ".claude-plugin", "plugin.json"), encoding="utf-8") as fh:
-            j = json.load(fh)
-        v = j.get("version") if isinstance(j, dict) else None
-        return v if isinstance(v, str) else None
-    except Exception:
-        return None
+# plugin_version 见 _common（1.0.40 收编——账行打标与宪法陈旧检测共用）
 
 
 try:
@@ -235,6 +224,12 @@ try:
            "sid": str(data.get("session_id") or "")[:MAX_SID],
            "reason": str(data.get("reason") or "")[:40],
            "plugin_ver": plugin_version()}
+    # 宪法陈旧事实位（1.0.40 · N-1）：项目戳 < 插件版即 True——「谁还在旧版」从提醒可见
+    #   变账本可聚合（记而不判，判读归聚合侧，与本 hook 三原则同款）。缺任一版本 → None
+    #   （区分「不陈旧」与「无从判」）。覆盖边界与 stop-reminder 陈旧闸一致（轻量档定根失败不入场）。
+    _pv, _sv = plugin_version(), constitution_stamp(root)
+    _pk, _sk = (version_key(_pv), version_key(_sv)) if (_pv and _sv) else (None, None)
+    rec["constitution_stale"] = (_pk > _sk) if (_pk and _sk) else None
     rec.update(facts)
     rec["markers"] = {label: bool(rx.search(tail)) for label, rx in MARKER_RES}
     rec["closing_q"] = bool(CLOSING_Q_RE.search(tail))

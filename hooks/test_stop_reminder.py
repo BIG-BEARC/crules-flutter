@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-# stop-reminder.py fixture 回归（A3 起，1.0.30 扩）——原四态（无队列静默 / 空队列静默 / stop_hook_active
+# stop-reminder.py fixture 回归（A3 起，1.0.30 扩，1.0.40 加陈旧提醒四态）——原四态（无队列静默 / 空队列静默 / stop_hook_active
 #   抑制 / 队列非空出 additionalContext）+ 批B F1 git 快查 + 1.0.30 队列分文件八项（sid 路由 / legacy 回退 /
-#   孤儿只报不删 / 新鲜不报 / sid 净化 / D5 已入队并集 / 读侧闸 / R6 文案指向 / R5 反斜杠归一 / N1 顶层形状），共 18 条检查
+#   孤儿只报不删 / 新鲜不报 / sid 净化 / D5 已入队并集 / 读侧闸 / R6 文案指向 / R5 反斜杠归一 / N1 顶层形状）
+#   + 宪法陈旧提醒四态，共 22 条检查
 import json, os, subprocess, sys, tempfile, time
 
 # 驱动自身 print 含中文（1.0.21 Windows 实机 P0-A，与 deny-list.py 同批）：宿主码页非 UTF-8
@@ -13,11 +14,20 @@ except Exception:
     pass
 
 HOOK = os.path.join(os.path.dirname(os.path.abspath(__file__)), "stop-reminder.py")
+# 宪法陈旧提醒闸（1.0.40）需要 plugin 版本可读：假 plugin.json 落**临时目录**（不污染分发面），
+#   CLAUDE_PLUGIN_ROOT 指过去——与真宿主注入语义同形（compliance fixture 同款打法）
+FAKE_PLUG_VER = "99.99.99"
+_FAKE_DIR = tempfile.mkdtemp(prefix="cf-fakeplug.")
+FAKE_ROOT = _FAKE_DIR
+os.makedirs(os.path.join(FAKE_ROOT, ".claude-plugin"), exist_ok=True)
+with open(os.path.join(FAKE_ROOT, ".claude-plugin", "plugin.json"), "w", encoding="utf-8") as f:
+    json.dump({"name": "crules-flutter", "version": FAKE_PLUG_VER}, f)
 fails = 0
 
 def run(payload, cwd):
+    env = dict(os.environ, CLAUDE_PLUGIN_ROOT=FAKE_ROOT)
     p = subprocess.run([sys.executable, HOOK], input=json.dumps(payload).encode(),
-                       capture_output=True, cwd=cwd)
+                       capture_output=True, cwd=cwd, env=env)
     return p.returncode, p.stdout.decode()
 
 def check(name, cond):
@@ -193,6 +203,29 @@ with tempfile.TemporaryDirectory() as d2:
         open(os.path.join(d5, ".claude", "memory", "NAVIGATION.md"), "w", encoding="utf-8").close()
         rc, out = run([], d5)
         check("顶层非对象 JSON（[]）→ exit 0 静默（N1 读侧）", rc == 0 and out == "")
+
+    # —— 宪法陈旧提醒闸（1.0.40 · N-1③）：戳 < 插件版即催升级，独立于队列状态 ——
+    def stale_project(stamp):
+        d6 = tempfile.mkdtemp()
+        os.makedirs(os.path.join(d6, ".claude", "memory"))
+        open(os.path.join(d6, ".claude", "memory", "NAVIGATION.md"), "w", encoding="utf-8").close()
+        if stamp:
+            open(os.path.join(d6, "CLAUDE.md"), "w", encoding="utf-8").write(
+                f"# t\n\n<!-- crules-flutter: v{stamp} @ 2026-01-01 -->\n")
+        return d6
+    d6 = stale_project("1.0.25")   # 旧戳 + 假插件 99.99.99 + **队列空**
+    rc, out = run({"hook_event_name": "Stop", "session_id": "stale-1", "stop_hook_active": False}, d6)
+    ac = ac_of(out) if out.strip() else ""
+    check("旧戳+队列空 → 陈旧提醒仍响（落点 bug 回归钉：不挂队列分支）",
+          "宪法版本落后" in ac and "1.0.25" in ac and "99.99.99" in ac and "install.sh" in ac)
+    rc2, out2 = run({"hook_event_name": "Stop", "session_id": "stale-1", "stop_hook_active": True}, d6)
+    check("stop_hook_active 续轮抑制陈旧提醒（防连环）", out2 == "")
+    d7 = stale_project(FAKE_PLUG_VER)   # 戳与插件同版
+    rc3, out3 = run({"hook_event_name": "Stop", "session_id": "stale-1", "stop_hook_active": False}, d7)
+    check("戳==插件版 → 静默", out3 == "")
+    d8 = stale_project(None)            # 无戳（老项目/人工合并态；上方各既有断言的 temp 项目均此态=隐式回归）
+    rc4, out4 = run({"hook_event_name": "Stop", "session_id": "stale-1", "stop_hook_active": False}, d8)
+    check("无戳 → 静默（无从判不催）", out4 == "")
 
 print(f"stop-reminder fixture: {'全绿' if fails == 0 else f'{fails} 失败'}")
 sys.exit(1 if fails else 0)

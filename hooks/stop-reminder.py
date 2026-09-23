@@ -21,8 +21,9 @@
 #   （未提交改动是开发常态，独立触发会在每次 Stop 重复打扰）——仅作队列非空时的补充信息，
 #   故「纯 Bash 落盘会话」仍不提醒（诚实边界，待观测后定是否加状态文件去重）。耗时受 timeout 5s 约束
 import json, os, subprocess, sys, time
-from _common import (find_project_root, sanitize_sid,
-                     _hook_utf8_streams)  # 1.0.39 共享实现收编（hooks/_common.py）
+from _common import (constitution_stamp, find_project_root, plugin_version,
+                     sanitize_sid, version_key,
+                     _hook_utf8_streams)  # 1.0.39 共享实现收编 / 1.0.40 陈旧检测三件入共享（hooks/_common.py）
 
 # 进程期 AV 弹框压制（1.0.33，三 hook 同款同改；2026-09-22 A/B 实测）：Windows 注入型管控 agent
 #   会使进程中途访问违例并弹模态框——hook 挂起等点击直至超时；脚本内 SetErrorMode(0x2) 即无框
@@ -91,6 +92,27 @@ root = find_project_root(os.getcwd())
 if not root:
     sys.exit(0)
 mem = os.path.join(root, ".claude", "memory")
+
+# 宪法陈旧提醒闸（1.0.40 · N-1③）：项目 CLAUDE.md 版本戳 < 已装 plugin 版本 → 催升级。
+#   位置钉在定根之后、队列读取之前——**独立于队列状态**：目标宿主（消费工程）常态恰是
+#   「刚收尾、队列空」，挂进队列非空分支等于闸对着该响的人永不响（设计评审抓出的落点 bug）。
+#   覆盖边界（如实）：轻量档工程（无 NAVIGATION）在上方 root 判定即退，收不到本提醒——与
+#   compliance 落账、漂移队列同覆盖面对齐；无戳（老项目人工合并态）静默（stamp=None）。
+#   升级动作本身不自动化（写用户工程文件=破坏性面，宪法规矩：提醒≠代执行）。
+plug_ver = plugin_version()
+stamp_ver = constitution_stamp(root)
+stale = ""
+if plug_ver and stamp_ver:
+    pk, sk = version_key(plug_ver), version_key(stamp_ver)
+    if pk and sk and pk > sk:
+        stale = (f"宪法版本落后：项目 CLAUDE.md v{stamp_ver}，插件已 v{plug_ver}——"
+                 '升级跑 bash "$CLAUDE_PLUGIN_ROOT/scripts/install.sh" <项目根> --upgrade'
+                 "（插件若也旧先 claude plugin update；--yes 免确认）。")
+
+def emit(context):
+    print(json.dumps({"hookSpecificOutput": {"hookEventName": "Stop",
+                                             "additionalContext": context[:10000]}}, ensure_ascii=False))
+
 # 取值类型守卫（1.0.30 收口 R3，与写侧同）：合法 JSON 但 session_id 非字符串时 re.sub 会抛未捕获异常，
 #   与头注 fail-open 契约不符——str 守卫使异型退化为「无此字段」语义
 sid = sanitize_sid(data.get("session_id"))  # 与写侧 D6 同规则净化（实现见 _common，1.0.39 收编单源）
@@ -102,9 +124,11 @@ if not lines and sid:
     if lines:
         src_name = ".pending-updates"
 if not lines:
+    if stale:
+        emit(stale)   # 队列空也要响（1.0.40 落点 bug 回归钉）
     sys.exit(0)
 first = lines[0][:120]
-msg = f"记忆库漂移队列非空：{len(lines)} 条待补索引（如 {first}）。"
+msg = (stale + f"记忆库漂移队列非空：{len(lines)} 条待补索引（如 {first}）。")
 # D4/D5：他人队列文件——行并入已入队集合（D5），mtime 超 ORPHAN_TTL 计孤儿（D4 只报不删，删除留给人）
 now = time.time()
 orphans = 0
@@ -133,5 +157,5 @@ clear_hint = (f"清空本会话队列文件 {own_name}" if src_name == own_name
               else "清空旧单文件 .pending-updates（升级存量，写侧 1.0.30 起已不再写它）")
 msg += (f"本轮改动若已收尾，按 .claude/memory/MAINTENANCE.md 触发表补对应索引后{clear_hint}；"
         "仍在继续任务则可忽略本条，收尾时会再提示。")
-print(json.dumps({"hookSpecificOutput": {"hookEventName": "Stop", "additionalContext": msg[:10000]}}, ensure_ascii=False))
+emit(msg)
 sys.exit(0)

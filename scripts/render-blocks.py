@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """孪生同文块生成器（F3 · 1.0.12）
 
-把五块「逐字同文块」由 canonical/ 单一源生成进目标文件——防漂移从**检测**前移到**构造**。
+把多块「逐字同文块」（块数以 EXPECTED 为准，不写死）由 canonical/ 单一源生成进目标文件——防漂移从**检测**前移到**构造**。
 方案：docs/方案-2026-09-15-孪生同文块生成化.md（v3，两轮独立评审消解）
 
 机制：
@@ -44,6 +44,10 @@ EXPECTED = {
     # 1.0.35：backend/frontend 两卡共用的「例外 + 判定线」句收源（agents 孪生漂移入闸——
     # 「底屽」错字级漂移实证后登记；围栏外各卡前缀语句保留手写，仅逐字同文核心进 canonical）
     "aggregate-exception": ["agents/backend.md", "agents/frontend.md"],
+    # 1.0.40：§一 两条新红线逐字双写收源（外部重核 N-2——红线落地当日即成 canonical 未覆盖面，
+    # 「逐字双写无闸」正是防漂移批点名的病形复发）
+    "redline-evidence": ["app/CLAUDE.md", "plugin/CLAUDE.md"],
+    "redline-review-check": ["app/CLAUDE.md", "plugin/CLAUDE.md"],
 }
 
 

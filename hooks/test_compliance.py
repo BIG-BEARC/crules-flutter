@@ -185,6 +185,14 @@ check("ledger 快照计入非空行（gate-exceptions=2）",
       r7b.get("ledger_lines", {}).get(".gate-exceptions") == 2)
 check("plugin_ver 自 CLAUDE_PLUGIN_ROOT 读取；sid 截断 MAX_SID=80",
       r7b.get("plugin_ver") == "9.9.9" and len(r7b.get("sid", "")) == 80)
+check("constitution_stale 无戳 → None（区分「不陈旧」与「无从判」，1.0.40）",
+      "constitution_stale" in r7b and r7b["constitution_stale"] is None)
+open(os.path.join(d7, "CLAUDE.md"), "w", encoding="utf-8").write(
+    "# t\n\n<!-- crules-flutter: v1.0.25 @ 2026-01-01 -->\n")
+run({"transcript_path": tp7, "cwd": d7, "session_id": "x", "reason": "resume"}, d7,
+    env={"CLAUDE_PLUGIN_ROOT": pr})   # 假插件 9.9.9 > 戳 1.0.25 → 陈旧 True
+check("constitution_stale 旧戳 → True（事实位与提醒闸同源，1.0.40）",
+      read_log(d7)[-1].get("constitution_stale") is True)
 check("append-only：同会话二次触发（resume 场景）落两行、不覆盖",
       len(rows) == 2 and rows[0].get("reason") == "other")
 raw = open(os.path.join(d7, ".claude", "memory", ".compliance-log"), encoding="utf-8").read()

@@ -134,15 +134,25 @@ rout=$(python3 "$T6/scripts/render-blocks.py" 2>&1); rrc=$?
 same=1
 for p in app/CLAUDE.md plugin/CLAUDE.md commands/help.md README.md agents/backend.md agents/frontend.md; do cmp -s "$T6/$p" "$SRC/$p" || same=0; done
 # 锚串守卫（review R2）：canonical 清空/截断时 render 双侧对称 → 比对仍绿；锚串**直查仓内**
-# 目标文件（不经比对），堵「整段静默消失」——P3 删旧 byte 断言后这是五块的关键防线之一
+# 目标文件（不经比对），堵「整段静默消失」——P3 删旧 byte 断言后这是各块的关键防线之一
+# 1.0.40（verify 族普查）：锚串改在**围栏区间内**查找——全文件 grep 的残余暴露=同文件叙事句
+# 含锚串字样即假绿（块被删仍在别处提到该短语）；围栏内查找把「提到」与「在位」区分开。
 anchor_bad=0
-for a in "app/CLAUDE.md|轻量〔light〕" "plugin/CLAUDE.md|轻量〔light〕" \
-         "app/CLAUDE.md|收尾时序**三档**" "plugin/CLAUDE.md|收尾时序**三档**" \
-         "app/CLAUDE.md|.gate-exceptions" "plugin/CLAUDE.md|.gate-exceptions" \
-         "commands/help.md|收尾档按任务规模三档判定" "README.md|收尾档按任务规模三档判定" \
-         "agents/backend.md|判定线 = 是否引入第二个" "agents/frontend.md|判定线 = 是否引入第二个"; do
-  af="${a%%|*}"; as="${a##*|}"
-  grep -qF -- "$as" "$SRC/$af" || { anchor_bad=1; echo "  ↳ $af 缺锚串「$as」——canonical 疑似清空/截断"; }
+in_fence() { python3 -c "
+import re,sys
+p,i,a=sys.argv[1],sys.argv[2],sys.argv[3]
+t=open(p,encoding='utf-8').read()
+m=re.search(r'<!--\s*gen:%s\s*-->\n(.*?)\n<!--\s*/gen:%s\s*-->'%(i,i),t,re.S)
+sys.exit(0 if m and a in m.group(1) else 1)" "$SRC/$1" "$2" "$3"; }
+for a in "app/CLAUDE.md|gear-preset|轻量〔light〕" "plugin/CLAUDE.md|gear-preset|轻量〔light〕" \
+         "app/CLAUDE.md|closing-tiers|收尾时序**三档**" "plugin/CLAUDE.md|closing-tiers|收尾时序**三档**" \
+         "app/CLAUDE.md|gate-exception|.gate-exceptions" "plugin/CLAUDE.md|gate-exception|.gate-exceptions" \
+         "commands/help.md|gear-note|收尾档按任务规模三档判定" "README.md|gear-note|收尾档按任务规模三档判定" \
+         "agents/backend.md|aggregate-exception|判定线 = 是否引入第二个" "agents/frontend.md|aggregate-exception|判定线 = 是否引入第二个" \
+         "app/CLAUDE.md|redline-evidence|必须引用皆有实测依据" "plugin/CLAUDE.md|redline-evidence|必须引用皆有实测依据" \
+         "app/CLAUDE.md|redline-review-check|方案评审必核两件事" "plugin/CLAUDE.md|redline-review-check|方案评审必核两件事"; do
+  af="${a%%|*}"; rest="${a#*|}"; bid="${rest%%|*}"; as="${rest#*|}"
+  in_fence "$af" "$bid" "$as" || { anchor_bad=1; echo "  ↳ $af 围栏 $bid 内缺锚串「$as」——canonical 疑似清空/截断"; }
 done
 if [ "$rrc" = "0" ] && [ "$same" = "1" ] && [ "$anchor_bad" = "0" ]; then
   PASS=$((PASS+1)); echo "PASS  孪生同文块生成闸（canonical↔六文件同步 + 锚串在位）"

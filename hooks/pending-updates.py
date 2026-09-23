@@ -11,7 +11,8 @@
 #   会话收尾主控看到队列非空即提示补索引（MAINTENANCE.md 自检清单）。
 # 输入契约 fail-open（批A F10①，1.0.11）：stdin 非法 JSON → exit 0 静默——输入由宿主构造风险低，
 #   fail-closed 恐误伤非 JSON 探活；本 hook 本就不阻止任何操作，静默即等价「无待办」
-import json, os, re, sys
+import json, os, sys
+from _common import find_project_root, sanitize_sid  # 1.0.39 共享实现收编（hooks/_common.py）
 
 # 进程期 AV 弹框压制（1.0.33，三 hook 同款同改；2026-09-22 A/B 实测）：Windows 注入型管控 agent
 #   会使进程中途访问违例并弹模态框——hook 挂起等点击直至超时；脚本内 SetErrorMode(0x2) 即无框
@@ -24,8 +25,6 @@ if sys.platform == "win32":
     except Exception:
         pass
 
-MAX_SID = 80  # sid 作文件名时的截断长度（与 stop-reminder.py 同源常量，改动需同步）
-
 # stdin 编码显式化（1.0.21，Windows 实机 P0-A）：宿主送来的 JSON 是 UTF-8，非 UTF-8 码页
 #   （简中 936 / 繁中 950…）下按码页解——实测**不抛**（Windows 标准流 errors=surrogateescape），
 #   坏字节变孤立代理项：file_path 含非 ASCII（中文目录名）时被解成垃圾串，仍会写进队列但条目
@@ -34,18 +33,6 @@ try:
     sys.stdin.reconfigure(encoding="utf-8", errors="replace")
 except Exception:
     pass
-
-def find_project_root(start):
-    """自 start 向上逐级找含 .claude/memory/NAVIGATION.md 的目录（1.0.30 D8）；到盘根未中 → None
-    **与 stop-reminder.py 的 find_project_root 同源，改动须两处同步**（两 hook 随 plugin 独立分发，不引共享模块）"""
-    d = os.path.abspath(start)
-    while True:
-        if os.path.exists(os.path.join(d, ".claude", "memory", "NAVIGATION.md")):
-            return d
-        parent = os.path.dirname(d)
-        if parent == d:
-            return None
-        d = parent
 
 try:
     data = json.load(sys.stdin)
@@ -72,8 +59,8 @@ if real.startswith(os.path.realpath(mem) + os.sep):  # 记忆库自身文件不�
 norm = real.replace(os.sep, "/")  # Windows 反斜杠路径归一后再判——旧写法正斜杠字面串在 Windows 恒不命中（1.0.30 D8 顺手修）
 if "/.claude/" in norm or "/.git/" in norm:  # 配置与 git 内部不记
     sys.exit(0)
-# sid → 文件名（净化规则与 stop-reminder.py 同源，改动须同步）
-sid = re.sub(r"[^A-Za-z0-9_-]", "-", str(data.get("session_id") or ""))[:MAX_SID]  # D6 净化 + 截断
+# sid → 文件名（净化规则见 _common.sanitize_sid——1.0.39 收编，读写侧同源单实现）
+sid = sanitize_sid(data.get("session_id"))  # D6 净化 + 截断
 queue = os.path.join(mem, (".pending-updates." + sid) if sid else ".pending-updates")
 try:
     lines = set()

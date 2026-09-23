@@ -20,7 +20,9 @@
 #   git status 快查，检出未入队的 A/D/? 源文件并入提醒。**设计取舍**：git 快查**不独立触发**
 #   （未提交改动是开发常态，独立触发会在每次 Stop 重复打扰）——仅作队列非空时的补充信息，
 #   故「纯 Bash 落盘会话」仍不提醒（诚实边界，待观测后定是否加状态文件去重）。耗时受 timeout 5s 约束
-import json, os, re, subprocess, sys, time
+import json, os, subprocess, sys, time
+from _common import (find_project_root, sanitize_sid,
+                     _hook_utf8_streams)  # 1.0.39 共享实现收编（hooks/_common.py）
 
 # 进程期 AV 弹框压制（1.0.33，三 hook 同款同改；2026-09-22 A/B 实测）：Windows 注入型管控 agent
 #   会使进程中途访问违例并弹模态框——hook 挂起等点击直至超时；脚本内 SetErrorMode(0x2) 即无框
@@ -33,43 +35,12 @@ if sys.platform == "win32":
     except Exception:
         pass
 
-MAX_SID = 80            # sid 作文件名时的截断长度（与 pending-updates.py 同源常量，改动需同步）
 ORPHAN_TTL = 24 * 3600  # 他人队列文件「孤儿」判定阈值（D4 只报不删；删除留给人）
 
-# 流编码显式化（1.0.21，Windows 实机 P0-A）：宿主码页非 UTF-8 时本 hook 的 print 中文或崩
-#   （该码页编不出该字，如 cp950 遇简体字形）或吐非 UTF-8 字节（cp936），两者都使提醒 JSON
-#   一字未能按契约送达——与 deny-list.py 同批同因，见该文件头注的双码页实测与兜底链放大效应。
-#   stdin 方向不抛（Windows 标准流 errors=surrogateescape），坏字节变孤立代理项＝失真非失败。
-def _hook_utf8_streams():
-    for name in ("stdin", "stdout", "stderr"):
-        s = getattr(sys, name, None)
-        if s is None:
-            continue
-        try:
-            s.reconfigure(encoding="utf-8", errors="replace")
-            continue
-        except Exception:
-            pass
-        try:   # Python < 3.7 无 reconfigure：退到重包 TextIOWrapper
-            import io
-            setattr(sys, name, io.TextIOWrapper(s.buffer, encoding="utf-8", errors="replace"))
-        except Exception:
-            pass
-
+# 流编码钉 UTF-8（1.0.21 Windows 实机 P0-A）——实现见 _common._hook_utf8_streams（1.0.39 收编）：
+#   宿主码页非 UTF-8 时本 hook 的 print 中文或崩（该码页编不出该字，如 cp950 遇简体字形）或吐
+#   非 UTF-8 字节（cp936），两者都使提醒 JSON 一字未能按契约送达。
 _hook_utf8_streams()
-
-
-def find_project_root(start):
-    """自 start 向上逐级找含 .claude/memory/NAVIGATION.md 的目录（1.0.30 D8）；到盘根未中 → None
-    **与 pending-updates.py 的 find_project_root 同源，改动须两处同步**（两 hook 随 plugin 独立分发，不引共享模块）"""
-    d = os.path.abspath(start)
-    while True:
-        if os.path.exists(os.path.join(d, ".claude", "memory", "NAVIGATION.md")):
-            return d
-        parent = os.path.dirname(d)
-        if parent == d:
-            return None
-        d = parent
 
 def read_lines(path):
     try:
@@ -122,7 +93,7 @@ if not root:
 mem = os.path.join(root, ".claude", "memory")
 # 取值类型守卫（1.0.30 收口 R3，与写侧同）：合法 JSON 但 session_id 非字符串时 re.sub 会抛未捕获异常，
 #   与头注 fail-open 契约不符——str 守卫使异型退化为「无此字段」语义
-sid = re.sub(r"[^A-Za-z0-9_-]", "-", str(data.get("session_id") or ""))[:MAX_SID]  # 与写侧 D6 同规则净化
+sid = sanitize_sid(data.get("session_id"))  # 与写侧 D6 同规则净化（实现见 _common，1.0.39 收编单源）
 own_name = (".pending-updates." + sid) if sid else ".pending-updates"
 src_name = own_name   # 报出的条目实际来自哪个队列文件（R6——D3 回退命中时文案须指向 legacy，否则用户清无可清）
 lines = read_lines(os.path.join(mem, own_name))

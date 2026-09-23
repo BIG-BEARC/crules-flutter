@@ -1,5 +1,18 @@
 # crules-flutter CHANGELOG
 
+## 1.0.39 · 防漂移批——hooks 共享实现收编（_common.py）+ 复制绊线 + 清单派生化 + 跨 hook 队列契约测试
+
+> 依据链：2026-09-22 外部可维护性评审「同类知识双源靠人同步」主张 → 九轮实测核实与方案收敛（逐条裁决记录见 docs/裁决单-2026-09-22-防漂移批.md，D-1(c)/D-2(b)/D-3(b)/D-4(a) 需求方拍板）→ 本批。核实要点：三符号（找根/sid 截断净化/三流钉 UTF-8）在 2→4 个 hook 间逐字复制、靠互指注释维持，AST 实测全等零漂；「不引共享模块」注释声称的分发约束查证为**幻影决策**（无 CHANGELOG/提交记录、install 无单文件分发逻辑、需求方确认非本意）；批内第 4 个 hook（compliance-audit，1.0.37）落地当日即把三符号抄成第三遍——注释纪律拦不住增量复制。
+
+- **hooks/_common.py（新）**：find_project_root / MAX_SID / sanitize_sid / _hook_utf8_streams 四件收编单源，pending-updates / stop-reminder / deny-list / compliance-audit 四 hook 改 import（hook 由 hooks.json 以插件目录整包安装启动，同目录 import 天然可达、无路径样板——「独立分发」疑虑实证解除）。sanitize_sid 自原两处逐字 `re.sub(...)[:MAX_SID]` 提取，行为零变化；互指「改动须两处同步」注释与幻影决策句随删。各 fixture + deny 双驱动 + `--diff` 170 例复跑全绿（见验证）
+- **复制绊线（test-self 断言 50→52 之二）**：①禁回抄锁——_common 定义的符号在任何生产 hook 顶层重现即红（防「不知道有 _common」再抄）；②跨 hook 同名绊线——任意两生产 hook 顶层同名函数/常量字面即红（AST 全量扫、新文件自动入网；手挑名单同族病本会话两次数错实证在先）。不锁调用式顶层赋值（root/mem 各 hook 语义有别，compliance 的 root 带参调用系合法分叉，实测 MIXED 后排除）
+- **清单派生化（D-3）**：①CI「语法编译」步手列 9 文件 → `compileall -q hooks scripts`（加文件零维护，release/CI 双清单历史漏过同族根治）；②AV 守卫断言手列四文件 → **从 hooks.json 注册命令派生**（注册面即分发面，第 5 个 hook 登记自动入检；空解析集显式红防「全体脱管」）；③help.md hooks ×N 计数闸口径排除 _common（实测不排除即咬——先核对再落闸）。release.sh 注释「三 fixture 实跑 6 py」写死数字同族，随批改不写死（1.0.35「数字写死即漂移之源」同训）
+- **跨 hook 队列契约测试（hooks/test_queue_contract.py，新）**：真调写侧产队列→真调读侧消费，锁队列文件 sid 路由/净化名/D2 回退/D3 迁移/正斜杠落盘去重五条**格式契约**（两侧各自 fixture 从不互调——1.0.30 R5 写读分隔符互踩正是此盲区咬过的实账；收编后同源函数不再漂，但两文件间的格式约定只有互调能锁）
+- **验证**：先红后绿留痕——收编前绊线探针红 3（MAX_SID/_hook_utf8_streams/find_project_root 三组三文件重名，红得其所）；收编后 test-self **52/0**（Windows 实机 Git Bash）；四 hook fixture + ps 驱动（82拦/38放/17warn/24变异/探针7 失败0）+ `--diff` 170 例两路同判 0 + compileall 全过；负控三注入全咬（重抄 _common 常量红/新符号跨两 hook 红/AV 常量翻转红）、真树零误伤
+- **诚实边界**：①改名复制（一侧 find_project_root 一侧 _root）AST 按名比对结构上抓不到——机械可查形态到此为止，注释留作人读线索；②py/ps1 跨语言双源不在本闸面（fixture 单源双驱动照旧锁）；③closing-audit↔compliance-audit 判据常量双源（批内新增第 7 对）**本批不动**——随批 3 探针去留裁决一并收口（D-5，现接线属白工）；④_common 一坏四 hook 齐坏的爆炸半径——防线=CI/test-self compileall 自动覆盖 + 各 fixture 子进程实跑，与收编前单文件语法错全红的现状同级
+- **观测带数**：①常驻基线零变化（hooks 属调用期执行面，_common 不入上下文常驻）②distill 四数：消费工程样本 8/30 · 比率按规则不输出（悬空态显式，同 1.0.31–1.0.38 口径）
+- 双 json 1.0.39 + README 横幅同步
+
 ## 1.0.38 · 易用性批——消费面文案去黑话 + 首跑断点补平 + 分发口径回填 + 死指针/黑话两闸
 
 > 依据链：2026-09-22 外部易用性评审六主张 → 逐条实测核实（4 成立/2 细节失实：README 行号 123→125、「金丝雀/撞号/D1-D8」实不在 README 只在 CHANGELOG、decisions//indexes/「断裂」系 NAVIGATION 按需创建契约被读成缺陷）→ 三轮「还有更好方案吗」自查净修正：追加实证第二条死指针 help.md:7（与 :76 同由 a121472 README 重排遗孤、既有链接闸只解析 `[x](y)` 形结构性够不到——死指针是**族**非孤例）；C/D 各升一档（distill 空态从「文档引导」改「首跑当场提议建复盘」；闸从「逐个修已知」改「普查收口全量+落闸防复发」）。跨会话队列协调：1.0.36 跳号让位遵守度批（37 先入库），无实物缺版。

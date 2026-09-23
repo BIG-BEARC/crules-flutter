@@ -7,7 +7,7 @@
 #   ②**转录只作采料场**——本机实测留存仅数日，持久账必须由本 hook 落盘。③**窗口口径钉死**——
 #   本账自装版起算、非全历史（「无数≠零样本」同族病的构造性预防）。
 # 判据常量与 scripts/closing-audit.py（批1 探针 = 本 hook 前稿）同源——**改判据两处同步**；
-#   find_project_root 与 pending-updates.py / stop-reminder.py 同源三处，同纪律（不引共享模块）。
+#   找根/截断长/三流编码系 hooks/_common.py 共享实现（1.0.39 收编，本文件曾为第三例拷贝）。
 # SessionEnd 契约边界（1.0.36 实核官方文档）：
 #   - 每会话终结触发一次，reason ∈ clear|resume|logout|prompt_input_exit|other；多次终结多次触发
 #     （resume 场景）——账本 append-only，重复触发是事实不是重复记账错误，聚合侧按 sid 归并。
@@ -24,6 +24,8 @@
 # 并发落盘：单行 <4KB，POSIX O_APPEND 原子；Windows 无 flock 沿 pending-updates D3 口径（窗口远小于不记）。
 # 编码/AV 纪律：1.0.21 P0-A 三流钉 UTF-8；1.0.33 SetErrorMode——**四 hook 同款同改**（本文件为第四位）。
 import json, os, re, sys, time
+from _common import (MAX_SID, find_project_root,
+                     _hook_utf8_streams)  # 1.0.39 共享实现收编（hooks/_common.py）
 
 # 进程期 AV 弹框压制（1.0.33 同款，1.0.36 起四 hook 同款同改）：Windows 注入型管控 agent
 #   会使进程中途访问违例并弹模态框——hook 挂起等点击直至超时；脚本内 SetErrorMode(0x2) 即无框
@@ -35,7 +37,6 @@ if sys.platform == "win32":
     except Exception:
         pass
 
-MAX_SID = 80       # sid 截断（与 pending-updates.py / stop-reminder.py 同源常量，仅作日志字段）
 # 扫描时间闸（< hooks.json 登记的 timeout 30。同步执行会占用会话退出瞬间，闸须短——
 #   实测转录均值 ≈400 行、5 万行大转录也仅 1–3s，10s 已覆盖极端态）。
 #   env 覆写口仅供 fixture 测截断路径——真机不会有人设它；float 解析失败退默认（fail-open）
@@ -63,36 +64,10 @@ MARKER_RES = (("review结论", re.compile(r"review ?结论", re.I)),
               ("裁决区", re.compile(r"裁决区")))
 
 
-def _hook_utf8_streams():
-    """（与 stop-reminder.py 同源）非 UTF-8 码页宿主下 print/读崩或失真——三流显式钉 UTF-8"""
-    for name in ("stdin", "stdout", "stderr"):
-        s = getattr(sys, name, None)
-        if s is None:
-            continue
-        try:
-            s.reconfigure(encoding="utf-8", errors="replace")
-            continue
-        except Exception:
-            pass
-        try:   # Python < 3.7 无 reconfigure：退到重包 TextIOWrapper
-            import io
-            setattr(sys, name, io.TextIOWrapper(s.buffer, encoding="utf-8", errors="replace"))
-        except Exception:
-            pass
-
+# 流编码钉 UTF-8 / 向上找项目根 / sid 截断长——实现见 _common（1.0.39 收编四 hook 重复源）
 _hook_utf8_streams()
 
 
-def find_project_root(start):
-    """自 start 向上找 .claude/memory/NAVIGATION.md（**三 hook 同源，改动须三处同步**）"""
-    d = os.path.abspath(start)
-    while True:
-        if os.path.exists(os.path.join(d, ".claude", "memory", "NAVIGATION.md")):
-            return d
-        parent = os.path.dirname(d)
-        if parent == d:
-            return None
-        d = parent
 
 
 def blocks(d):

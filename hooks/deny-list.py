@@ -37,7 +37,7 @@
 #   - 诚实边界（1.0.22 仍开口）：①首解释器被中途 kill（超时）→ 管道剩半截 JSON（非空非法）→
 #     落 F10① 放行；②本文件语法错误 → 解释器根本没跑起来、excepthook 未安装 → exit 1 放行
 #     （release.sh 的 test-self 全套是此路线的发行前闸——1.0.34 起由「py_compile+夹具」升级为本 fixture
-#      子进程实跑本 hook，语法错误连 fixture 一起红；CI py_compile 步为编译层二次覆盖）；③两解释器皆缺 → exit 127 放行
+#      子进程实跑本 hook，语法错误连 fixture 一起红；CI compileall 步为编译层二次覆盖，1.0.39 起扫目录）；③两解释器皆缺 → exit 127 放行
 #     （README 声明：终极防线回 Claude Code 原生权限确认）；④宿主超时的 hook 按官方口径本就不拦
 # 边界与局限（诚实声明）：
 #   - 非锚定搜索会把字符串里的破坏命令（含引号内原文——1.0.8 归一后成立）一并拦下——
@@ -77,21 +77,8 @@ if sys.platform == "win32":
 # 修法 = 三流钉死 UTF-8，不依赖宿主码页，与 deny-list.ps1 入口段的 OpenStandardInput/Output +
 #   UTF8Encoding($false) 同款（ps1 早有此手，py 侧补齐）。errors 两侧均 replace：编码侧防孤立
 #   代理项（\udXXX）令闸门自毁，解码侧保住 ASCII 骨架（签名/路径仍可判）——两个方向都优于抛异常。
-def _hook_utf8_streams():
-    for name in ("stdin", "stdout", "stderr"):
-        s = getattr(sys, name, None)
-        if s is None:
-            continue
-        try:
-            s.reconfigure(encoding="utf-8", errors="replace")
-            continue
-        except Exception:
-            pass
-        try:   # Python < 3.7 无 reconfigure：退到重包 TextIOWrapper
-            import io
-            setattr(sys, name, io.TextIOWrapper(s.buffer, encoding="utf-8", errors="replace"))
-        except Exception:
-            pass
+#   实现见 _common._hook_utf8_streams（1.0.39 收编——与 stop-reminder/compliance-audit 三处逐字重复）。
+from _common import _hook_utf8_streams
 
 _hook_utf8_streams()
 

@@ -7,7 +7,7 @@
 #     本包三脚本此类位置一律花括号隔离（v59 BSD grep 环境坑同款教训）
 set -uo pipefail
 SRC=$(cd "$(dirname "$0")/.." && pwd)
-# 环境守卫（1.0.13）：本脚本两条断言（draft / tag）依赖 git 历史，其余 46 条不依赖（1.0.37 断言 47→48 时同步——净增仅 compliance fixture 挂载，AV/gitignore 为改造非新增；计数以实跑为准）。在无 .git 的拷贝里
+# 环境守卫（1.0.13）：本脚本两条断言（draft / tag）依赖 git 历史，其余 50 条不依赖（1.0.39 断言 48→52 时同步——净增 = 跨 hook 契约 fixture 挂载 + 收编双锁，AV 派生/计数排除为改造非新增；计数以实跑为准）。在无 .git 的拷贝里
 # （典型：插件 cache = 全仓文件快照、非 clone）draft 吃 git 报错码 128 → **假红**；tag 则落到「读 HEAD 失败」
 # 分支 → **假绿**，其声称守护的「1.0.2 D2 防 tag 打在 bump 前旧树」版本比对从未执行。假绿比报错更贵——
 # 故显式拒绝，不静默变形。
@@ -36,6 +36,7 @@ else
 fi
 t 0 "python3 $SRC/hooks/test_stop_reminder.py"            "stop-reminder fixture 应全绿（A3 读侧闭环）"
 t 0 "python3 $SRC/hooks/test_pending_updates.py"          "pending-updates 写侧 fixture 应全绿（1.0.30 队列分文件）"
+t 0 "python3 $SRC/hooks/test_queue_contract.py"           "跨 hook 队列契约测试应全绿（1.0.39 D-4 写读互调）"
 t 0 "python3 $SRC/hooks/test_compliance.py"               "compliance-audit fixture 应全绿（1.0.37 批2 遵守度事实账）"
 t 1 "bash $SRC/scripts/release.sh tag 9.9.9"               "release tag 版本不匹配应报错（1.0.2 D2——防 tag 打在 bump 前旧树）"
 # 非 git 树守卫的反向断言（1.0.13）：把脚本本身拷进非 git 目录跑，须**显式拒绝**。判据三条件缺一不可——
@@ -169,8 +170,8 @@ sem_ok=1
 pj_ver=$(grep -o '"version": "[^"]*"' "${SRC}/.claude-plugin/plugin.json" | head -1 | cut -d'"' -f4)
 br_ver=$(grep -m1 '当前状态：' "${SRC}/README.md" | grep -oE '当前状态：[0-9]+\.[0-9]+\.[0-9]+' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
 if [ -n "${pj_ver}" ] && [ "${br_ver}" = "${pj_ver}" ]; then :; else sem_ok=0; echo "  ↳ README 横幅版本(${br_ver:-无}) ≠ plugin.json(${pj_ver})"; fi
-# ② help.md hooks ×N == hooks/*.py 实际数
-hook_n=$(ls "${SRC}"/hooks/*.py 2>/dev/null | grep -vc test_ || true)
+# ② help.md hooks ×N == hooks/*.py 实际数（_common.py 系 import 库非 hook，排除——1.0.39 收编批）
+hook_n=$(ls "${SRC}"/hooks/*.py 2>/dev/null | grep -vE 'test_|_common' | grep -c . || true)
 help_n=$(grep -oE 'hooks ×[0-9]+' "${SRC}/commands/help.md" | head -1 | grep -oE '[0-9]+')
 if [ -n "${help_n}" ] && [ "${help_n}" = "${hook_n}" ]; then :; else sem_ok=0; echo "  ↳ help.md hooks ×${help_n:-无} ≠ 实际 ${hook_n}"; fi
 # ③ 停更栈禁推：agents 无 screenutil 正面示例；app 模板无未注记的裸 hive
@@ -370,13 +371,76 @@ fi
 # 访问违例弹模态框、挂起等点击直至超时；守卫（win32 判定 + SetErrorMode(0x2)）被删/改时此处变红。
 # 必须落在脚本内部（CPython 启动覆写继承 error mode，父进程预设无效）；实测依据见 CHANGELOG 1.0.33。
 # 1.0.37：compliance-audit.py 入列（同款守卫，第四位）——「三 hook 同款同改」自此为四。
-av_ok=1
-for f in hooks/deny-list.py hooks/pending-updates.py hooks/stop-reminder.py hooks/compliance-audit.py; do
-  for s in 'sys.platform == "win32"' 'SetErrorMode(0x0002)'; do
-    grep -qF -- "${s}" "${SRC}/${f}" || { av_ok=0; echo "  ↳ ${f} 缺「${s}」"; }
-  done
-done
-[ "${av_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  四 hook AV 弹框压制守卫在位（win32 判定 + SetErrorMode）"; } || { FAIL=$((FAIL+1)); echo "FAIL  AV 弹框压制守卫漂移（见上）"; }
+# 1.0.39（裁决 D-3）：文件清单由手列四行改**从 hooks.json 派生**——注册面即分发面，新 hook 登记自动
+#   入检；手挑清单同族病（1.0.37 加第四位时人肉同步 5+ 处、release/CI 清单历史漏过）自此免修。
+av_bad=$(python3 - "$SRC" <<'PYEOF'
+import json, os, re, sys
+try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+except Exception: pass
+root = sys.argv[1]
+h = json.load(open(os.path.join(root, 'hooks', 'hooks.json'), encoding='utf-8'))['hooks']
+scripts = sorted({m.group(1) for ev in h.values() for b in ev for x in b.get('hooks', [])
+                  for m in [re.search(r'/hooks/([A-Za-z0-9_.-]+\.py)', x.get('command', ''))] if m})
+errs = []
+if not scripts:
+    errs.append('hooks.json 未解析出任何 .py 注册脚本（派生清单失明——空集=全体脱管）')
+for name in scripts:
+    text = open(os.path.join(root, 'hooks', name), encoding='utf-8').read()
+    for s in ('sys.platform == "win32"', 'SetErrorMode(0x0002)'):
+        if s not in text: errs.append(name + ' 缺「' + s + '」')
+print(len(errs)); [print('  ↳ ' + e) for e in errs]
+PYEOF
+)
+n_av=$(printf '%s' "$av_bad" | head -1)
+if [ "${n_av:-1}" = "0" ]; then
+  PASS=$((PASS+1)); echo "PASS  注册 hook AV 弹框压制守卫在位（win32 判定 + SetErrorMode，清单自 hooks.json 派生 ×4）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  AV 弹框压制守卫漂移 ×${n_av:-?}（见上）"
+fi
+
+# 1.0.39 断言（裁决 D-1+D-2）：hooks 共享收编双锁——①收编名单禁回抄：_common 定义的
+#   find_project_root/MAX_SID/sanitize_sid/_hook_utf8_streams 在任何生产 hook 顶层重现即红
+#   （防第 5 个 hook「不知道有 _common」又抄一份——单文件抄一份时跨文件重名规则不触发）；
+#   ②跨 hook 同名绊线：任意两生产 hook 顶层同名函数/同名常量字面即红（防**新**复制对，
+#   glob 全量、新文件自动入网——手挑名单已被本会话两次数错证伪）。
+#   不锁调用式顶层赋值（root/mem/sid 各 hook 语义有别，compliance 的 root 系带参调用，合法分叉）。
+tw_bad=$(python3 - "$SRC" <<'PYEOF'
+import ast, os, sys
+from collections import defaultdict
+try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+except Exception: pass
+root = sys.argv[1]
+hdir = os.path.join(root, 'hooks')
+def top_names(path):
+    out = []
+    for node in ast.parse(open(path, 'rb').read().decode('utf-8')).body:
+        if isinstance(node, ast.FunctionDef):
+            out.append(node.name)
+        elif isinstance(node, ast.Assign) and isinstance(node.value, ast.Constant):
+            out += [t.id for t in node.targets if isinstance(t, ast.Name)]
+    return out
+common = set(top_names(os.path.join(hdir, '_common.py')))
+if not common:
+    print(1); print('  ↳ _common.py 未解析出符号（双锁失明面）'); sys.exit(0)
+prod = [f for f in sorted(os.listdir(hdir)) if f.endswith('.py')
+        and not f.startswith('test_') and f != '_common.py']
+errs = []
+byname = defaultdict(list)
+for f in prod:
+    for n in top_names(os.path.join(hdir, f)):
+        byname[n].append(f)
+        if n in common: errs.append(f + ' 顶层重抄 _common 符号: ' + n)
+for n, loc in sorted(byname.items()):
+    if len(loc) > 1: errs.append('跨 hook 重名顶层符号: ' + n + ' @ ' + ','.join(loc))
+print(len(errs)); [print('  ↳ ' + e) for e in errs]
+PYEOF
+)
+n_tw=$(printf '%s' "$tw_bad" | head -1)
+if [ "${n_tw:-1}" = "0" ]; then
+  PASS=$((PASS+1)); echo "PASS  hooks 共享收编双锁（_common 禁回抄 + 跨 hook 同名绊线，1.0.39 D-2）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  hooks 复制病复发 ×${n_tw:-?}（见上——改用 from _common import …）"
+fi
 
 # 1.0.35 断言①：hooks.json 结构看守——注册面是 deny 闸的开关命门，此前全仓零断言（外部评审核实）。
 # matcher 集漂移 / 引用脚本改名 / async 位翻转（deny 判定转 async = 判定赶不上执行，闸失效；

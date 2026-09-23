@@ -98,7 +98,8 @@ PY
       [ "${got:-x}" = "$ver" ] || { echo "❌ $f 读回为 v${got:-无} ≠ v${ver}"; exit 1; }
     done
     # 1.0.34：删手工验证清单（原 py_compile 枚举 3/7 漂移实锤）——发版路径与 CI 跑同一个 test-self：
-    # 三 fixture 子进程实跑 6 个 py + 生成闸实跑 render-blocks，7 个 py 全被真实执行，强于 py_compile 枚举
+    # 各 fixture 子进程实跑全部 py hook 与共享库 + 生成闸实跑 render-blocks，全被真实执行，强于枚举清单
+    #（1.0.39 注：文件数不写死在此——「数字写死即下次漂移之源」，1.0.35 ps 驱动同训）
     bash scripts/test-self.sh
     echo "== 下一步（手工）== claude plugin update crules-flutter@crules-flutter-market && scripts/release.sh verify-cache '<本轮改动特征串>'"
     ;;

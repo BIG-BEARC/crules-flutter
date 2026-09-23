@@ -67,10 +67,15 @@ case "$1" in
     # tail -1 取到旧版目录，verify 验旧不验新且特征串撞旧内容可假绿；v59 BSD grep 坑同款环境假设，
     # 与 commands/init.md 源定位同 idiom 对齐）
     latest=$(ls "$cache_root" | sort -V | tail -1)
-    if grep -rl --include='*.md' --include='*.py' --include='*.json' --include='*.sh' --include='*.yml' -F "$feat" "$cache_root/$latest" 2>/dev/null | head -3 | grep -q .; then
-      echo "✅ cache $latest 含特征串（新版本已生效）"
+    # 特征串排除 docs/ 与 CHANGELOG.md（1.0.39 发布复验实锤假绿：1.0.38 cache 的裁决单**正文**
+    # 含「_common.py」字样，verify '_common' 在插件未更新时即绿——叙事性预告撞特征串，验旧不验新。
+    # 本命令验的是「改动实物到没到 cache」，谈论改动的文档不算实物）
+    hit=$(grep -rl --include='*.md' --include='*.py' --include='*.json' --include='*.sh' --include='*.yml' \
+            --exclude-dir=docs --exclude='CHANGELOG.md' -F "$feat" "$cache_root/$latest" 2>/dev/null | head -3)
+    if [ -n "$hit" ]; then
+      echo "✅ cache $latest 含特征串实物（$hit）——新版本已生效"
     else
-      echo "❌ cache $latest 不含特征串——update 未生效或特征选错"; exit 1
+      echo "❌ cache $latest 不含特征串实物——update 未生效或特征选错（docs/CHANGELOG 叙事面不计实物）"; exit 1
     fi
     ;;
   *)

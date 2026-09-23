@@ -7,7 +7,8 @@
 #     本包三脚本此类位置一律花括号隔离（v59 BSD grep 环境坑同款教训）
 set -uo pipefail
 SRC=$(cd "$(dirname "$0")/.." && pwd)
-# 环境守卫（1.0.13）：本脚本两条断言（draft / tag）依赖 git 历史，其余 50 条不依赖（1.0.39 断言 48→52 时同步——净增 = 跨 hook 契约 fixture 挂载 + 收编双锁，AV 派生/计数排除为改造非新增；计数以实跑为准）。在无 .git 的拷贝里
+# 环境守卫（1.0.13）：本脚本两条断言（draft / tag）依赖 git 历史，其余不依赖（1.0.39 断言 48→52；1.0.41 +3
+# 至 54——撞名/缺口/债龄三闸，其中缺口闸调 git tag 但不可读时自 SKIP；计数以实跑为准）。在无 .git 的拷贝里
 # （典型：插件 cache = 全仓文件快照、非 clone）draft 吃 git 报错码 128 → **假红**；tag 则落到「读 HEAD 失败」
 # 分支 → **假绿**，其声称守护的「1.0.2 D2 防 tag 打在 bump 前旧树」版本比对从未执行。假绿比报错更贵——
 # 故显式拒绝，不静默变形。
@@ -623,6 +624,107 @@ if [ "${n_ptr:-1}" = "0" ]; then
   PASS=$((PASS+1)); echo "PASS  文件锚定散文指针闸（「X『Y』节」的 Y 须为 X 真实标题——实证死指针 help.md:7/:76 同族封闸）"
 else
   FAIL=$((FAIL+1)); echo "FAIL  散文死指针 ×${n_ptr:-?}（补目标标题或改指针口径）："; printf '%s\n' "$ptr_bad" | tail -n +2
+fi
+
+# 1.0.41 轻量撞名消歧批断言 ×3：
+# ① 撞名闸（E1/G1）——「轻量」在消费面（进阶/ + commands/ + README.md）只许落项目档位轴：
+#   行级匹配白名单形「轻量〔light〕」「轻量档」（canonical/ 与 skills/ 不在扫面；1.0.38 曾占用
+#   的裸「轻量 tier」「轻量起见」族措辞即红——后占用者已改「极简档」「简化起见」）。
+# ② 版本缺口闸（E4/G3）——CHANGELOG 版本头 − git tag 差集须 ⊆ docs/清单-版本缺口与欠账.md 登记表
+#   （先核后写：11 缺口已逐版分诊，需求方 09-23 裁「不回补」，登记表即终态）。非 git 树 SKIP 不计 FAIL。
+# ③ 欠账龄闸（E2/G3）——⑤欠账表「起于」为版本形的行，债龄（当前 minor − 起于 minor）≤ N=10。
+#   2026-09-23 需求方裁「上闸即咬」：/context 债起 1.0.10 债龄 30，本闸真树即红系设计意图，
+#   封版（release tag 前跑全套 test-self）至行动甲 B 销账——展期须附需求方裁决引用。
+nm_bad=$(python3 - "$SRC" <<'PYEOF'
+import os, re, sys
+try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+except Exception: pass
+root = sys.argv[1]
+WL = re.compile(r'轻量〔light〕|轻量档')
+targets = ['README.md']
+for d in ('进阶', 'commands'):
+    targets += [d + '/' + f for f in sorted(os.listdir(os.path.join(root, d))) if f.endswith('.md')]
+bad = []
+for rel in targets:
+    for i, line in enumerate(open(os.path.join(root, rel.replace('/', os.sep)), encoding='utf-8').read().splitlines(), 1):
+        if '轻量' in line and not WL.search(line):
+            bad.append(rel + ':' + str(i) + ' ' + line.strip()[:50])
+print(len(bad)); [print('  ↳ ' + b) for b in bad]
+PYEOF
+)
+n_nm=$(printf '%s' "$nm_bad" | head -1)
+if [ "${n_nm:-1}" = "0" ]; then
+  PASS=$((PASS+1)); echo "PASS  轻量撞名闸（消费面「轻量」仅项目档位白名单形，行级）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  轻量裸用/轴混 ×${n_nm:-?}（改「极简档/简化起见」或补档位限定）："; printf '%s\n' "$nm_bad" | tail -n +2
+fi
+
+gap_out=$(python3 - "$SRC" <<'PYEOF'
+import os, re, subprocess, sys
+try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+except Exception: pass
+root = sys.argv[1]
+try:
+    r = subprocess.run(['git', 'tag'], cwd=root, capture_output=True, text=True, timeout=10)
+    if r.returncode != 0:
+        print('SKIP'); sys.exit(0)
+except Exception:
+    print('SKIP'); sys.exit(0)
+tags = {t.lstrip('v') for t in r.stdout.split() if re.match(r'^v?\d+\.\d+\.\d+$', t)}
+heads = set(re.findall(r'^## (1\.0\.\d+)', open(os.path.join(root, 'CHANGELOG.md'), encoding='utf-8').read(), re.M))
+reg_txt = open(os.path.join(root, 'docs', '清单-版本缺口与欠账.md'), encoding='utf-8').read()
+sec1 = reg_txt.split('## 一、')[1].split('## 二、')[0] if '## 一、' in reg_txt else ''
+reg = set(re.findall(r'^\| (1\.0\.\d+) \|', sec1, re.M))
+missing = sorted(heads - tags, key=lambda s: [int(x) for x in s.split('.')])
+unreg = [v for v in missing if v not in reg]
+ghost = sorted(reg - set(missing), key=lambda s: [int(x) for x in s.split('.')])
+if unreg or ghost:
+    print('BAD')
+    for v in unreg: print('  ↳ 版本缺口未登记: ' + v)
+    for v in ghost: print('  ↳ 登记表幽灵行（已非缺口，删行）: ' + v)
+else:
+    print('OK ' + str(len(missing)))
+PYEOF
+)
+if printf '%s' "$gap_out" | grep -q '^SKIP'; then
+  echo "SKIP  版本缺口闸（git tag 不可读——非 git 树/超时，不计 FAIL，同 pwsh 先例）"
+elif printf '%s' "$gap_out" | grep -q '^OK'; then
+  PASS=$((PASS+1)); echo "PASS  版本缺口闸（差集 ⊆ 登记表双向对账，缺口 $(printf '%s' "$gap_out" | head -1 | cut -d' ' -f2) 个全在册）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  版本缺口登记漂移（新增缺口或登记表幽灵行）："; printf '%s\n' "$gap_out" | tail -n +2
+fi
+
+debt_out=$(python3 - "$SRC" <<'PYEOF'
+import os, re, sys
+try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+except Exception: pass
+root = sys.argv[1]
+N = 10
+ver = re.search(r'"version":\s*"(\d+)\.(\d+)\.(\d+)"', open(os.path.join(root, '.claude-plugin', 'plugin.json'), encoding='utf-8').read())
+if not ver: print('SKIP'); sys.exit(0)
+cur = int(ver.group(3))
+txt = open(os.path.join(root, 'docs', '清单-版本缺口与欠账.md'), encoding='utf-8').read()
+sec2 = txt.split('## 二、')[1] if '## 二、' in txt else ''
+errs = []
+rows = 0
+for line in sec2.splitlines():
+    m = re.match(r'^\| [^|]+\| (\d+)\.(\d+)\.(\d+)[^|]*\|', line)
+    if not m or m.group(2) != '0': continue
+    rows += 1
+    age = cur - int(m.group(3))
+    if age > N: errs.append('债龄超限: ' + line.split('|')[1].strip() + '（起于 ' + m.group(0).split('|')[2].strip() + '，龄 ' + str(age) + ' > N=' + str(N) + '）——还债或附需求方裁决引用展期')
+if errs:
+    print('BAD'); [print('  ↳ ' + e) for e in errs]
+else:
+    print('OK ' + str(rows))
+PYEOF
+)
+if printf '%s' "$debt_out" | grep -q '^SKIP'; then
+  echo "SKIP  欠账龄闸（plugin.json 版本不可读，不计 FAIL）"
+elif printf '%s' "$debt_out" | grep -q '^OK'; then
+  PASS=$((PASS+1)); echo "PASS  欠账龄闸（版本形债行 ×$(printf '%s' "$debt_out" | head -1 | cut -d' ' -f2) 均 ≤N=10）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  欠账龄超限（真树即红系 09-23 裁决「咬」，销账=行动甲 B，展期=附裁决引用）："; printf '%s\n' "$debt_out" | tail -n +2
 fi
 
 # 1.0.34 分发工程批断言（外部评审对账三根因：验证清单多处复制 / 出错兜底继续走 / 落位状态机缺口）：

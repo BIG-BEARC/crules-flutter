@@ -48,6 +48,7 @@ claude plugin install crules-flutter@crules-flutter-market --scope user
 | 新工程接入 | `/crules-flutter:init`（必填三处） |
 | 日常开发 / 写方案 / 引依赖 / 排障 | 根 `CLAUDE.md` 双 Gate · flutter-rules skill · `platform-pitfalls` 坑库 · `error` agent |
 | 交付收尾 | `checklist.md` + reviewer → `/crules-flutter:distill` |
+| 复刻 / 重写 / 迁移既有模块 | **parity-rewrite** skill（对照清单钉住原行为 → 逐项重建 → 测试矩阵验证一致） |
 
 **出问题看哪**（排查序）：行为不符预期 → `/crules-flutter:help` 查场景归属 → 仍不明 → `memory/MAINTENANCE.md` → `CHANGELOG.md` 查能力引入版本。
 

@@ -5,6 +5,7 @@
 # 注2（bash 5.3 坑，2026-09-05）：set -u 下 $var 紧邻多字节字符（中文标点，如 $lst））会把多字节
 #     首字节吸入变量名致 unbound 中止（brew bash 5.3.15 实测；LC_ALL=C 与 ${var} 花括号均免疫）——
 #     本包三脚本此类位置一律花括号隔离（v59 BSD grep 环境坑同款教训）
+# 1.0.42 断言（待核版本号，让位则回改）：parity-rewrite 双扫描+尺寸 两闸入常驻断言区
 set -uo pipefail
 SRC=$(cd "$(dirname "$0")/.." && pwd)
 # 环境守卫（1.0.13）：本脚本两条断言（draft / tag）依赖 git 历史，其余不依赖（1.0.39 断言 48→52；1.0.41 +3
@@ -39,6 +40,82 @@ t 0 "python3 $SRC/hooks/test_stop_reminder.py"            "stop-reminder fixture
 t 0 "python3 $SRC/hooks/test_pending_updates.py"          "pending-updates 写侧 fixture 应全绿（1.0.30 队列分文件）"
 t 0 "python3 $SRC/hooks/test_queue_contract.py"           "跨 hook 队列契约测试应全绿（1.0.39 D-4 写读互调）"
 t 0 "python3 $SRC/hooks/test_compliance.py"               "compliance-audit fixture 应全绿（1.0.37 批2 遵守度事实账）"
+# 1.0.42 断言①（待核版本号，让位则回改）：parity-rewrite 零项目值+引用悬空双扫描——
+# 扫 skills/parity-rewrite/ 全树：①禁列 token（05 计划 Global Constraints 全表 + 裸 ARB）
+# 命中即红；②引用悬空式（spec 节号 `5.<数字>` / 裸 §<中文序号> / 「草案」）命中即红。
+# token 与正则片段一律字符串拼接构造：本脚本自身在 walk 面内，完整字面会自命中
+# （头部注释 :3–4 同训；「草稿」词面天然不咬，咬的是「草案」）。
+pr_bad=$(python3 - "$SRC" <<'PYEOF'
+import os, re, sys
+try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+except Exception: pass
+root = sys.argv[1]
+BAN = ['1.2' + '65', 'saas-' + 'cashier', 'saas-' + 'suite', 'saas_pos' + '_smart_edition',
+       '.' + 'arb', 'zh_' + 'HK', 'AppTextStyle' + 's', 'AppColo' + 'rs', 'AppSpac' + 'ing',
+       'smart-' + 'pos-', 'fvm' + ' ', 'crules-' + 'flutter',
+       '03-' + 'code/', '01-' + 'specs/', 'Get.' + 'dialog', 'getGiveStr', 'ARB']
+DR = re.compile('5' + chr(92) + '.[0-9]+' + '|' + '§' + '[一二三四五六七八九十]+' + '|' + '草' + '案')
+base = os.path.join(root, 'skills', 'parity-rewrite')
+bad = []
+if not os.path.isdir(base):
+    bad.append('skills/parity-rewrite/ 目录缺失（Task 1–3 交付被删？）')
+for dp, dn, fn in os.walk(base):
+    for f in sorted(fn):
+        p = os.path.join(dp, f)
+        rel = os.path.relpath(p, root).replace(os.sep, '/')
+        try: text = open(p, encoding='utf-8').read()
+        except (OSError, UnicodeDecodeError) as e:
+            bad.append(rel + ' 读取失败: ' + str(e)); continue
+        for i, line in enumerate(text.splitlines(), 1):
+            for tok in BAN:
+                if tok in line:
+                    bad.append(rel + ':' + str(i) + ' 禁列「' + tok + '」 ' + line.strip()[:60])
+            m = DR.search(line)
+            if m:
+                bad.append(rel + ':' + str(i) + ' 引用悬空「' + m.group() + '」 ' + line.strip()[:60])
+print(len(bad)); [print('  ↳ ' + b) for b in bad]
+PYEOF
+)
+n_pr=$(printf '%s' "$pr_bad" | head -1)
+if [ "${n_pr:-1}" = "0" ]; then
+  PASS=$((PASS+1)); echo "PASS  parity-rewrite 零项目值+引用悬空双扫描"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  parity-rewrite 双扫描命中 ×${n_pr:-?}（禁列项目值或 spec 节引用，就地改写/换指针）："; printf '%s\n' "$pr_bad" | tail -n +2
+fi
+
+# 1.0.42 断言②（待核版本号，让位则回改）：parity-rewrite 尺寸闸——SKILL.md ≤10000 字符、
+# references/ 与 templates/ 单文件 ≤12000 字符（先例 flutter-rules SKILL.md 实测 8054；
+# 上限系 05 计划自设工程约束）。口径 = 字符数（python len，UTF-8 解码后），勿用 wc -m（:91 同训）。
+sz_bad=$(python3 - "$SRC" <<'PYEOF'
+import os, sys
+try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+except Exception: pass
+root = sys.argv[1]
+base = os.path.join(root, 'skills', 'parity-rewrite')
+LIMIT_SKILL, LIMIT_SUB = 10000, 12000
+bad = []
+for relp, cap in [('SKILL.md', LIMIT_SKILL)]:
+    p = os.path.join(base, relp)
+    if not os.path.isfile(p): bad.append('缺 ' + relp); continue
+    n = len(open(p, encoding='utf-8').read())
+    if n > cap: bad.append(relp + ' ' + str(n) + ' 字符 > ' + str(cap))
+for d, cap in [('references', LIMIT_SUB), ('templates', LIMIT_SUB)]:
+    dd = os.path.join(base, d)
+    if not os.path.isdir(dd): bad.append('缺 ' + d + '/ 目录'); continue
+    for f in sorted(os.listdir(dd)):
+        if not f.endswith('.md'): continue
+        n = len(open(os.path.join(dd, f), encoding='utf-8').read())
+        if n > cap: bad.append(d + '/' + f + ' ' + str(n) + ' 字符 > ' + str(cap))
+print(len(bad)); [print('  ↳ ' + b) for b in bad]
+PYEOF
+)
+n_sz=$(printf '%s' "$sz_bad" | head -1)
+if [ "${n_sz:-1}" = "0" ]; then
+  PASS=$((PASS+1)); echo "PASS  parity-rewrite 尺寸闸（SKILL.md ≤10000，references/ 与 templates/ 单文件 ≤12000 字符）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  parity-rewrite 尺寸超限 ×${n_sz:-?}（超限须拆分下沉，不静默上调预算）："; printf '%s\n' "$sz_bad" | tail -n +2
+fi
+
 t 1 "bash $SRC/scripts/release.sh tag 9.9.9"               "release tag 版本不匹配应报错（1.0.2 D2——防 tag 打在 bump 前旧树）"
 # 非 git 树守卫的反向断言（1.0.13）：把脚本本身拷进非 git 目录跑，须**显式拒绝**。判据三条件缺一不可——
 # rc≠0 单独不成立：守卫缺失时该拷贝会跑完全套，并因既有 FAIL>0 同样退出非零（又一个假绿）；故另须确认
@@ -258,7 +335,9 @@ root = sys.argv[1]
 pat = re.compile(r'\[[^\]]*\]\(([^)]+)\)')
 bad = []
 for dirpath, dirnames, filenames in os.walk(root):
-    dirnames[:] = [d for d in dirnames if d not in ('.git', '__pycache__', '.claude', 'node_modules')]
+    # .superpowers/ = 本机过程面（git 忽略、非分发面，1.0.42 主控裁决豁免——撞的是
+    # 协调文档里的相对链接示例与正则字面，非仓内容器死链）
+    dirnames[:] = [d for d in dirnames if d not in ('.git', '__pycache__', '.claude', 'node_modules', '.superpowers')]
     for fn in filenames:
         if not fn.endswith('.md'): continue
         p = os.path.join(dirpath, fn)
@@ -547,7 +626,7 @@ import os, re, sys
 try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 except Exception: pass
 root = sys.argv[1]
-skip_dirs = {'.git', '__pycache__', '.claude', 'node_modules'}
+skip_dirs = {'.git', '__pycache__', '.claude', 'node_modules', '.superpowers'}   # 1.0.42 主控裁决豁免：过程面协调文档含正则字面
 BAN = re.compile(r'批[A-F][0-9]?|[（(]\s*[A-F]\d{1,2}\s*[)）]|销案|金丝雀|撞号|外审\s*[#🟠🔴🟡]\d?|评审\s*[A-Z]\d|裁决单')
 bad = []
 for dp, dn, fn in os.walk(root):

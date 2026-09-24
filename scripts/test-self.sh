@@ -143,8 +143,64 @@ o2=$(bash $SRC/scripts/install.sh $T2 --app 2>/dev/null | grep -c SIDE-CAR)
 [ "$o2" -ge 1 ] && grep -q 'always_use_package_imports' "$T2/analysis_options.yaml" && { PASS=$((PASS+1)); echo "PASS  自定义 lint → SIDE-CAR 伴生且原文保留"; } || { FAIL=$((FAIL+1)); echo "FAIL  自定义应 SIDE-CAR"; }
 printf 'WR-SENTINEL\n' > "$T1/.claude/memory/business-rules.md"
 bash $SRC/scripts/install.sh $T1 --app --force >/dev/null 2>&1
-grep -q 'WR-SENTINEL' "$T1/.claude/memory/business-rules.md" && [ -f "$T1/CLAUDE.md.new" ] && { PASS=$((PASS+1)); echo "PASS  force 升级：memory 哨兵 KEEP + CLAUDE.md 出 .new"; } || { FAIL=$((FAIL+1)); echo "FAIL  force 安全升级"; }
+# 1.0.43：--force 改走三向合并（首装已自存 base）——memory 哨兵 KEEP 不变，CLAUDE.md 零改动→直替（MERGE），
+#   base 快照同体→无冲突无 .new（旧断言的 .new 出现是「无 base 可比」形态，本夹具不成立）
+grep -q 'WR-SENTINEL' "$T1/.claude/memory/business-rules.md" && [ ! -f "$T1/CLAUDE.md.new" ] \
+  && [ -f "$T1/CLAUDE.md.crules-base" ] && { PASS=$((PASS+1)); echo "PASS  force 升级：memory 哨兵 KEEP + CLAUDE.md 经 base 合并直替"; } || { FAIL=$((FAIL+1)); echo "FAIL  force 安全升级"; }
 rm -rf "$T1" "$T2"
+
+# 1.0.43 三向合并四态 fixture（方案 v2 甲 §2 验证设计；夹具 mktemp，评审 #9）
+MM=$(mktemp -d /tmp/cf-mg.XXXXXX)
+# 态① 首装自存 base + 零改动直替
+bash $SRC/scripts/install.sh "$MM" --app >/dev/null 2>&1
+[ -f "$MM/CLAUDE.md.crules-base" ] && grep -qF 'crules-base' "$MM/.gitignore" \
+  && { PASS=$((PASS+1)); echo "PASS  合并态① 首装自存 base + gitignore 伴生物"; } || { FAIL=$((FAIL+1)); echo "FAIL  合并态①（base/gitignore）"; }
+# 态② 自动并：项目侧改一处中段 + 模板侧演进不可达——造 base 落后（改 base 删一行）
+cp "$MM/CLAUDE.md" "$MM/CLAUDE.md.crules-base.bak"
+python3 - "$MM" <<'PYEOF'
+import sys, re
+d = sys.argv[1]
+p = d + "/CLAUDE.md.crules-base"
+t = open(p, encoding="utf-8").read()
+t = t.replace("- **禁止自动提交**：不自动 `git commit` / `git push`\n", "", 1)  # 模拟旧版缺该条
+open(p, "w", encoding="utf-8").write(t)
+open(d + "/CLAUDE.md", "a", encoding="utf-8").write("\n<!-- 项目自注 -->\n")
+PYEOF
+o=$(bash $SRC/scripts/install.sh "$MM" --app --force 2>&1)
+echo "$o" | grep -q 'MERGE CLAUDE.md' && grep -q '禁止自动提交' "$MM/CLAUDE.md" && grep -q '项目自注' "$MM/CLAUDE.md" \
+  && ! grep -q '^<<<<<<<' "$MM/CLAUDE.md" && { PASS=$((PASS+1)); echo "PASS  合并态② 双方各自演进自动并（模板条回+项目注保留）"; } || { FAIL=$((FAIL+1)); echo "FAIL  合并态②（自动并不成立）"; }
+# 态③ 尾部撞戳位窄形自动解（saas-suite 1.0.40 实跑形）：base=模板+旧戳，ours=模板+项目尾节+旧戳，theirs=模板+新戳
+python3 - "$MM" <<'PYEOF'
+import sys, re
+d = sys.argv[1]
+t = open(d + "/CLAUDE.md.crules-base", encoding="utf-8").read()   # 态② 后 base=模板+现行戳快照
+old = "<!-- crules-flutter: v0.0.1 @ 2026-01-01 -->"
+tb = re.sub(r"<!-- crules-flutter: v[0-9.]+ @ [0-9-]+ -->", old, t, count=1)
+open(d + "/CLAUDE.md.crules-base", "w", encoding="utf-8").write(tb)
+open(d + "/CLAUDE.md", "w", encoding="utf-8").write(tb.replace(old, "#### 项目速查\n内容行\n" + old, 1))
+PYEOF
+o=$(bash $SRC/scripts/install.sh "$MM" --app --force 2>&1)
+echo "$o" | grep -q 'MERGE CLAUDE.md' && ! grep -q '^<<<<<<<' "$MM/CLAUDE.md" \
+  && grep -q '#### 项目速查' "$MM/CLAUDE.md" && ! grep -q 'v0.0.1' "$MM/CLAUDE.md" \
+  && [ "$(grep -c 'crules-flutter: v' "$MM/CLAUDE.md")" = "1" ] \
+  && { PASS=$((PASS+1)); echo "PASS  合并态③ 尾部撞戳位窄形自动解（尾节保留、旧戳去、单戳）"; } || { FAIL=$((FAIL+1)); echo "FAIL  合并态③（窄形解未命中或戳残留）"; }
+# 态④ 真冲突呈人：同段两侧语义重写（base 与项目对同一行各自改写）
+printf '共享行 v0\n' > "$MM/checklist.md"
+cp "$MM/checklist.md" "$MM/checklist.md.crules-base"
+printf '共享行 项目侧改\n' > "$MM/checklist.md"
+python3 - "$MM" <<'PYEOF'
+import sys
+d = sys.argv[1]
+t = open(d + "/checklist.md.crules-base", encoding="utf-8").read().replace("v0", "base侧改")
+open(d + "/checklist.md.crules-base", "w", encoding="utf-8").write(t)
+PYEOF
+o=$(bash $SRC/scripts/install.sh "$MM" --app --force 2>&1); grep -q MERGE-CONFLICT <<<"$o" \
+  && grep -q '^<<<<<<<' "$MM/checklist.md" && [ -f "$MM/checklist.md.crules-bak" ] && [ -f "$MM/checklist.md.crules-conflicts" ] \
+  && { PASS=$((PASS+1)); echo "PASS  合并态④ 真冲突带标记写回+.bak+.conflicts"; } || { FAIL=$((FAIL+1)); echo "FAIL  合并态④（冲突呈人链路）"; }
+# 退路：--new-only 强制 .new 人工
+o=$(bash $SRC/scripts/install.sh "$MM" --app --force --new-only 2>&1)
+echo "$o" | grep -q 'UPDATE-NEW' && { PASS=$((PASS+1)); echo "PASS  退路 --new-only 出 .new（D-2）"; } || { FAIL=$((FAIL+1)); echo "FAIL  退路 --new-only"; }
+rm -rf "$MM"
 
 # 0.4.0 批1断言（设计 §5 test-self 行）：落位 8 模板 / init 三处必填 / twin 一致性
 T4=$(mktemp -d /tmp/cf-pitfalls.XXXXXX)

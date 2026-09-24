@@ -24,7 +24,7 @@ ls -d ~/.claude/plugins/cache/*/crules-flutter/*/scripts/install.sh | sort -V | 
 - 项目根**无** `CLAUDE.md` → 新项目（步骤 2）
 - **有** `CLAUDE.md`：
   - **无** `<!-- crules-flutter: v` 戳 → 老项目：**不自动安装**（禁静默覆盖）——提示需求方这是既有规则项目，给出选择：a) 人工对照模板合并（推荐：备份后逐节取舍，取舍记录落 `.claude/memory/decisions/`）b) 确认废弃旧规则后 `--force` 覆盖（须需求方显式确认）
-  - **有戳** → 重装/升级：跑 `check-imports.sh` 报版本差 → 提示重跑 install（默认跳过已存在，改动聚焦两版本间变更）
+  - **有戳** → 重装/升级：跑 `check-imports.sh` 报版本差 → 提示重跑 install（默认跳过已存在；`--force` 走三向合并——对 base 零改动直替、双方各自演进自动并、真冲突带标记+摘要呈人并禁更新戳；无 base 可比或 `--new-only` 退 `.new` 伴生人工对照，memory 永不覆盖）
 
 ### 2. 问形态（新项目）
 

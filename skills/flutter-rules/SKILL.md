@@ -20,7 +20,7 @@ description: Flutter/Dart 技术最佳实践参考——写/审 Flutter 代码�
 | 布局 / Overflow / 叠层 / 浮层 | [references/layout.md](references/layout.md) | Expanded-Flexible-Wrap 边界 / 滚动容器选型 / Stack 定位 / OverlayPortal 浮层全例 |
 | 状态管理（预设 A / Riverpod 纪律） | [references/state-management.md](references/state-management.md) | Notifier 模式 / Provider 就近组织 / ConsumerWidget vs ConsumerStatefulWidget 强制 / autoDispose 生命周期（选 A 时生效） |
 | 测试选型 / 补测（TDD 适用范围） | [references/testing.md](references/testing.md) | App 按层分档表 + plugin 公开 API 全覆盖表 / 同构批量红绿细则 |
-| 接入 / 调试外设、多屏、设备类排障 | [references/iot-devices.md](references/iot-devices.md) | IoT / 外设通信（通用铁律 / 蓝牙·串口·USB·网口分节 / 打印·扫码专项 / 副屏 / KDS 指针） |
+| 接入 / 调试外设、多屏、设备类排障 | [references/iot-devices.md](references/iot-devices.md) | IoT / 外设通信（通用铁律 / 蓝牙·串口·USB·网口分节 / 打印·内置打印机·标签机·扫码·钱箱专项 / 副屏 / KDS 指针） |
 | 卡顿 / 内存 / 低配设备 / 线上崩溃 | [references/performance.md](references/performance.md) | DevTools 双线程归因（UI/Raster 列说话）/ 图片按显示尺寸解码（低配 OOM 头号根因）/ FlutterError + PlatformDispatcher 双钩子 / 符号化依赖 |
 | 配 CI / 出包 / 签名 / 混淆 / 发 pub 包 | [references/build-release.md](references/build-release.md) | flavor 与 dart-define 选型 / keystore 与 iOS 证书纪律 / symbols 归档 / App 发布前检查与 pub 发布检查 |
 | 支付 / 退款 / 核销 / 涉钱接口 | [references/payment.md](references/payment.md) | 防重三层口径（判定线 / 请求号语义警示）/ 不可逆操作时序 / 重试红线 |

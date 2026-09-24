@@ -49,7 +49,7 @@ model: sonnet
 
 ## 设备通信（蓝牙 / 串口等）
 
-通用铁律与设备分节（蓝牙 / 串口 / USB / 网口 / 打印 / 扫码 / 多屏）见 skill **flutter-rules** `references/iot-devices.md`——接入 / 调试外设前 Read 该文件。
+通用铁律与设备分节（蓝牙 / 串口 / USB / 网口 / 打印 / 内置打印机 / 标签机 / 扫码 / 钱箱 / 多屏）见 skill **flutter-rules** `references/iot-devices.md`——接入 / 调试外设前 Read 该文件。
 
 ## 工作流程
 

@@ -25,6 +25,7 @@
 | 下划线过短、下划线左缘缩进、title 未对齐、indicatorPadding | 全平台 | TabBar indicatorSize.label × 非零 indicatorPadding 双重内缩——下划线过短且左缘缩进 |
 | divider 撑满差异、同代码两版渲染不同、测试对真机错 | 全平台 | 滚动 TabBar dividerColor: transparent 跨 SDK 撑满 / 收缩差异——同代码两版渲染不同 |
 | textAlignVertical 无效、hint 不居中、输入框钉顶、几何断言红 | 全平台 | InputDecorator 垂直定位基线制——textAlignVertical 无杠杆、hint 盒居中几何断言不可达 |
+| 广播注册崩溃、SecurityException、RECEIVER_EXPORTED、targetSdk 34、USB 拔出无检测、副屏崩溃、window type | Android 14 | targetSdk 34 外设在屏双门——registerReceiver 必须三参 RECEIVER_*，副屏 Presentation 窗口类型不可覆盖 |
 | 分区存储、photo picker、预测性返回、16KB page size、edge-to-edge、Play 上架被拦 | Android | 版本兼容基线（一卡多区间合并） |
 | 类找不到、UnmodifiableUint8ListView、dill 陈旧、测试载入即崩 | Windows | 页面级 widget test 载入即崩——「类找不到」先疑工具链损坏（dill 陈旧），勿急降依赖 |
 | 直调错误版本 SDK、报错文案取版本、fvm shim 缺失、验证结论作废 | Windows | 机械验证直调错误版本 SDK——逃生门二进制的版本取自报错文案而非钉定版本 |
@@ -151,6 +152,17 @@
 - 出处：生产实证（私有仓探针四变体实测 + 修复批 member_manager_toolbar_test.dart；1.0.29「表征断言先实测再落锁」条同源实证）
 
 ## OS 平台
+
+### [Android 14] targetSdk 34 外设在屏双门——registerReceiver 必须三参 RECEIVER_*，副屏 Presentation 窗口类型不可覆盖
+
+- 关键词：广播注册崩溃、SecurityException、RECEIVER_EXPORTED、targetSdk 34、USB 拔出无检测、副屏崩溃、window type
+- 归属：OS 平台（Android 14 API 34 行为变更）× App 层 / vendored 外设插件层
+- 覆盖两门（一卡多区间合并）：
+  1. **运行时广播注册**：targetSdk 34 起两参 `registerReceiver(receiver, filter)` 直接抛 IllegalArgumentException/SecurityException——凡注册系统级广播（USB 插拔 / 权限授权等）必须三参指定 `Context.RECEIVER_EXPORTED`（系统广播属外部广播）；三参方法自 API 33 提供，守卫取 `>= TIRAMISU`。实证同一修法落四路：USB 打印机 + 双串口秤插件同笔修（4ee867142）、支付 IoT SDK（NFC dongle，其自身未适配 14、App 层 try-catch 兜底 + 根本解法升 SDK——de5cbceab）。**顺手必查**：filter 注册的 action 集合 vs receiver 实际处理的 action 是否一致——实证秤插件 filter 只注册 GRANT_USB 而 receiver 处理 DETACHED，拔出断开检测自写入之日起就是死代码（修 ① 时才暴露）。
+  2. **副屏 Presentation 窗口类型**：Android 14 新增 WindowContext 类型一致性校验——`Presentation` 构造内部以 `TYPE_PRIVATE_PRESENTATION`(2037) 建 WindowContext，随后 `setType(TYPE_APPLICATION_OVERLAY)`(2038) 覆盖后 `show()` 即崩。修法按版本三分支：14+ 不覆盖（保留默认类型，专为副屏设计且无需 overlay 权限）；8~13 保留 TYPE_APPLICATION_OVERLAY；<8 用 TYPE_SYSTEM_ALERT。
+- 区间：targetSdk 34+（API 34 行为变更；注册三参 API 自 33 起可用）
+- 状态：已修复（私有仓 Android 14 兼容批，USB 外设 + 副屏 + 支付 IoT 三路） ｜ 最后核验：2026-09-24
+- 出处：saas-cashier `4ee867142`（三插件同修）/ `de5cbceab`（支付 IoT 兜底）/ `f65fd7234`（副屏窗口类型三分支）+ 其仓 doc/android14_compatibility_fix.md；设备侧影响面指针：iot-devices.md USB 节 / 副屏节（外设坑在 14 设备上须先过此门）
 
 ### [Android] 版本兼容基线（一卡多区间合并）
 

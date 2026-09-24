@@ -19,6 +19,7 @@
 - `flutter build apk/appbundle --release --obfuscate --split-debug-info=<目录>`：混淆后包体更小 + 逆向成本升高，代价是崩溃栈不可读
 - **symbols 文件（`app.android-arm64.symbols` 等）每次构建归档**（按版本号存目录 / CI artifact），线上崩溃还原全靠它——丢失即永久不可读；符号化命令与流程见官方 docs（Obfuscating Dart code 节），iOS dSYM 同理随构建归档
 - 混淆开启后**首跑全量回归**：反射 / JSON 手写字段名依赖（`fromJson('snake_case')` 走代码生成的没事）在混淆下可能静默失效
+- vendored 二进制 SDK（jar/aar 内反射）第一天就写 keep 规则，按 SDK **全包名**覆盖（`.data/.io/.util` 类伴随包一并）——实证：秤 SDK 反射类被 R8 吞致一体秤闪退，先整体关混淆后补 keep（iot-devices.md 秤节，锚 af901bc09、e7e9117a1）
 
 ## 发布前检查（App 形态）
 

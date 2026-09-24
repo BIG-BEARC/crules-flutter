@@ -3,7 +3,7 @@
 面向 **Flutter 工程**的 AI 协作规则 plugin：把「AI 怎么跟你安全地干活」固化成机制——危险命令硬拦、改动先过方案确认、交付必过审查、经验自动沉淀。
 独立自持（源自 crules fork，2026-09 起 1.0.0 独立演进，史见 [CHANGELOG](CHANGELOG.md)）；许可 **MIT**（[LICENSE](LICENSE)）。
 
-> 当前状态：1.0.42（版本编年史见 [CHANGELOG](CHANGELOG.md)）
+> 当前状态：1.0.43（版本编年史见 [CHANGELOG](CHANGELOG.md)）
 
 ---
 
@@ -110,14 +110,15 @@ agents 不复制——plugin 已自动挂载 7 角色（`crules-flutter:frontend
 ```bash
 SRC=$(ls -d ~/.claude/plugins/cache/*/crules-flutter/*/scripts/install.sh 2>/dev/null | sort -V | tail -1)
 [ -n "$SRC" ] || { echo "❌ 未找到 plugin cache——先装 plugin，或把 SRC 手动指向本仓克隆路径"; exit 1; }
-bash "$SRC" <项目根> --app --upgrade    # 巡检版本差 → 确认 → --force 升级（.new 伴生，memory 永不覆盖）
+bash "$SRC" <项目根> --app --upgrade    # 巡检版本差 → 确认 → --force 三向合并升级（memory 永不覆盖）
 # 无人值守加 --yes（跳过 y/N 确认；不给则 EOF/关闭 stdin 默认保守取消）
 # 源旧于项目戳时默认拒（防误降级），确要降级加 --allow-downgrade 显式放行
+# --new-only 退回 .new 伴生全人工对照（1.0.42 及以前的升级语义）
 ```
 
 手动等价：`check-imports.sh <项目根>` 查版本差 → `install.sh <项目根> --app --force`。
 
-**合并 `.new` 要点**：memory/ 只对照不强合；项目自改的 §七技术栈 / §十二附录是合并主体，勿被新版冲掉——历史逐版本细节查 [CHANGELOG](CHANGELOG.md)。
+**三向合并语义**（1.0.43）：对 base（上轮自存快照 `.crules-base`，历史工程首轮退 cache 旧版模板）零改动直替；项目与模板各自演进自动并；仅 CLAUDE.md 尾部撞戳位窄形自动解；真冲突带冲突标记写回 + `.crules-conflicts` 摘要呈人（`.crules-bak` 先备份，解标记前戳与 base 不更新）；无 base 可比或 `--new-only` 退 `.new` 伴生。memory/ 永不覆盖；项目自改的 §七技术栈 / §十二附录是合并主体，冲突裁决时勿弃——历史逐版本细节查 [CHANGELOG](CHANGELOG.md)。
 
 **记忆库兜底**：`/crules-flutter:update-memory`——索引全量刷新（日常仍以「写代码顺手更新」为主，见 `.claude/memory/MAINTENANCE.md`）。
 

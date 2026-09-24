@@ -1,5 +1,13 @@
 # crules-flutter CHANGELOG
 
+## 1.0.45 · cache 快照刷新批——v1.0.44 tag 后三提交按 1.0.18 先例 bump 入 cache（零代码改动）
+
+> 依据链：v1.0.44 tag（89fcba7）后，update 实测按版本号刷 cache 不重来（W2）——b142fa4（init.md 第 6 条提示改「两 skill」+ parity 模板行 + test-self 注记）、89fcba7（撞名补录 docs）、3ad9659（缺口表 1.0.43 除名）停在 1.0.44 cache 外；verify-cache 负控实证「两 skill、7 个 agent」rc=1 缺席、cache 清单含已删 1.0.43 行。消费面 init.md 提示停旧为实害，按 1.0.18 先例（「cache 快照须含 ps1 炸点修复」）bump 刷 cache。本批零代码/规则改动，仅版本面。
+
+- **bump 三件套**：双 json + README 横幅 1.0.44→1.0.45；CHANGELOG 即本条
+- **验证**：plugin update 后 cache 1.0.45 含「两 skill、7 个 agent」实物（verify-cache 绿）；test-self 全套绿随 release.sh bump/tag 两步各跑一遍
+- **诚实边界**：89fcba7/3ad9659 系 docs/清单维护面，不进 install payload——本批主因是 b142fa4 的消费面两行；docs 进 cache 属快照搭车
+
 ## 1.0.44 · 硬件外设知识沉淀收口批（批3 客显/语音播报 + 版本批）——iot-devices.md 58→220 行全量沉淀终态
 
 > 依据链：[方案-2026-09-23-硬件外设知识沉淀.md](docs/方案-2026-09-23-硬件外设知识沉淀.md)（v6，需求方 09-24 确认）三批串行管线；批1（d3c5e6c 打印/扫码/钱箱）、批2（电子秤/串口/副屏）已落，本批=批3（客显/语音播报）落盘 + D9 版本收口。采证源 saas-cashier（日活 7w 餐饮 POS）纯只读；两域 17 卡经三轮机械检验（哈希 cat-file 逐笔 / 覆盖命令复跑全等 / diff 逐字 / 现值回读）后需求方四裁全过。细节见 docs/复盘-2026-09-24-硬件外设批2沉淀.md、docs/复盘-2026-09-24-硬件外设批3沉淀.md。

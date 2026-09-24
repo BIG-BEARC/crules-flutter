@@ -162,7 +162,7 @@
   2. **副屏 Presentation 窗口类型**：Android 14 新增 WindowContext 类型一致性校验——`Presentation` 构造内部以 `TYPE_PRIVATE_PRESENTATION`(2037) 建 WindowContext，随后 `setType(TYPE_APPLICATION_OVERLAY)`(2038) 覆盖后 `show()` 即崩。修法按版本三分支：14+ 不覆盖（保留默认类型，专为副屏设计且无需 overlay 权限）；8~13 保留 TYPE_APPLICATION_OVERLAY；<8 用 TYPE_SYSTEM_ALERT。
 - 区间：targetSdk 34+（API 34 行为变更；注册三参 API 自 33 起可用）
 - 状态：已修复（私有仓 Android 14 兼容批，USB 外设 + 副屏 + 支付 IoT 三路） ｜ 最后核验：2026-09-24
-- 出处：saas-cashier `4ee867142`（三插件同修）/ `de5cbceab`（支付 IoT 兜底）/ `f65fd7234`（副屏窗口类型三分支）+ 其仓 doc/android14_compatibility_fix.md；设备侧影响面指针：iot-devices.md USB 节 / 副屏节（外设坑在 14 设备上须先过此门）
+- 出处：saas-cashier `4ee867142`（三插件同修）/ `de5cbceab`（支付 IoT 兜底）/ `f65fd7234`（副屏窗口类型三分支）+ 其仓 doc/android14_compatibility_fix.md；设备侧影响面指针：printer.md（USB 打印卡）/ scale.md（秤卡）/ iot-devices.md 副屏节（外设坑在 14 设备上须先过此门）
 
 ### [Android] 版本兼容基线（一卡多区间合并）
 

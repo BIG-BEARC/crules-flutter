@@ -49,7 +49,11 @@ model: sonnet
 
 ## 设备通信（蓝牙 / 串口等）
 
-通用铁律与设备分节（蓝牙 / 串口 / USB / 网口 / 打印 / 内置打印机 / 标签机 / 扫码 / 钱箱 / 秤 / 多屏副屏 / 数字客显 / 语音播报）见 skill **flutter-rules** `references/iot-devices.md`——接入 / 调试外设前 Read 该文件。
+外设域已按设备拆四文件（2026-09-24）：打印（蓝牙 / USB / 网口 / 内置 / 标签）见 skill **flutter-rules** `references/printer.md`；电子秤 / 数字客显 / 串口见 `references/scale.md`；扫码枪 / 扫码盒（HID / 盲扫）见 `references/scanner.md`；通用铁律 / 钱箱 / 副屏 / 语音播报 / KDS 见 `references/iot-devices.md`——接入 / 调试对应外设前 Read 对应文件。
+
+## 网络通信（MQTT / 消息推送）
+
+连接生命周期（重连重订）/ 订阅与 QoS / 推送到达性案卷 / broker 配置安全见 skill **flutter-rules** `references/network-comms.md`——接入 / 排障消息推送、写断线重连逻辑前 Read 该文件。
 
 ## 工作流程
 

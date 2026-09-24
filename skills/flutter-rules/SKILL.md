@@ -20,7 +20,11 @@ description: Flutter/Dart 技术最佳实践参考——写/审 Flutter 代码�
 | 布局 / Overflow / 叠层 / 浮层 | [references/layout.md](references/layout.md) | Expanded-Flexible-Wrap 边界 / 滚动容器选型 / Stack 定位 / OverlayPortal 浮层全例 |
 | 状态管理（预设 A / Riverpod 纪律） | [references/state-management.md](references/state-management.md) | Notifier 模式 / Provider 就近组织 / ConsumerWidget vs ConsumerStatefulWidget 强制 / autoDispose 生命周期（选 A 时生效） |
 | 测试选型 / 补测（TDD 适用范围） | [references/testing.md](references/testing.md) | App 按层分档表 + plugin 公开 API 全覆盖表 / 同构批量红绿细则 |
-| 接入 / 调试外设、多屏、设备类排障 | [references/iot-devices.md](references/iot-devices.md) | IoT / 外设通信（通用铁律 / 蓝牙·串口·USB·网口分节 / 打印·内置打印机·标签机·扫码·钱箱·秤专项 / 副屏·数字客显 / 语音播报 / KDS 指针） |
+| 接入 / 调试打印机（蓝牙 / USB / 网口 / 内置 / 标签）、打印排障 | [references/printer.md](references/printer.md) | 打印域（蓝牙·USB·网口链路卡 / 打印专项跨链路 / 一体机内置 / 标签 TSPL） |
+| 接入 / 调试电子秤、数字客显、串口设备排障 | [references/scale.md](references/scale.md) | 秤·客显串口设备域（串口 RS232 公共底座 / 电子秤含 USB 秤 / 数字客显——平行双实现并为一文件） |
+| 扫码枪 / 扫码盒接入、盲扫与 HID 排障 | [references/scanner.md](references/scanner.md) | 扫码域（USB HID 键盘流 / 盲扫与业务面） |
+| 外设通用铁律、钱箱、副屏、语音播报、KDS | [references/iot-devices.md](references/iot-devices.md) | IoT 枢纽（通用铁律 / 外设域文件地图 / 钱箱 / 副屏 / 语音播报 / KDS 指针——打印 / 秤客显 / 扫码三域已拆分独立文件） |
+| MQTT / 消息推送接入 / 推送到达性排障 | [references/network-comms.md](references/network-comms.md) | 网络通信域（连接生命周期·重连重订 / 订阅与 QoS·分发面 / 业务到达性案卷 / broker 配置安全） |
 | 卡顿 / 内存 / 低配设备 / 线上崩溃 | [references/performance.md](references/performance.md) | DevTools 双线程归因（UI/Raster 列说话）/ 图片按显示尺寸解码（低配 OOM 头号根因）/ FlutterError + PlatformDispatcher 双钩子 / 符号化依赖 |
 | 配 CI / 出包 / 签名 / 混淆 / 发 pub 包 | [references/build-release.md](references/build-release.md) | flavor 与 dart-define 选型 / keystore 与 iOS 证书纪律 / symbols 归档 / App 发布前检查与 pub 发布检查 |
 | 支付 / 退款 / 核销 / 涉钱接口 | [references/payment.md](references/payment.md) | 防重三层口径（判定线 / 请求号语义警示）/ 不可逆操作时序 / 重试红线 |

@@ -40,11 +40,11 @@ t 0 "python3 $SRC/hooks/test_stop_reminder.py"            "stop-reminder fixture
 t 0 "python3 $SRC/hooks/test_pending_updates.py"          "pending-updates 写侧 fixture 应全绿（1.0.30 队列分文件）"
 t 0 "python3 $SRC/hooks/test_queue_contract.py"           "跨 hook 队列契约测试应全绿（1.0.39 D-4 写读互调）"
 t 0 "python3 $SRC/hooks/test_compliance.py"               "compliance-audit fixture 应全绿（1.0.37 批2 遵守度事实账）"
-# 1.0.42 断言①（待核版本号，让位则回改）：parity-rewrite 零项目值+引用悬空双扫描——
+# 1.0.42 断言①：parity-rewrite 零项目值+引用悬空双扫描——
 # 扫 skills/parity-rewrite/ 全树：①禁列 token（05 计划 Global Constraints 全表 + 裸 ARB）
 # 命中即红；②引用悬空式（spec 节号 `5.<数字>` / 裸 §<中文序号> / 「草案」）命中即红。
-# token 与正则片段一律字符串拼接构造：本脚本自身在 walk 面内，完整字面会自命中
-# （头部注释 :3–4 同训；「草稿」词面天然不咬，咬的是「草案」）。
+# token 与正则片段一律字符串拼接构造（:3–4 deny-list 同训：断言脚本不存全形字面，
+# 扫描面日后扩围亦不自咬；「草稿」词面天然不咬，咬的是「草案」）。
 pr_bad=$(python3 - "$SRC" <<'PYEOF'
 import os, re, sys
 try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -61,6 +61,7 @@ if not os.path.isdir(base):
     bad.append('skills/parity-rewrite/ 目录缺失（Task 1–3 交付被删？）')
 for dp, dn, fn in os.walk(base):
     for f in sorted(fn):
+        if not f.endswith('.md'): continue  # 只扫分发 md；二进制件（如 Finder .DS_Store）不属执法面，防解码假红/文件名残迹咬 token（1.0.42 批外置待验#2 收口）
         p = os.path.join(dp, f)
         rel = os.path.relpath(p, root).replace(os.sep, '/')
         try: text = open(p, encoding='utf-8').read()
@@ -83,7 +84,7 @@ else
   FAIL=$((FAIL+1)); echo "FAIL  parity-rewrite 双扫描命中 ×${n_pr:-?}（禁列项目值或 spec 节引用，就地改写/换指针）："; printf '%s\n' "$pr_bad" | tail -n +2
 fi
 
-# 1.0.42 断言②（待核版本号，让位则回改）：parity-rewrite 尺寸闸——SKILL.md ≤10000 字符、
+# 1.0.42 断言②：parity-rewrite 尺寸闸——SKILL.md ≤10000 字符、
 # references/ 与 templates/ 单文件 ≤12000 字符（先例 flutter-rules SKILL.md 实测 8054；
 # 上限系 05 计划自设工程约束）。口径 = 字符数（python len，UTF-8 解码后），勿用 wc -m（:91 同训）。
 sz_bad=$(python3 - "$SRC" <<'PYEOF'
@@ -498,7 +499,7 @@ fi
 
 # ④ checklist 指针限定闸：skills 内提及 checklist 须带「项目根」——skill 随 plugin 缓存分发、
 #    与 checklist.md（装在消费工程根）不同目录，裸写不可解析
-ck_bad=$(grep -rn 'checklist' "$SRC/skills" | grep -v '项目根' || true)
+ck_bad=$(grep -rn --include='*.md' 'checklist' "$SRC/skills" | grep -v '项目根' || true)
 if [ -z "$ck_bad" ]; then
   PASS=$((PASS+1)); echo "PASS  checklist 指针限定（skills 提及均带「项目根」）"
 else

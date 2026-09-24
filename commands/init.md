@@ -45,7 +45,7 @@ bash <源>/scripts/install.sh <项目根> --app | --plugin [--dry-run]
 3. **§十二项目附录 3 必填**：项目名 / 构建·分析·测试命令 / （协作偏好可选项提示：固定语言、提交触发词覆写、提速档、沉淀闸档位）
 4. **支持矩阵（`.claude/memory/platform-pitfalls.md` 头部）**：按步骤 5 三段式生成初稿并引导核对补全
 5. **记忆库接线确认**：模板 §十二已带 `@.claude/memory/NAVIGATION.md` 启动内联行——引导需求方把 NAVIGATION 占位索引表裁成项目实际目录（删/改 `<common-widget-dir>` 等占位行，防每会话内联一屏占位垃圾）；小项目**可选**删该 @ 行与 `.claude/memory/`；**轻量档**＝删（与档位预设一致；启用条件见 `进阶/记忆库体系.md`）
-6. 提示：flutter-rules skill 与 7 个 agent 已随 plugin 就位（无需复制）；导入巡检 `bash <源>/scripts/check-imports.sh <项目根>`
+6. 提示：flutter-rules 与 parity-rewrite 两 skill、7 个 agent 已随 plugin 就位（无需复制）；导入巡检 `bash <源>/scripts/check-imports.sh <项目根>`
 
 ### 5. 支持矩阵三段式（自动初稿 → 人核对 → 人补）
 

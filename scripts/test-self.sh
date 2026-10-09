@@ -773,6 +773,8 @@ fi
 # ③ 欠账龄闸（E2/G3）——⑤欠账表「起于」为版本形的行，债龄（当前 minor − 起于 minor）≤ N=10。
 #   2026-09-23 需求方裁「上闸即咬」：/context 债起 1.0.10 债龄 30，本闸真树即红系设计意图，
 #   封版（release tag 前跑全套 test-self）至行动甲 B 销账——展期须附需求方裁决引用。
+# 1.1.0 版本滚动适配（2026-10-09 需求方裁：patch 位 0–19 封顶、满则进 minor）——②头/登记表正则去
+#   1.0.x 硬编码；③计龄改线性 minor×20+patch（原 patch 直减在 minor 进位后归零成假绿，行过滤 minor≠0 同步撤）。
 nm_bad=$(python3 - "$SRC" <<'PYEOF'
 import os, re, sys
 try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -812,14 +814,16 @@ try:
 except Exception:
     print('SKIP'); sys.exit(0)
 tags = {t.lstrip('v') for t in r.stdout.split() if re.match(r'^v?\d+\.\d+\.\d+$', t)}
-heads = set(re.findall(r'^## (1\.0\.\d+)', open(os.path.join(root, 'CHANGELOG.md'), encoding='utf-8').read(), re.M))
+heads = set(re.findall(r'^## (\d+\.\d+\.\d+)', open(os.path.join(root, 'CHANGELOG.md'), encoding='utf-8').read(), re.M))
+# 1.1.0 滚动适配实跑勘误：全量正则被 0.6.x fork 前史段头咬红——0.x 无 tag 非缺口、不属 tag 纪律面，major≥1 过滤
+heads = {v for v in heads if int(v.split('.')[0]) >= 1}
 # 当前版本豁免：release 链路 = bump（CHANGELOG 头先落）→ commit → tag 后打——
 # tag 未打的当轮被扫即红是时序假缺口非登记缺口（1.0.41 首咬自证）；tag 必达闸兜其后
 mver = re.search(r'"version":\s*"(\d+\.\d+\.\d+)"', open(os.path.join(root, '.claude-plugin', 'plugin.json'), encoding='utf-8').read())
 if mver: heads.discard(mver.group(1))
 reg_txt = open(os.path.join(root, 'docs', '清单-版本缺口与欠账.md'), encoding='utf-8').read()
 sec1 = reg_txt.split('## 一、')[1].split('## 二、')[0] if '## 一、' in reg_txt else ''
-reg = set(re.findall(r'^\| (1\.0\.\d+) \|', sec1, re.M))
+reg = set(re.findall(r'^\| (\d+\.\d+\.\d+) \|', sec1, re.M))
 missing = sorted(heads - tags, key=lambda s: [int(x) for x in s.split('.')])
 unreg = [v for v in missing if v not in reg]
 ghost = sorted(reg - set(missing), key=lambda s: [int(x) for x in s.split('.')])
@@ -847,7 +851,7 @@ root = sys.argv[1]
 N = 10
 ver = re.search(r'"version":\s*"(\d+)\.(\d+)\.(\d+)"', open(os.path.join(root, '.claude-plugin', 'plugin.json'), encoding='utf-8').read())
 if not ver: print('SKIP'); sys.exit(0)
-cur = int(ver.group(3))
+cur = int(ver.group(2)) * 20 + int(ver.group(3))   # 1.1.0 起线性计龄 minor×20+patch（patch 0–19 封顶进 minor，2026-10-09 裁）
 txt = open(os.path.join(root, 'docs', '清单-版本缺口与欠账.md'), encoding='utf-8').read()
 sec2 = txt.split('## 二、')[1] if '## 二、' in txt else ''
 sec2 = sec2.split('\n## ')[0]   # 只扫在册节——「三、已销账」读数留档行不得再数龄
@@ -855,9 +859,9 @@ errs = []
 rows = 0
 for line in sec2.splitlines():
     m = re.match(r'^\| [^|]+\| (\d+)\.(\d+)\.(\d+)[^|]*\|', line)
-    if not m or m.group(2) != '0': continue
+    if not m: continue   # 1.1.0 撤 minor≠0 行过滤——新 minor 债行同受龄约束
     rows += 1
-    age = cur - int(m.group(3))
+    age = cur - (int(m.group(2)) * 20 + int(m.group(3)))
     if age > N: errs.append('债龄超限: ' + line.split('|')[1].strip() + '（起于 ' + m.group(0).split('|')[2].strip() + '，龄 ' + str(age) + ' > N=' + str(N) + '）——还债或附需求方裁决引用展期')
 if errs:
     print('BAD'); [print('  ↳ ' + e) for e in errs]

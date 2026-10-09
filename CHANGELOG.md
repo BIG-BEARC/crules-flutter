@@ -1,5 +1,14 @@
 # crules-flutter CHANGELOG
 
+## 1.0.51 · 外部 skill 吸收批三——条 6 闸红修因不绕闸（ci-cd-and-automation 唯一真空白，整批不收）
+
+> 依据链：需求方 2026-10-09 第三问外部 skill（addyosmani/agent-skills · skills/ci-cd-and-automation）「有必要补充进来吗」——原文取回判定**整批不收**：80% 系 Node 栈 CI 配方（GitHub Actions YAML / tsc / jest / Playwright / Vercel，对 Flutter 消费工程错栈）；质量门流水线、失败喂回、密钥卫生、小批量已被本仓流水线与构建发布专项覆盖；Build Cop / PR 保护 / CI 优化单作者仓 N/A 或过早。「确定？」复核**零修正维持**（三连问首次），两处证据补强：①闸红凑绿禁令全仓 grep 确认三向量零条文，testing.md 无 flaky 面；②build-release.md 补读，回滚 N/A 判断维持。唯一真空白=闸红处置纪律：memory「篡改自测禁 git 回滚」系恢复协议非禁令，且反证断言篡改在本工作区真实发生过一次（工作区事件，不具仓内可复现性，据此不设 inline 实证引用）——半句落条 6。
+
+- **checklist.md 条 6 半句**：「机械项归 CI 基线」处扩——**闸红修因不绕闸**：diff 中禁测试删除 / 注释 / 跳过、禁断言放宽凑绿、禁超时放大吞 flaky（flaky 修到稳定为准，**重跑通过不销账**）。落点先例：同条「质量脚本唯一入口禁裸跑」即住在评审清单的实施侧纪律，diff 可查（测试删除 / 断言放宽 / 超时放大入 diff 即红）；与 1.0.50「需改测试才过 = 行为变更信号」不同源（彼管批次分类，此管凑绿动作）
+- **吸收裁决记录**（未吸收留痕）：Node 栈 YAML 不收（错栈）；feature flag（isGray）清理日期不收（域内确有灰度机制、无实证背书不硬凑，留候选待实战触发）；shift-left / 失败喂回 / 密钥卫生 / 小批量不收（已有覆盖：流水线时序、机械验证回环、构建发布专项、体量门先例）；Build Cop / Dependabot / PR 分支保护 / CI 优化不收（单作者 + AI 流水线语境 N/A 或过早）
+- **验证**：test-self 全量 PASS=61 FAIL=0（收口批实跑）；checklist.md 单行原位插入
+- **观测带数**：checklist.md 135→135 行（条 6 行内扩写，行数不变）
+
 ## 1.0.50 · 外部 skill 吸收批二——简化 / 重构专项条件节 + 条 8 分笔（简化批门槛 / Chesterton 栅栏 / 过度简化反面清单）
 
 > 依据链：需求方 2026-10-09 追加外部 skill（addyosmani/agent-skills · skills/code-simplification）问可借鉴处——原文 CDN 镜像取回（非转述），六候选初判；「确定？」复核修正两处：**撤候选 5「机械大改走 dart fix」**——与条 6「禁裸跑默认参数命令、脚本唯一入口」正面冲突（`dart fix` 裸跑同属全仓扫，条 6 已更严管住同一风险，实证 dart format 166 文件）；**候选 1 主判据重述**——「既有测试零修改全绿」预设消费工程有像样测试套件，实际自测档 = 6.2×矩阵真机手测、单测覆盖薄，重述为「老行为变更清单必须为空」门槛、测试信号降半句；证据引用同轮勘误：printer.md「修复激活休眠缺陷」证的是复验受影响面而非 Chesterton，改引 scale.md `close()` 现场反查——四条保留，「继续」执行。

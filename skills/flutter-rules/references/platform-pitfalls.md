@@ -26,6 +26,7 @@
 | divider 撑满差异、同代码两版渲染不同、测试对真机错 | 全平台 | 滚动 TabBar dividerColor: transparent 跨 SDK 撑满 / 收缩差异——同代码两版渲染不同 |
 | textAlignVertical 无效、hint 不居中、输入框钉顶、几何断言红 | 全平台 | InputDecorator 垂直定位基线制——textAlignVertical 无杠杆、hint 盒居中几何断言不可达 |
 | 广播注册崩溃、SecurityException、RECEIVER_EXPORTED、targetSdk 34、USB 拔出无检测、副屏崩溃、window type | Android 14 | targetSdk 34 外设在屏双门——registerReceiver 必须三参 RECEIVER_*，副屏 Presentation 窗口类型不可覆盖 |
+| 蓝牙扫不出、蓝牙权限被拒绝、neverForLocation、位置权限、清单双声明、receiver 泄漏、扫描永挂 | Android 12+ | 蓝牙权限链三陷阱——12+ 请求列表残留 location 致误拒、清单双声明合并削弱 neverForLocation、扫描 catch 不注销 receiver |
 | 分区存储、photo picker、预测性返回、16KB page size、edge-to-edge、Play 上架被拦 | Android | 版本兼容基线（一卡多区间合并） |
 | 类找不到、UnmodifiableUint8ListView、dill 陈旧、测试载入即崩 | Windows | 页面级 widget test 载入即崩——「类找不到」先疑工具链损坏（dill 陈旧），勿急降依赖 |
 | 直调错误版本 SDK、报错文案取版本、fvm shim 缺失、验证结论作废 | Windows | 机械验证直调错误版本 SDK——逃生门二进制的版本取自报错文案而非钉定版本 |
@@ -163,6 +164,18 @@
 - 区间：targetSdk 34+（API 34 行为变更；注册三参 API 自 33 起可用）
 - 状态：已修复（私有仓 Android 14 兼容批，USB 外设 + 副屏 + 支付 IoT 三路） ｜ 最后核验：2026-09-24
 - 出处：saas-cashier `4ee867142`（三插件同修）/ `de5cbceab`（支付 IoT 兜底）/ `f65fd7234`（副屏窗口类型三分支）+ 其仓 doc/android14_compatibility_fix.md；设备侧影响面指针：printer.md（USB 打印卡）/ scale.md（秤卡）/ iot-devices.md 副屏节（外设坑在 14 设备上须先过此门）
+
+### [Android 12+] 蓝牙权限链三陷阱——12+ 请求列表残留 location 致误拒、清单双声明合并削弱 neverForLocation、扫描 catch 不注销 receiver
+
+- 关键词：蓝牙扫不出、蓝牙权限被拒绝、neverForLocation、位置权限、清单双声明、receiver 泄漏、扫描永挂
+- 归属：OS 平台（Android 12 / API 31 权限模型换代）× App 权限请求层 / vendored 蓝牙插件层
+- 三陷阱（实证出自 Android 16 小米平板现场「扫不到蓝牙打印机」单案，机制链逐环亲验）：
+  1. **12+ 请求列表残留 location**：BLUETOOTH_SCAN 带 `neverForLocation` flag 时 12+ 扫描/连接均**不需要**位置权限；请求列表若按 ≤11 习惯保留 `Permission.location`，商户拒位置 → permission_handler 返回 denied（**非** permanentlyDenied，无法引导去设置）→ 扫描被误拦。未在清单声明的权限 status/request 双双 denied，与「被拒」不可区分——请求列表必须按平台版本分段（12+ 只求 SCAN+CONNECT），错误提示文案勿一概写「权限被拒绝」。
+  2. **清单双声明**：App 主清单带 flag 的 SCAN/CONNECT + 插件清单裸声明同名权限，manifest merger 合并结果静态不可断言（裸声明可能稀释 neverForLocation 语义）——**单一权威**：插件清单删裸声明、只留 ≤30 legacy 的 FINE/COARSE（必须 `maxSdkVersion="30"`，API ≤11 discovery 仍要位置，删了存量设备扫不到）；发版门以 **aapt 反编译产物 grep** 实证声明与 flag，勿信源码推断。
+  3. **扫描 catch 不注销**：`startDiscovery()` 抛 SecurityException（权限临界态）时 discovery 未启动、FINISHED 永不来，receiver 泄漏为**永久性**（重入还叠加旧 result 永挂/新轮被迟到 FINISHED 掐灭）——catch 分支必须先注销再置空；入口做重入补收尾（settle 上轮），FINISHED 收尾须带「本轮激活」标志（STARTED 置位）防 stale。
+- 区间：Android 12+（API 31 权限模型；API ≤11 legacy 仍需位置）
+- 状态：已修复（权限分段请求 + 清单收口 maxSdk=30 + 插件三路加固；neverForLocation 合并结果待 aapt 产物实测终裁） ｜ 最后核验：2026-10-08
+- 出处：saas-cashier `ad7dce216`（S1 权限收口）/ `0e85c82ac`（S2 插件加固）+ 其仓 doc/android16_bluetooth_printer_scan_fix_design.md；设备侧影响面指针：printer.md（蓝牙打印卡）
 
 ### [Android] 版本兼容基线（一卡多区间合并）
 

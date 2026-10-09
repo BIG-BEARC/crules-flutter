@@ -17,6 +17,8 @@
 
 **蓝牙设备 MAC 大小写不归一 → 同机重复 / 编辑误拦**——iOS 大写 / Android 小写混用同一批设备；比较前统一大小写、编辑查重排除自身 id。「connect 前 disconnect」在 Android 侧是刚需、在 iOS 侧有崩溃副作用（见上卡）——平台差异须分支处理，不能一把梭。锚：cf73751d5、ecd66a354；doc/pitfall_knowledge_base_2026.md §三。
 
+**Android 12+ 蓝牙扫描权限链三陷阱（扫不出打印机首查权限分段）**——12+ 请求列表残留 location 致商户拒位置误拦扫描（neverForLocation 下无需位置）；插件清单裸声明稀释 neverForLocation（单一权威 + aapt 产物实证）；catch 不注销 receiver 永久泄漏。详见 platform-pitfalls.md「蓝牙权限链三陷阱」卡。锚：ad7dce216、0e85c82ac、36e6f743f；doc/android16_bluetooth_printer_scan_fix_design.md。
+
 ## USB 打印
 
 **USB 连接态不可缓存布尔**——打印机断电重启 / 拔插后 App 侧一切「正常」但不再出纸：connect 若 `if(isConnected) return` 幂等空操作即踩（旧代码把 `openPort()` 注释掉、连接判断走 AtomicBoolean 缓存；2022 年同型坑复发两次）。连接态必须以 claimInterface / 端点实测为准。配套超时：Android bulkTransfer 500→800ms、Kotlin 层 DEFAULT_TIMEOUT_MS 0→5000ms（0=无限阻塞，挂死写线程）。锚：a660b9eaa、0b7addec7、caf9eab92、dcc747dbe、f52f68889。

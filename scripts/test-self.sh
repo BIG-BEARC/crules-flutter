@@ -8,8 +8,10 @@
 # 1.0.42 断言：parity-rewrite 双扫描+尺寸 两闸入常驻断言区
 set -uo pipefail
 SRC=$(cd "$(dirname "$0")/.." && pwd)
-# 环境守卫（1.0.13）：本脚本两条断言（draft / tag）依赖 git 历史，其余不依赖（1.0.39 断言 48→52；1.0.41 +3、1.0.42 +2
-# 至 56——撞名/缺口/债龄三闸 + parity 两闸，其中缺口闸调 git tag 但不可读时自 SKIP；计数以实跑为准）。在无 .git 的拷贝里
+# 环境守卫（1.0.13）：本脚本两条断言（draft / tag）依赖 git 历史，其余不依赖（1.0.38 50 → 1.0.39 51、1.0.41 +3 至 54、
+# 1.0.42 +2 至 56——撞名/缺口/债龄三闸 + parity 两闸，其中缺口闸调 git tag 但不可读时自 SKIP；计数以实跑为准。
+# 1.0.39/40 曾误记「52/0」、1.0.39 起点曾误记 48——09-24 三 tag 隔离实跑勘误：51/51/54，且本机无 pwsh 时 ps1 夹具
+# SKIP 不计（有 pwsh 环境 +1），跨环境对数先对齐 SKIP 面）。在无 .git 的拷贝里
 # （典型：插件 cache = 全仓文件快照、非 clone）draft 吃 git 报错码 128 → **假红**；tag 则落到「读 HEAD 失败」
 # 分支 → **假绿**，其声称守护的「1.0.2 D2 防 tag 打在 bump 前旧树」版本比对从未执行。假绿比报错更贵——
 # 故显式拒绝，不静默变形。
@@ -781,18 +783,21 @@ targets = ['README.md']
 for d in ('进阶', 'commands'):
     targets += [d + '/' + f for f in sorted(os.listdir(os.path.join(root, d))) if f.endswith('.md')]
 bad = []
+ok = []
 for rel in targets:
     for i, line in enumerate(open(os.path.join(root, rel.replace('/', os.sep)), encoding='utf-8').read().splitlines(), 1):
-        if '轻量' in line and not WL.search(line):
-            bad.append(rel + ':' + str(i) + ' ' + line.strip()[:50])
-print(len(bad)); [print('  ↳ ' + b) for b in bad]
+        if '轻量' in line:
+            if WL.search(line): ok.append(rel + ':' + str(i))
+            else: bad.append(rel + ':' + str(i) + ' ' + line.strip()[:50])
+print(len(bad)); [print('  ↳ ' + b) for b in bad]; [print('  ✓ ' + o) for o in ok]
 PYEOF
 )
 n_nm=$(printf '%s' "$nm_bad" | head -1)
 if [ "${n_nm:-1}" = "0" ]; then
-  PASS=$((PASS+1)); echo "PASS  轻量撞名闸（消费面「轻量」仅项目档位白名单形，行级）"
+  PASS=$((PASS+1)); echo "PASS  轻量撞名闸（消费面「轻量」仅项目档位白名单形 ×$(printf '%s' "$nm_bad" | grep -c '^  ✓')，行级）白名单命中："
+  printf '%s\n' "$nm_bad" | grep '^  ✓' || true
 else
-  FAIL=$((FAIL+1)); echo "FAIL  轻量裸用/轴混 ×${n_nm:-?}（改「极简档/简化起见」或补档位限定）："; printf '%s\n' "$nm_bad" | tail -n +2
+  FAIL=$((FAIL+1)); echo "FAIL  轻量裸用/轴混 ×${n_nm:-?}（改「极简档/简化起见」或补档位限定）："; printf '%s\n' "$nm_bad" | grep '^  ↳' || true
 fi
 
 gap_out=$(python3 - "$SRC" <<'PYEOF'

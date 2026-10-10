@@ -1,5 +1,14 @@
 # crules-flutter CHANGELOG
 
+## 1.1.3 · 分发面默认不进 git——install.sh 幂等铺三行（/CLAUDE.md /checklist.md /进阶/）
+
+> 依据链：2026-10-10 需求方查实消费工程 1（saas-cashier / saas_pos_smart_edition）进阶六篇于 09-18 被功能提交 cfaaba5ee 整树扫入 git（+918 行）并已推 origin 两 feature 分支——早于 09-24「本库全部内容不参与团队共享」裁决的存量，此后从未清点。根因：install.sh 分发 CLAUDE.md / checklist / 进阶到项目根但**从不铺对应 ignore 行**（只有机器件五行），git 视角下分发面即普通未跟踪文件，等任何一次 `git add` 整树扫入。需求方裁：**分发面默认不进仓库，是否跟随仓库（团队共享）由用户按工程显式决定**。
+
+- **install.sh 分发面三行幂等落位**：`/CLAUDE.md` `/checklist.md` `/进阶/` + 政策注释行追加至目标 `.gitignore`——根锚定形态防误伤 TARGET 子树外同名件；幂等 / 迁移 / dry-run 只计数，语义同机器件五行。ignore 不影响已跟踪文件：重装补行对 opted-in（已跟踪）工程无害，跟随=删对应行后 `git add`、退跟踪=显式 `git rm --cached`。
+- **MAINTENANCE 模板 git 分层段增「分发面默认本机态」政策行**（含跟随 / 退跟踪反悔方式）；memory 侧分层口径不动——git 政策按工程各记各的。
+- **test-self 增断言**：三行 + 政策注释首装即落、force 重装不重复（T5 沙盒复用，读数含幂等验证）。
+- **README 分发表**：`.gitignore` 行扩为 5+3 行，CLAUDE / checklist / 进阶 三行标注默认本机态。
+
 ## 1.1.2 · docs 轮次化清点 + 欠账龄闸段序计龄（d 案）——轮次化程序加固三条 + R7 首次入册 + 债龄闸滚动盲区修复
 
 > 依据链：1.1.0 minor 漏跑轮次化清点（README「每次 minor」义务无触发点），积压 09-22~09-24 三波 11 篇。2026-10-10 本批清点：三轮需求方「确定？」确认轮（R1 抓防漂移裁决单 D-5 活裁决项改保留 / R2 复证实证 C-2 豁免已机械化落码 / R3 抓过期戳计数 6→5 断茬），10 篇终态档删除（ab28e42，纯 docs 批先行、死链声明随 commit message）。吸收裁决：组 A 三半句（README 轮次化条）+ 组 C 负证据检查特化先例（方案评审闭环）+ 组 B=R7 入册 + 债龄闸 d 案（呈裁中挖出线性公式滚动盲区；a/b/c 三案并陈后 d 案以「CHANGELOG 段序即单调钟」胜出）。

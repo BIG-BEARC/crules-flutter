@@ -775,6 +775,12 @@ fi
 #   封版（release tag 前跑全套 test-self）至行动甲 B 销账——展期须附需求方裁决引用。
 # 1.1.0 版本滚动适配（2026-10-09 需求方裁：patch 位 0–19 封顶、满则进 minor）——②头/登记表正则去
 #   1.0.x 硬编码；③计龄改线性 minor×20+patch（原 patch 直减在 minor 进位后归零成假绿，行过滤 minor≠0 同步撤）。
+# 1.1.2 段序计龄（d 案，2026-10-10 轮次化批呈裁发现盲区）：线性 minor×20+patch 对 1.0.2x–1.0.51
+#   遗留版起债为负龄恒绿（1.0.47→47 vs 现行 1.1.1→21）——非单调、纪元死数字基点（52）换纪元再适配。
+#   改段序位次差：age = 起于版本自顶段序位次（最新段=0；CHANGELOG 段头文件序 = 发版序，缺口闸同哲学）。
+#   两道 fail-closed：起于查无段头红（1.0.36 幽灵类跳号不许作起于）/ ≥1.0.0 段头严格降序破坏红
+#   （前史 0.x 尾有 0.0.1/0.1.1 文件序异常〔已实测〕，降序断言豁免 0.x 段——债面永不触及）。
+#   plugin.json 读取删除：顶段即当轮在飞版，release draft 段顶多致全表 +1，fail-safe 方向。
 nm_bad=$(python3 - "$SRC" <<'PYEOF'
 import os, re, sys
 try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -849,32 +855,39 @@ try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 except Exception: pass
 root = sys.argv[1]
 N = 10
-ver = re.search(r'"version":\s*"(\d+)\.(\d+)\.(\d+)"', open(os.path.join(root, '.claude-plugin', 'plugin.json'), encoding='utf-8').read())
-if not ver: print('SKIP'); sys.exit(0)
-cur = int(ver.group(2)) * 20 + int(ver.group(3))   # 1.1.0 起线性计龄 minor×20+patch（patch 0–19 封顶进 minor，2026-10-09 裁）
 txt = open(os.path.join(root, 'docs', '清单-版本缺口与欠账.md'), encoding='utf-8').read()
+full = open(os.path.join(root, 'CHANGELOG.md'), encoding='utf-8').read()
+heads = re.findall(r'^## (\d+)\.(\d+)\.(\d+)', full, re.M)
+vers = ['%s.%s.%s' % h for h in heads]              # 文件序 = 新→旧（缺口闸同哲学）
+pos = {v: i for i, v in enumerate(vers)}
+# fail-closed ②：≥1.0.0 段头严格降序破坏 = 时序钟坏，整闸红（0.x 前史豁免——尾部有 0.0.1/0.1.1 实测异常，债面永不触及）
+seq = [tuple(map(int, h)) for h in heads if int(h[0]) >= 1]
+if not all(a > b for a, b in zip(seq, seq[1:])):
+    print('BAD'); print('  ↳ CHANGELOG ≥1.0.0 段头文件序非严格降序——段序钟坏，先修段序再论债龄'); sys.exit(0)
 sec2 = txt.split('## 二、')[1] if '## 二、' in txt else ''
 sec2 = sec2.split('\n## ')[0]   # 只扫在册节——「三、已销账」读数留档行不得再数龄
 errs = []
 rows = 0
 for line in sec2.splitlines():
     m = re.match(r'^\| [^|]+\| (\d+)\.(\d+)\.(\d+)[^|]*\|', line)
-    if not m: continue   # 1.1.0 撤 minor≠0 行过滤——新 minor 债行同受龄约束
+    if not m: continue   # 日期形/说明形「起于」行不数龄，人跟
     rows += 1
-    age = cur - (int(m.group(2)) * 20 + int(m.group(3)))
-    if age > N: errs.append('债龄超限: ' + line.split('|')[1].strip() + '（起于 ' + m.group(0).split('|')[2].strip() + '，龄 ' + str(age) + ' > N=' + str(N) + '）——还债或附需求方裁决引用展期')
+    key = '%s.%s.%s' % m.groups()
+    if key not in pos:   # fail-closed ①：起于查无段头（1.0.36 幽灵类跳号不许作起于）
+        errs.append('债行起于无段头: ' + line.split('|')[1].strip() + '（起于 ' + key + '）——段头缺失或幽灵版本，先核账')
+        continue
+    age = pos[key]
+    if age > N: errs.append('债龄超限: ' + line.split('|')[1].strip() + '（起于 ' + key + '，段序龄 ' + str(age) + ' > N=' + str(N) + '）——还债或附需求方裁决引用展期')
 if errs:
     print('BAD'); [print('  ↳ ' + e) for e in errs]
 else:
     print('OK ' + str(rows))
 PYEOF
 )
-if printf '%s' "$debt_out" | grep -q '^SKIP'; then
-  echo "SKIP  欠账龄闸（plugin.json 版本不可读，不计 FAIL）"
-elif printf '%s' "$debt_out" | grep -q '^OK'; then
-  PASS=$((PASS+1)); echo "PASS  欠账龄闸（版本形债行 ×$(printf '%s' "$debt_out" | head -1 | cut -d' ' -f2) 均 ≤N=10）"
+if printf '%s' "$debt_out" | grep -q '^OK'; then
+  PASS=$((PASS+1)); echo "PASS  欠账龄闸（版本形债行 ×$(printf '%s' "$debt_out" | head -1 | cut -d' ' -f2) 均 ≤N=10，段序计龄）"
 else
-  FAIL=$((FAIL+1)); echo "FAIL  欠账龄超限（真树即红系 09-23 裁决「咬」，销账=行动甲 B，展期=附裁决引用）："; printf '%s\n' "$debt_out" | tail -n +2
+  FAIL=$((FAIL+1)); echo "FAIL  欠账龄闸红（段序计龄：超限 / 起于无段头 / 段序钟坏；真树红系 09-23 裁决「咬」，展期=附裁决引用）："; printf '%s\n' "$debt_out" | tail -n +2
 fi
 
 # 1.0.34 分发工程批断言（外部评审对账三根因：验证清单多处复制 / 出错兜底继续走 / 落位状态机缺口）：

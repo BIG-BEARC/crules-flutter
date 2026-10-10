@@ -973,6 +973,15 @@ gi1=$(grep -c '^\.claude/memory' "$T5/.gitignore" 2>/dev/null) || gi1=0
 bash $SRC/scripts/install.sh "$T5" --app --force >/dev/null 2>&1
 gi2=$(grep -c '^\.claude/memory' "$T5/.gitignore" 2>/dev/null) || gi2=0
 [ "${gi1}" = "5" ] && [ "${gi2}" = "5" ] && { PASS=$((PASS+1)); echo "PASS  gitignore 幂等落位（首装 5 行，force 重装仍 5 行）"; } || { FAIL=$((FAIL+1)); echo "FAIL  gitignore 落位（首装 ${gi1} 行 / 重装 ${gi2} 行，期望 5/5）"; }
+
+# 1.1.3 断言：分发面默认不进 git（2026-10-10 需求方裁）——/CLAUDE.md /checklist.md /进阶/ 三行 +
+#   政策注释首装即落、force 重装不重复（上面 gi2 已重装过一次，此处读数即含幂等验证）。
+#   起因：消费工程进阶六篇曾被功能提交整树扫入并推远端——分发面无 ignore 行即裸奔。
+gd=$(grep -c -xF -e '/CLAUDE.md' -e '/checklist.md' -e '/进阶/' "$T5/.gitignore" 2>/dev/null) || gd=0
+gdc=$(grep -c -F 'crules-flutter：分发面' "$T5/.gitignore" 2>/dev/null) || gdc=0
+[ "${gd}" = "3" ] && [ "${gdc}" = "1" ] \
+  && { PASS=$((PASS+1)); echo "PASS  分发面默认本机态三行幂等落位（含政策注释，force 重装不重复）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  分发面 ignore 落位（三行命中 ${gd}/3，注释 ${gdc}/1）"; }
 rm -rf "$T5"
 
 # 1.0.30 断言：gitignore entry 精确名 → 通配名（.pending-updates → .pending-updates*，队列按会话分文件）。

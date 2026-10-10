@@ -55,6 +55,7 @@
 
 - **进 git（制度资产，随仓）**：本文件 / `patterns.md` / `business-rules.md` / `INVARIANTS.md` / `decisions/`——规则与决策是制度资产：随仓可追溯、跨机不丢，人与 AI 共守
 - **不进 git（本机生成物，可重建）**：`indexes/`（代码索引）与 `.pending-updates*`（漂移队列——1.0.30 起按会话分文件 `.pending-updates.<会话id>`，旧单文件为旧宿主/升级存量）、`.review-ledger`（review 裁决台账——本机私域，防误报率被拿作考核）与 `.gate-exceptions`（Gate 例外台账——豁免留痕，备事后审计）与 `.compliance-log`（遵守度事实账——SessionEnd hook 每会话一行计数事实，本机观测面）——五行由 install.sh **幂等自动落位**到 `.gitignore`（已存在不重复）；想反着来（如 indexes 进 git）装后自行删行即可
+- **分发面默认本机态（2026-10-10 需求方裁）**：`CLAUDE.md` / `checklist.md` / `进阶/` 为安装落位的本机件，**默认不进 git**（install.sh 幂等落 `.gitignore` 三行 `/CLAUDE.md` `/checklist.md` `/进阶/`，1.1.3 起）；是否跟随仓库（团队共享）由各工程显式裁——跟随=删对应 ignore 行后 `git add`，已跟踪者退跟踪=`git rm --cached`（ignore 不影响已跟踪文件，重装补行对 opted-in 工程无害）
 - 同理：`.claude/settings.json`（随仓的权限 / hooks 配置）**进 git**；`settings.local.json` **永不进**（本机私有）
 
 ## 规模演进触发

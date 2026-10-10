@@ -3,7 +3,7 @@
 面向 **Flutter 工程**的 AI 协作规则 plugin：把「AI 怎么跟你安全地干活」固化成机制——危险命令硬拦、改动先过方案确认、交付必过审查、经验自动沉淀。
 独立自持（源自 crules fork，2026-09 起 1.0.0 独立演进，史见 [CHANGELOG](CHANGELOG.md)）；许可 **MIT**（[LICENSE](LICENSE)）。
 
-> 当前状态：1.1.2（版本编年史见 [CHANGELOG](CHANGELOG.md)）
+> 当前状态：1.1.3（版本编年史见 [CHANGELOG](CHANGELOG.md)）
 
 ---
 
@@ -94,11 +94,11 @@ sequenceDiagram
 
 | 落位物 | 位置 | 说明 |
 |---|---|---|
-| `CLAUDE.md`（App / Plugin 模板二选一 + 版本戳） | 项目根 | 协作规则本体 |
-| `checklist.md` | 项目根 | 审查清单（通用 10 条编号 0–9 + Flutter 专项） |
+| `CLAUDE.md`（App / Plugin 模板二选一 + 版本戳） | 项目根 | 协作规则本体；分发面默认不进 git（见下） |
+| `checklist.md` | 项目根 | 审查清单（通用 10 条编号 0–9 + Flutter 专项）；分发面默认不进 git（见下） |
 | `analysis_options.yaml` | 项目根 | 三态落位：flutter 脚手架默认 → 升级替换（原文件留 `.scaffold-bak`）；已有自定义 → 落伴生文件待人工合并；无 → 写入 |
-| `.gitignore` 五行 | 项目根 | memory 本机生成物（索引 / 漂移队列 `.pending-updates*` / review 台账 / Gate 例外台账 / 遵守度事实账 `.compliance-log`）自动排除出 git（幂等；1.0.30 起队列行改通配，升级时旧精确行自动迁移；1.0.37 起补 compliance-log 行） |
-| `进阶/` 6 篇 | 项目根 | 上手教程 / 工程化流程 / 审查纪律 / 方案评审闭环 / Agent 编排 / 记忆库体系 |
+| `.gitignore` 5+3 行 | 项目根 | memory 本机生成物五行（索引 / 漂移队列 `.pending-updates*` / review 台账 / Gate 例外台账 / 遵守度事实账 `.compliance-log`——幂等；1.0.30 起队列行改通配，升级时旧精确行自动迁移）+ **分发面三行 `/CLAUDE.md` `/checklist.md` `/进阶/`**（1.1.3 起，2026-10-10 裁：默认不进 git；跟随仓库=删对应行后 `git add`，已跟踪者退跟踪=`git rm --cached`——ignore 不影响已跟踪文件，重装补行对 opted-in 工程无害） |
+| `进阶/` 6 篇 | 项目根 | 上手教程 / 工程化流程 / 审查纪律 / 方案评审闭环 / Agent 编排 / 记忆库体系；分发面默认不进 git（见上） |
 | `memory/` 8 模板 | `.claude/memory/` | 制度资产（含 `reference-map.md` 分域参考系 / `platform-pitfalls.md` 平台坑库） |
 
 agents 不复制——plugin 已自动挂载 7 角色（`crules-flutter:frontend` 等）。

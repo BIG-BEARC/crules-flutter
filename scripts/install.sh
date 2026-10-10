@@ -257,6 +257,25 @@ for entry in ".claude/memory/indexes/" ".claude/memory/.pending-updates*" ".clau
   GI_ADD=$((GI_ADD+1))
 done
 [ "$GI_ADD" -gt 0 ] && echo "  GITIGNORE（幂等追加 ${GI_ADD} 行本机生成物）  $GI"
+
+# 分发面默认不进 git（1.1.3——2026-10-10 需求方裁）：CLAUDE.md / checklist.md / 进阶/ 为安装落位的本机件，
+#   默认不入库；是否跟随仓库（团队共享）由各工程显式决定——跟随=删对应行后 git add、已跟踪者退跟踪
+#   =git rm --cached。ignore 不影响已跟踪文件，故重装补行对 opted-in（已跟踪）工程无害。
+#   根锚定（/进阶/ 形态）防误伤 TARGET 子树外同名件；幂等/迁移/dry-run 语义同上五行机器件。
+#   起因：消费工程进阶六篇曾被功能提交整树扫入并推远端（2026-09-18，裁决前存量）——分发面无 ignore 行
+#   即裸奔，git 视角下就是普通未跟踪文件，等任何一次 add 扫入。
+GI_DIST=0
+if ! grep -qF 'crules-flutter：分发面' "$GI" 2>/dev/null; then
+  if [ "$DRYRUN" != "1" ]; then
+    printf '# crules-flutter：分发面（CLAUDE.md/checklist/进阶）默认不进 git（2026-10-10 裁）——跟随仓库=删对应行后 git add；退跟踪=git rm --cached；政策见 .claude/memory/MAINTENANCE.md「git 分层」\n' >> "$GI"
+  fi
+fi
+for entry in "/CLAUDE.md" "/checklist.md" "/进阶/"; do
+  if [ -f "$GI" ] && grep -qxF "$entry" "$GI"; then continue; fi
+  [ "$DRYRUN" != "1" ] && printf '%s\n' "$entry" >> "$GI"
+  GI_DIST=$((GI_DIST+1))
+done
+[ "$GI_DIST" -gt 0 ] && echo "  GITIGNORE（幂等追加 ${GI_DIST} 行分发面默认本机态）  $GI"
 echo "== 汇总：写入 ${W}，跳过/保留 ${S}，合并并入 ${MG}，冲突待解 ${CF}，.new 待合并 ${N}，失败 ${E} =="
 [ "${CF}" -eq 0 ] || echo "⚠️ 有 ${CF} 处冲突已带标记写回宪法文件——解标记前该文件非完整宪法；戳与 base 未动，逐块裁决后删 .crules-bak 与 .crules-conflicts"
 

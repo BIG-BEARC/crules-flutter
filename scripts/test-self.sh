@@ -998,6 +998,22 @@ gi_new=$(grep -cxF '.claude/memory/.pending-updates*' "$T5B/.gitignore" 2>/dev/n
   || { FAIL=$((FAIL+1)); echo "FAIL  gitignore 升级迁移（${gi3} 行 / 旧行 ${gi_old} / 新行 ${gi_new}，期望 5/0/1）"; }
 rm -rf "$T5B"
 
+# 1.1.4 断言：消费工程双任务收尾吸收——总览双规 / 覆盖面枚举 / 矩阵证据四落位 + 黑话红线扩禁
+#   （依据：2026-10-14 挂账对照失误复盘 + Wi-Fi 换装孤儿面复盘吸收；红线旧句只禁「造」不禁「用」，
+#   扩禁后旧句双模板清零、新句双模板命中——防回退漂移）。
+ov1=$(grep -c "任务总览表" "$SRC/进阶/工程化流程.md" 2>/dev/null) || ov1=0
+ov2=$(grep -c "^## 进度" "$SRC/进阶/工程化流程.md" 2>/dev/null) || ov2=0
+ov3=$(grep -c "未登记域禁落码" "$SRC/进阶/工程化流程.md" 2>/dev/null) || ov3=0
+ov4=$(grep -c "规则全集矩阵" "$SRC/进阶/审查与复核纪律.md" 2>/dev/null) || ov4=0
+[ "$ov1" -ge 1 ] && [ "$ov2" -ge 1 ] && [ "$ov3" -ge 1 ] && [ "$ov4" -ge 1 ] \
+  && { PASS=$((PASS+1)); echo "PASS  1.1.4 吸收四落位（总览表/进度行/覆盖面枚举/矩阵证据）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  1.1.4 四落位（总览表 ${ov1}/进度行 ${ov2}/枚举 ${ov3}/矩阵 ${ov4}，期望各 ≥1）"; }
+jl_new=$(grep -l "不使用黑话与自造词" "$SRC/plugin/CLAUDE.md" "$SRC/app/CLAUDE.md" 2>/dev/null | wc -l | tr -d ' ')
+jl_old=$(grep -l "不自创黑话新词" "$SRC/plugin/CLAUDE.md" "$SRC/app/CLAUDE.md" 2>/dev/null | wc -l | tr -d ' ')
+[ "${jl_new:-0}" = "2" ] && [ "${jl_old:-0}" = "0" ] \
+  && { PASS=$((PASS+1)); echo "PASS  黑话红线扩禁（新句双模板命中，旧句清零）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  黑话红线（新句 ${jl_new:-?}/2，旧句残留 ${jl_old:-?}）"; }
+
 # 幂等断言：同输入两次运行结论一致且均 deny（双 plugin 共存的可测背书；1.0.9 输出契约
 # 现代化 block→permissionDecision deny，grep 口径随迁）
 BADCMD="git push --fo""rce origin main"   # 分段拼接，避免源码含完整字面串

@@ -963,6 +963,19 @@ PY
   && { PASS=$((PASS+1)); echo "PASS  戳读链（.claude/CLAUDE.md 优先 → 根回退 → None）"; } \
   || { FAIL=$((FAIL+1)); echo "FAIL  戳读链（${stamp_rc}）"; }
 
+# 1.1.6 断言：parity-rewrite 实战吸收六落位——覆盖面五类枚举 / 壳形制列头 / P0 独立确认轮 /
+#   规则全集矩阵审查 / 模板批N 骨架 / 行为常量第⑤类联动
+#   （依据：挂账对照失误复盘 2026-10-12 + 网络检测设计评审 2026-10-10，八缺口择六落 skill 本体）
+p1=$(grep -c "对照项覆盖面枚举" "$SRC/skills/parity-rewrite/SKILL.md" 2>/dev/null) || p1=0
+p2=$(grep -c "响应壳形制+出参关键字段" "$SRC/skills/parity-rewrite/templates/parity-checklist-template.md" 2>/dev/null) || p2=0
+p3=$(grep -c "独立确认轮" "$SRC/skills/parity-rewrite/SKILL.md" 2>/dev/null) || p3=0
+p4=$(grep -c "规则全集矩阵" "$SRC/skills/parity-rewrite/SKILL.md" 2>/dev/null) || p4=0
+p5=$(grep -c "批N 增量登记" "$SRC/skills/parity-rewrite/templates/parity-checklist-template.md" 2>/dev/null) || p5=0
+p6=$(grep -c "行为常量" "$SRC/进阶/工程化流程.md" 2>/dev/null) || p6=0
+[ "${p1:-0}" -ge 1 ] && [ "${p2:-0}" -ge 1 ] && [ "${p3:-0}" -ge 1 ] && [ "${p4:-0}" -ge 1 ] && [ "${p5:-0}" -ge 1 ] && [ "${p6:-0}" -ge 1 ] \
+  && { PASS=$((PASS+1)); echo "PASS  1.1.6 parity 吸收六落位（覆盖面枚举/壳形制列/确认轮/矩阵审查/批N 骨架/行为常量）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  1.1.6 六落位（枚举 ${p1:-?}/壳列 ${p2:-?}/确认轮 ${p3:-?}/矩阵 ${p4:-?}/批N ${p5:-?}/常量 ${p6:-?}，期望各 ≥1）"; }
+
 rm -rf "$D"
 echo "== 脚本自测：PASS=$PASS FAIL=$FAIL =="
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1

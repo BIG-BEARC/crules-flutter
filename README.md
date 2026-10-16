@@ -3,7 +3,7 @@
 面向 **Flutter 工程**的 AI 协作规则 plugin：把「AI 怎么跟你安全地干活」固化成机制——危险命令硬拦、改动先过方案确认、交付必过审查、经验自动沉淀。
 独立自持（源自 crules fork，2026-09 起 1.0.0 独立演进，史见 [CHANGELOG](CHANGELOG.md)）；许可 **MIT**（[LICENSE](LICENSE)）。
 
-> 当前状态：1.1.5（版本编年史见 [CHANGELOG](CHANGELOG.md)）
+> 当前状态：1.1.6（版本编年史见 [CHANGELOG](CHANGELOG.md)）
 
 ---
 
@@ -140,6 +140,7 @@ agents 不复制——plugin 已自动挂载 7 角色（`crules-flutter:frontend
 ### 发布操作
 
 - 本仓独立演进：bump 双 json → `plugin update` → cache 特征串验证（步骤细节见 `scripts/release.sh` 头注与 CHANGELOG）
+- **合入定义（R7 写死）**：版本合入 = **tag 推送 origin**——收口批五件套（CHANGELOG 段 / bump 双 json / README 横幅 / test-self 断言 / tag 推送）齐且 tag 落远端才算合入；只 commit 未推 tag = 未合入（1.0.47 撞名复审裁决「下批写死」，1.1.6 触发批落实）
 - **deny-list 双源同步义务（1.0.17 起）**：判据改 `hooks/deny-list.py` 与 `hooks/deny-list.ps1` **两源同改**（函数对照表在 ps1 文末），夹具单源 `hooks/fixtures/deny-list-cases.json`（lang 标 both/bash/ps），改后两驱动全绿（本机无 pwsh 则 SKIP，CI pwsh 步硬拦）；新增绕过形态 fixture-first
 
 ### 每次 minor 例行（发布单，从上到下过一遍）

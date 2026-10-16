@@ -1,5 +1,18 @@
 # crules-flutter CHANGELOG
 
+## 1.1.5 · 丁-Copy 载体批——宪法指针副本化 + install 分发退役 + 引用面全量切新口径
+
+> 依据链：方案 docs/方案-2026-10-15-宪法载体丁-Copy.md（v4.0，Q6 裁丁-Copy——全内部相对导入零审批面、`-p` 直载与 compact 存续双绿〔T2，2026-10-15 手跑〕）+ 需求方三裁（零受控文件接触 / 零仓元素 / 存量不自动迁移）；收口前外审=reviewer 隔离子代理 15 项全处置（R3 证伪、R7 随批入库、余 13 修——逐项台账落 `.review-ledger` 本机件，编年见方案 §3.1「10-16（修）」）。
+
+- **丁-Copy 形态落位**：`/crules-flutter:init` 落未跟踪四行指针（`.claude/CLAUDE.md`：版本戳 + 宪法导入 + memory 导入 ×2——配方单源 commands/init.md）+ 宪法副本 `.claude/crules/constitution.md`（pristine 可哈希对拍）+ memory 9 种子（缺则补永不覆盖；新增 `PROJECT.md` 项目事实锚点——§七 技术栈 / §十二 附录·档位行 / 支持矩阵指针）+ AO 人择建议稿与 `.crules-state`；消费工程受控文件零接触（R0）。
+- **install.sh 分发退役**：303→15 行桩（任意调用 exit 1 指引 init、零写入）；check-imports.sh 戳读链改「指针优先 → 根回退 → 一致/源更旧/可升级三态」；stop-reminder 陈旧提醒按戳形态分叉——指针态催 init 刷副本，丁-tracked 存量（根 CLAUDE.md 戳）报存量迁移批待授权、不再催 init 死路（外审 R6）。
+- **双模板口径重写**：项目事实全落 PROJECT.md，「复制后手改」旧指令族清零（使用方式 / §七 必填标记 / 最终栈·类型填空 / 屏幕适配删其余，外审 R1——旧指令会引导 AI 在项目根建 CLAUDE.md 即破 R0）；轻量档重定义——仅删指针 ③ 行、PROJECT.md 锚点必留（外审 R2——原「删指针 ③④ 与 memory」先写后删自毁档位行，agents×7 / skills / 宪法覆写锚点全断）；canonical gear-preset/gear-note 同源更新。
+- **引用面 ~50 处切新口径**（批 2.6 + 外审补面）：进阶 6 篇 / skills / agents×7 / memory 种子 / README / help / checklist——「项目根 CLAUDE.md」「项目根 checklist」→「指针 → 副本」「插件 cache」；checklist AO 条改人择口径（外审 R4）；上手教程与审查纪律 checklist 引用补「插件 cache」限定（外审 R5）＋闸面扩进阶/；NAVIGATION 补 PROJECT.md 行（外审 R8）。
+- **init 机械面加固（外审 R10-R13）**：副本 cp 加守卫（不一致停呈报、禁静默覆盖）；R0 自检改基线快照对比（只看 init 新增 tracked 变动、无 git 如实跳过——原判据两头失效：无 git 假绿、脏树误红）；AO 建议稿缺则补；flutter_lints 自动提示改「待接线」如实标注。
+- **test-self 断言区重写**：删 install 时代死断言，增退役拒绝/零写入/戳链指针优先/配方单源/MAINTENANCE 零残留/**双模板零旧形态指令**（新，外审 R1 回归钉）/checklist 限定扩进阶——64→57 断言。
+- **验证**：test-self 57/0 绿；render-blocks 7 块×6 文件失败 0；stop-reminder fixture 全绿；常驻面预算 app 17909/18000、plugin 16500/16500。
+- **收口五件套**：本段 + bump 双 json 1.1.5 + README 横幅（随 feat 笔）+ tag v1.1.5 推 origin。
+
 ## 1.1.4 · 消费工程双任务收尾吸收批——总览双规 + 对照清单覆盖面枚举 + 审查证据形态 + 黑话红线扩禁
 
 > 依据链：2026-10-14 需求方提四条体验问题（执行计划后无任务总览 / 任务完成后无进度总览 / code review 未校验魔法数 / 黑话禁令），各配复盘文档（挂账对照失误复盘 2026-10-12 §五四轮合规审查 + Wi-Fi 换装孤儿面复盘 2026-10-14，均在 saas_pos_smart_edition）。呈裁经四轮「确定？」共修正十处（v1 四修：写侧根因 / 红线自洽 / 总览降形 / 裁6 越权；v2 三修：批次表非通例 / 对照清单已存 §9 / reviewer 已接 checklist；v3 两修：进度行挂交付汇报粒度 / 矩阵证据只罩可机械化条目）。试点如实：校验层试点 2/3、3/3 窗口未触发（两任务收尾在别会话，ledger 零校验条目）；3/3 改挂网络模块整分支待审 review（裁4，另办）。

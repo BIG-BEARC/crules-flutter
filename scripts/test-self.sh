@@ -10,6 +10,7 @@ set -uo pipefail
 SRC=$(cd "$(dirname "$0")/.." && pwd)
 # 环境守卫（1.0.13）：本脚本两条断言（draft / tag）依赖 git 历史，其余不依赖（1.0.38 50 → 1.0.39 51、1.0.41 +3 至 54、
 # 1.0.42 +2 至 56——撞名/缺口/债龄三闸 + parity 两闸，其中缺口闸调 git tag 但不可读时自 SKIP；计数以实跑为准。
+# 1.1.7 +1 至 59（合一断言；1.1.5/1.1.6 两批增量未逐批记账——外审 R8 勘误，防归因失真）
 # 1.0.39/40 曾误记「52/0」、1.0.39 起点曾误记 48——09-24 三 tag 隔离实跑勘误：51/51/54，且本机无 pwsh 时 ps1 夹具
 # SKIP 不计（有 pwsh 环境 +1），跨环境对数先对齐 SKIP 面）。在无 .git 的拷贝里
 # （典型：插件 cache = 全仓文件快照、非 clone）draft 吃 git 报错码 128 → **假红**；tag 则落到「读 HEAD 失败」
@@ -977,5 +978,27 @@ p6=$(grep -c "行为常量" "$SRC/进阶/工程化流程.md" 2>/dev/null) || p6=
   || { FAIL=$((FAIL+1)); echo "FAIL  1.1.6 六落位（枚举 ${p1:-?}/壳列 ${p2:-?}/确认轮 ${p3:-?}/矩阵 ${p4:-?}/批N ${p5:-?}/常量 ${p6:-?}，期望各 ≥1）"; }
 
 rm -rf "$D"
+# 1.1.7 断言：superpowers7 吸收批三落位——D6 双模板叠加条款 7.0.0 口径（主要硬冲突+偏好覆写，
+# 旧「唯一」清零）+ D5 parity description 触发-only（工作流摘要句移正文，SDO 反噬面）+ D1 README
+# 改条文纪律（配对表/微测五要点/触发范围/止损线四件）
+sp_ok=1
+for f in app/CLAUDE.md plugin/CLAUDE.md; do
+  for s in '主要硬冲突' '7.0.0' '偏好压过 skill 默认'; do
+    grep -qF -- "${s}" "${SRC}/${f}" || { sp_ok=0; echo "  ↳ ${f} 缺「${s}」"; };
+  done
+  grep -qF -- '唯一硬冲突' "${SRC}/${f}" && { sp_ok=0; echo "  ↳ ${f} 残留「唯一硬冲突」"; };
+done
+d5_desc=$(sed -n '/^description:/p' "${SRC}/skills/parity-rewrite/SKILL.md")
+d5_ok=1
+echo "${d5_desc}" | grep -qF -- '对照清单' && { d5_ok=0; echo "  ↳ description 残留工作流摘要（对照清单）"; }
+grep -qF -- '方法概览：先建「对照清单」' "${SRC}/skills/parity-rewrite/SKILL.md" || { d5_ok=0; echo "  ↳ 正文缺「方法概览」等价句"; }
+d1_ok=1
+for s in '### 改条文纪律' '连续 3 次微测' 'canonical 源文' '每臂 ≥5 rep'; do
+  grep -qF -- "${s}" "${SRC}/README.md" || { d1_ok=0; echo "  ↳ README 缺「${s}」"; };
+done
+[ "${sp_ok}" = "1" ] && [ "${d5_ok}" = "1" ] && [ "${d1_ok}" = "1" ] \
+  && { PASS=$((PASS+1)); echo "PASS  1.1.7 吸收批三落位（D6 双模板 7.0.0 口径 / D5 description 触发-only / D1 改条文纪律四件）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  1.1.7 落位（D6 ${sp_ok} / D5 ${d5_ok} / D1 ${d1_ok}，见上漂移清单）"; }
+
 echo "== 脚本自测：PASS=$PASS FAIL=$FAIL =="
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1

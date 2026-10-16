@@ -1,11 +1,11 @@
 ---
-description: 初始化 crules-flutter——把 Flutter 工程接入协作规则（调 install.sh 机械安装 + 引导必填项）
+description: 初始化 crules-flutter——把 Flutter 工程接入协作规则（丁-Copy 指针落位 + 引导必填项）
 disable-model-invocation: true
 ---
 
 # /crules-flutter:init
 
-把 crules-flutter 装进当前 Flutter 工程。**只动规则文件，不碰业务代码**。
+把 crules-flutter 装进当前 Flutter 工程——**丁-Copy 形态**（1.1.5 起）：未跟踪指针 `.claude/CLAUDE.md`（四行）＋宪法副本 `.claude/crules/constitution.md`＋memory 种子。**不碰任何受控文件**（R0 红线）：根 CLAUDE.md / checklist / `analysis_options.yaml` / `进阶/` 一律不落位——权威源在插件 cache（去分发化，依据见插件仓库 docs/方案-2026-10-15-宪法载体丁-Copy.md）。
 
 ## 执行步骤
 
@@ -13,60 +13,108 @@ disable-model-invocation: true
 
 ```bash
 # ① plugin cache 最大版本（命令的主受众——cache 安装用户）
-ls -d ~/.claude/plugins/cache/*/crules-flutter/*/scripts/install.sh | sort -V | tail -1
+ls -d ~/.claude/plugins/cache/*/crules-flutter/*/app/CLAUDE.md | sort -V | tail -1 | xargs dirname
 # ② 找不到（本地开发态 / 手动部署）→ 提示需求方给 crules-flutter 仓库路径后停止
 ```
 
-取到源根后，后续 install / check-imports 均用该绝对路径（跨目录操作一律绝对路径纪律）。
+取到源根 `$SRC` 后一切操作用绝对路径；戳行版本 `$VER` 读 `$SRC/.claude-plugin/plugin.json` 的 `version`。
 
 ### 1. 分流（自动）
 
-- 项目根**无** `CLAUDE.md` → 新项目（步骤 2）
-- **有** `CLAUDE.md`：
-  - **无** `<!-- crules-flutter: v` 戳 → 老项目：**不自动安装**（禁静默覆盖）——提示需求方这是既有规则项目，给出选择：a) 人工对照模板合并（推荐：备份后逐节取舍，取舍记录落 `.claude/memory/decisions/`）b) 确认废弃旧规则后 `--force` 覆盖（须需求方显式确认）
-  - **有戳** → 重装/升级：跑 `check-imports.sh` 报版本差 → 提示重跑 install（默认跳过已存在；`--force` 走三向合并——对 base 零改动直替、双方各自演进自动并、真冲突带标记+摘要呈人并禁更新戳；无 base 可比或 `--new-only` 退 `.new` 伴生人工对照，memory 永不覆盖）
+- **根 `CLAUDE.md` 有 `<!-- crules-flutter: v` 戳** → 丁-tracked 老形态（宪法曾复制进项目根 `CLAUDE.md`、随 git 跟踪）：**不自动迁移**（存量原子切=一次性授权批，宪法纪律：提醒≠代执行）——告知现状与迁移路径后停
+- **`.claude/CLAUDE.md` 有戳**（指针已在）→ 刷新路径：走步骤 3（副本对拍 + 指针重写即刷戳），步骤 5 仅补未填项
+- **两者皆无** → 新装（步骤 2 起）
+- 根 `CLAUDE.md` 存在但**无戳**（项目自有宪法）→ 可共存（实证：同场双载、根先指针后、项目事实胜）——提示共存与优先级后继续
+- `.claude/CLAUDE.md` 存在但**无戳**（本机自建件）→ **不覆盖**，呈需求方裁决
 
 ### 2. 问形态（新项目）
 
-App 工程（`app/` 模板）还是 Plugin/工具库（`plugin/` 模板）？——不确定时看 `pubspec.yaml` 有无 `flutter.plugin.platforms` 声明。
+App 工程（`app/` 宪法）还是 Plugin/工具库（`plugin/` 宪法）？——不确定时看 `pubspec.yaml` 有无 `flutter.plugin.platforms` 声明。
 
-### 3. 跑机械安装（脚本确定性操作，AI 不手抄文件）
+### 3. 机械落位（bash 确定性操作；全部写**未跟踪本机态**）
 
 ```bash
-bash <源>/scripts/install.sh <项目根> --app | --plugin [--dry-run]
+ROOT=<项目根>; SRC=<源根>; KIND=app 或 plugin
+VER=$(grep -m1 -oE '"version":[[:space:]]*"[0-9]+\.[0-9]+\.[0-9]+"' "$SRC/.claude-plugin/plugin.json" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+mkdir -p "$ROOT/.claude/crules" "$ROOT/.claude/memory" "$ROOT/.claude/memory/indexes" "$ROOT/.claude/memory/decisions"
+
+# R0 基线快照（落位前 tracked 面状态，收尾自检对比用；无 git 仓时为空文件）
+git -C "$ROOT" status --porcelain 2>/dev/null | sort > "/tmp/crules-init-baseline.$$" || : > "/tmp/crules-init-baseline.$$"
+
+# ① 宪法副本（共享纪律层——项目内容一律不写进副本，保持 pristine 可哈希对拍）
+#    不存在 → 拷；已存在且不一致 → 曾被手改或待升级：先 diff 呈报，需求方确认后
+#    AI 另行执行同型 cp（本块不静默覆盖——禁静默覆盖）
+if [ ! -f "$ROOT/.claude/crules/constitution.md" ]; then
+  cp "$SRC/$KIND/CLAUDE.md" "$ROOT/.claude/crules/constitution.md"
+elif ! cmp -s "$SRC/$KIND/CLAUDE.md" "$ROOT/.claude/crules/constitution.md"; then
+  echo "副本不一致——AI 先 diff 呈报，经需求方确认后另行执行 cp 覆盖"
+fi
+
+# ② 指针四行（本文件=配方单一事实源，勿在他处复制）
+printf '<!-- crules-flutter: v%s -->\n@crules/constitution.md\n@memory/NAVIGATION.md\n@memory/PROJECT.md\n' "$VER" > "$ROOT/.claude/CLAUDE.md"
+
+# ③ memory 种子（9 件含 PROJECT.md）：缺则补、**永不覆盖**（落地即项目制度资产）
+for f in "$SRC"/memory/*.md; do
+  [ -e "$ROOT/.claude/memory/$(basename "$f")" ] || cp "$f" "$ROOT/.claude/memory/$(basename "$f")"
+done
+
+# ④ 本机态标记（AO 人择通道记账）
+[ -f "$ROOT/.claude/memory/.crules-state" ] || printf 'ao_adopted=0\n' > "$ROOT/.claude/memory/.crules-state"
 ```
 
-脚本行为：模板 CLAUDE.md + 版本戳 / checklist / `analysis_options.yaml`（项目已有 lint 配置则保留项目的）/ 进阶 / memory → 项目根；**agents 不复制**（plugin 已自动挂载 7 角色）；老项目护栏与幂等内建。需求方想先看全景时先跑 `--dry-run`。
+**落位后自检（逐条跑、输出贴给需求方）**：
 
-### 4. 引导必填（AI 交互）
+```bash
+[ "$(grep -c '^@' "$ROOT/.claude/CLAUDE.md")" = "3" ]                      # 指针 ③ 行导入
+cmp -s "$SRC/$KIND/CLAUDE.md" "$ROOT/.claude/crules/constitution.md"       # 副本逐字
+! grep -q '^@' "$ROOT/.claude/crules/constitution.md"                      # 宪法源零 @ 内链（1.1.5 清理恒真）
+# R0 自检：对比基线，只看 init 期间**新增**的 tracked 变动（存量脏行不归因于 init）
+git -C "$ROOT" status --porcelain 2>/dev/null | sort > "/tmp/crules-init-after.$$" || : > "/tmp/crules-init-after.$$"
+if git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  comm -13 "/tmp/crules-init-baseline.$$" "/tmp/crules-init-after.$$" | grep -v '^??' \
+    && echo "❌ init 新增 tracked 变动" || echo "R0 绿：init 零新增 tracked 变动（untracked 新增属预期）"
+else
+  echo "无 git 仓库——R0 自检跳过（无可对比面，如实呈报）"
+fi
+rm -f "/tmp/crules-init-baseline.$$" "/tmp/crules-init-after.$$"
+```
 
-1. **§七【复制后必填】**：技术栈三选一（App）或插件类型二选一（Plugin）——逐项问清后**删掉未选项**、填「本项目最终技术栈/类型」行；App 形态接着引 **§七 适配方案三选一**（A1 弹性+断点默认推荐 / A2 设计稿缩放 / A3 自定义——选定后删其余）与**字体策略**（公共必选——离线/内网设备提示字体打包路线，见坑卡「系统字体回退不可信」）
-2. **§十二档位预设（三选一，有默认）**：轻量〔light〕——单人 / 小工具（记忆库关、编排关、极简收尾占比高）；标准〔normal〕——日常工程（默认 = 现行行为）；完整〔full〕——复杂 / 多 agent 协作（编排开、plan-reviewer 默认启用）。选定后删掉模板 §十二 未选的两段预设块（提速档条通用保留）；不选 = 只留标准段——无块 = 默认标准。**不可配置项**（deny-list hook / 协作红线 / lint 硬拦）无开关，不引导配置
-3. **§十二项目附录 3 必填**：项目名 / 构建·分析·测试命令 / （协作偏好可选项提示：固定语言、提交触发词覆写、提速档、沉淀闸档位）
-4. **支持矩阵（`.claude/memory/platform-pitfalls.md` 头部）**：按步骤 5 三段式生成初稿并引导核对补全
-5. **记忆库接线确认**：模板 §十二已带 `@.claude/memory/NAVIGATION.md` 启动内联行——引导需求方把 NAVIGATION 占位索引表裁成项目实际目录（删/改 `<common-widget-dir>` 等占位行，防每会话内联一屏占位垃圾）；小项目**可选**删该 @ 行与 `.claude/memory/`；**轻量档**＝删（与档位预设一致；启用条件见 `进阶/记忆库体系.md`）
-6. 提示：flutter-rules 与 parity-rewrite 两 skill、7 个 agent 已随 plugin 就位（无需复制）；导入巡检 `bash <源>/scripts/check-imports.sh <项目根>`
+（`.claude/` 已 ignore 的工程连 untracked 都不出现；无 ignore 行工程出现 `?? .claude/` 属预期——提示需求方按 MAINTENANCE「git 分层」处理，AI 不代写受控 `.gitignore`。）
 
-### 5. 支持矩阵三段式（自动初稿 → 人核对 → 人补）
+### 4. AGENTS.md 抑制检测
 
-**① 机械读（AI 执行——读得到才填）**：
+项目根有 `AGENTS.md` → 提示：宿主对部分形态以 AGENTS.md 优先、可能抑制 CLAUDE.md 家族加载——宪法仍建议落位，整合与否由需求方裁决，不静默改写。
 
-- 平台目录存在性：`ls <项目根>` 看 `android/ ios/ windows/ macos/ linux/ web/` 哪些在——目录在 ≠ 发版支持，仅作初稿
-- Android 下限：`grep -n 'minSdk' android/app/build.gradle*`；值为 `flutter.minSdkVersion` 间接引用时写「flutter.minSdkVersion（随 SDK，当时解析值：<值>）」
-- iOS 下限：`grep -n 'platform :ios' ios/Podfile`
-- **失败分支**：`build.gradle.kts` 等变体 / 解析失败 / 文件缺失 → **保留占位符 `【待填·init 三段式生成】`**，显式报告未解析原因，**不瞎填**
+### 5. 引导必填（AI 交互——**全部写 `.claude/memory/PROJECT.md`**，宪法副本永不改）
 
-**② 人核对（AI 呈初稿，需求方裁决）**：生成了目录但从未发版的平台划掉；构建下限 ≠ 实际支持下限的改正。
+1. **§七 技术栈**：App 三选一（含适配方案 A1 弹性+断点〔默认推荐〕/ A2 设计稿缩放 / A3 自定义）或 Plugin 类型二选一；**字体策略**公共必选（离线/内网设备提示字体打包路线，坑卡「系统字体回退不可信」）→ 写 PROJECT.md「§七」节
+2. **档位预设三选一**（轻量〔light〕/ 标准〔normal〕/ 完整〔full〕，无档位行 = 默认标准）→ 写 PROJECT.md 档位行。**不可配置项**（deny-list hook / 协作红线 / lint 硬拦）无开关，不引导配置。**轻量档另触发**：仅删指针 ③ 行（NAVIGATION 常驻导入关）——指针 ④ 行与 PROJECT.md **必留**（档位行 / §七 / §十二 是 agents·skills·宪法覆写的锚点，删即断链）；其余 memory 种子留着、停维护即「记忆库关」（不删文件，将来升档零成本）
+3. **项目附录 3 必填**：项目名 / 构建·分析·测试命令 /（协作偏好可选项）→ PROJECT.md「§十二」节
+4. **支持矩阵三段式** → `.claude/memory/platform-pitfalls.md` 头部：①机械读（`ls` 平台目录、`grep minSdk` / `platform :ios`；解析失败保留占位符不瞎填）②人核对（未发版平台划掉）③人补（实测上限、现场设备实态）
+5. **NAVIGATION 占位表裁剪**：删/改 `<common-widget-dir>` 等占位行为项目实际目录（防每会话内联占位垃圾）
+6. 提示：flutter-rules / parity-rewrite 两 skill、7 个 agent 已随 plugin 就位；上手 15 分钟闭环见 cache `进阶/上手教程.md`
 
-**③ 人补（工程内查不到，问需求方）**：各平台**实测支持上限** + 现场设备实态（通常一行）。
+### 6. AO 建议稿（AO 人择通道——静态 lint 从「随发」转「建议」，零功能损失：三工程基线从未生效）
 
-初稿写入矩阵表后标「待核对」，②③ 完成后才去掉。矩阵格式与消费端兜底（读占位符即顶回）见 `.claude/memory/platform-pitfalls.md` 头部说明。
+```bash
+# 缺则补、永不覆盖（与 memory 种子同语义——需求方对建议稿的手批注不丢）
+[ -f "$ROOT/.claude/memory/analysis-options.suggested.yaml" ] \
+  || cp "$SRC/analysis_options.yaml" "$ROOT/.claude/memory/analysis-options.suggested.yaml"
+```
+
+提示需求方：采纳=手工并入项目自己的 `analysis_options.yaml`（受控文件，AI 不代改），采纳后把 `.claude/memory/.crules-state` 的 `ao_adopted` 置 1（复核时机：flutter_lints 大版本升级时人工复核建议稿——自动提示待接线）。
+
+### 7. 收尾汇报
+
+落位清单（指针/副本 sha256/种子件数）＋自检四条输出＋R0 机械证据（基线对比输出贴出）＋一句「删 `.claude/CLAUDE.md` 指针（连同 `.claude/crules/`）即整体回退；`.claude/memory/` 为项目资产，去留自裁」。
 
 ## 依据
 
-- 机械/交互分工：install.sh 管确定性 cp（幂等可测），本命令管问答引导（消灭手动步骤 + agents plugin-only 后安装面更小）
-- 禁静默覆盖：老项目分支不自动装（本仓老项目纪律）
+- 丁-Copy 载体（方案 docs/方案-2026-10-15-宪法载体丁-Copy.md，v4.0·Q6 裁，2026-10-15）：全内部相对导入零审批面、`-p` 直载实证、副本本机自持抗丢
+- R0：常态机制永不写受控文件——本命令全部写未跟踪本机态，机械自检可证
+- 禁静默覆盖：副本对拍不一致 / 无戳 `.claude/CLAUDE.md` / 丁-tracked 存量，三者一律呈人裁决
 
 ## 注意
 
-- 只装规则文件，**不写业务代码**；重跑安全（幂等，默认跳过已存在）
+- 只动规则载体与 memory 种子，**不写业务代码**；重跑安全（幂等：种子缺则补、副本对拍、指针重写）
+- 消费工程内禁 `claude -p` 冒烟（探针一律 /tmp 沙盒）

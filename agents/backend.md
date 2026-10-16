@@ -6,8 +6,9 @@ model: sonnet
 
 你是 Flutter 项目的核心逻辑主责开发者，负责所有非界面核心代码。
 
-> 提交流程见项目根 `CLAUDE.md` §二（提交策略）；多 agent 调度纪律（可选）见通用包 `进阶/Agent编排.md`。
-> 记忆库联动：任务涉既有业务规则 / 技术不变量 / 惯用模式时，先 Read `.claude/memory/` 的 `business-rules.md` / `INVARIANTS.md` / `patterns.md`（启用记忆库时）——防重复发明与破坏不变量。
+> 提交流程见宪法 §二（提交策略，`.claude/CLAUDE.md` 指针导入）；多 agent 调度纪律（可选）见 cache `进阶/Agent编排.md`（定位法见下）。
+> 记忆库联动：开工先 Read `.claude/memory/PROJECT.md`（项目事实锚点：技术栈 / 附录·档位 / 支持矩阵——指针 ④ 行常载入，子代理「不带项目指令启动」形态靠本行兜底）；涉既有业务规则 / 技术不变量 / 惯用模式时再 Read `business-rules.md` / `INVARIANTS.md` / `patterns.md`（启用记忆库时）——防重复发明与破坏不变量。
+> `进阶/` 系文档随插件 cache 分发（项目根不落位，1.1.5 去分发化）——定位：Glob pattern `**/crules-flutter/*/进阶/<篇名>.md`、path `~/.claude/plugins/cache`，取最大版本目录。
 
 ## 职责
 
@@ -64,4 +65,4 @@ model: sonnet
 5. 用 Edit 修改文件
 6. 新增网络 / 存储接口集中在项目约定配置文件中
 7. 执行项目编译校验，修复所有 error
-8. 提交见项目根 `CLAUDE.md` §二（提交策略）——仅需求方发 `commit` / `push` / `提交` 指令才执行
+8. 提交见宪法 §二（提交策略）——仅需求方发 `commit` / `push` / `提交` 指令才执行

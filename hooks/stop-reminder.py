@@ -96,8 +96,9 @@ mem = os.path.join(root, ".claude", "memory")
 # 宪法陈旧提醒闸（1.0.40 · N-1③）：项目 CLAUDE.md 版本戳 < 已装 plugin 版本 → 催升级。
 #   位置钉在定根之后、队列读取之前——**独立于队列状态**：目标宿主（消费工程）常态恰是
 #   「刚收尾、队列空」，挂进队列非空分支等于闸对着该响的人永不响（设计评审抓出的落点 bug）。
-#   覆盖边界（如实）：轻量档工程（无 NAVIGATION）在上方 root 判定即退，收不到本提醒——与
-#   compliance 落账、漂移队列同覆盖面对齐；无戳（老项目人工合并态）静默（stamp=None）。
+#   覆盖边界（如实）：轻量档工程（1.1.5 起仅删指针 ③ 行、memory 仍在）同被覆盖；无戳
+#   （老项目人工合并态）静默（stamp=None）；丁-tracked 存量（戳在根 CLAUDE.md）按形态
+#   分叉——init 对该形态不自动迁移，催 init 是死路循环，改报存量迁移批待授权。
 #   升级动作本身不自动化（写用户工程文件=破坏性面，宪法规矩：提醒≠代执行）。
 plug_ver = plugin_version()
 stamp_ver = constitution_stamp(root)
@@ -105,9 +106,16 @@ stale = ""
 if plug_ver and stamp_ver:
     pk, sk = version_key(plug_ver), version_key(stamp_ver)
     if pk and sk and pk > sk:
-        stale = (f"宪法版本落后：项目 CLAUDE.md v{stamp_ver}，插件已 v{plug_ver}——"
-                 '升级跑 bash "$CLAUDE_PLUGIN_ROOT/scripts/install.sh" <项目根> --upgrade'
-                 "（插件若也旧先 claude plugin update；--yes 免确认）。")
+        ptr = [ln for ln in read_lines(os.path.join(root, ".claude", "CLAUDE.md"))
+               if "@crules/constitution.md" in ln]
+        if ptr:
+            stale = (f"宪法版本落后：项目宪法 v{stamp_ver}，插件已 v{plug_ver}——"
+                     "跑 /crules-flutter:init 刷新指针与 .claude/crules/ 宪法副本"
+                     "（插件若也旧先 claude plugin update）。")
+        else:
+            stale = (f"宪法版本落后：根 CLAUDE.md v{stamp_ver}（丁-tracked 旧形态·随 git 跟踪），"
+                     f"插件已 v{plug_ver}——旧分发形态已退役；升级 = 存量迁移批（一次性授权、"
+                     "待需求方批），init 对此形态不自动迁移、暂缓跑。")
 
 def emit(context):
     print(json.dumps({"hookSpecificOutput": {"hookEventName": "Stop",

@@ -1,8 +1,8 @@
 # Agent 编排
 
-> **启用条件**：使用多 agent 协作时按本篇调度（本篇已随 init 落位项目根 `进阶/`；角色卡由 plugin 自动挂载，无需复制任何目录）。单人单 agent 工作不需要本篇。
-> 配套根规则：项目根 `CLAUDE.md`。本篇不重复根规则（提交、范围、后台 diff 展示等），只定义角色分工与调度。
-> 启用 superpowers / spec-kit 时，多 agent 阶段的 skill 映射（如 `subagent-driven-development`）见 项目根 CLAUDE.md §九（superpowers + dart-flutter 协作）。
+> **启用条件**：使用多 agent 协作时按本篇调度（本篇在插件 cache 即读——1.1.5 去分发化不落项目根；角色卡由 plugin 自动挂载，无需复制任何目录）。单人单 agent 工作不需要本篇。
+> 配套根规则：宪法（`.claude/CLAUDE.md` 指针 → `.claude/crules/constitution.md` 副本，1.1.5 丁-Copy）。本篇不重复根规则（提交、范围、后台 diff 展示等），只定义角色分工与调度。
+> 启用 superpowers / spec-kit 时，多 agent 阶段的 skill 映射（如 `subagent-driven-development`）见宪法 §九（superpowers + dart-flutter 协作）。
 >
 > **术语**：本篇「主控」指分发任务的 agent（通常即主对话）；「子代理」指被派发的 agent。模型档位按任务难度选型，不写死——难度越高用越强模型。0.5.2 起各角色卡 frontmatter 已设默认 `model`（i18n=haiku 低档 / frontend·backend·platform·error=sonnet 中档 / reviewer·plan-reviewer=opus 高档）——档位名随当前可用模型演进，升级 Claude Code 后复核一次。
 
@@ -179,4 +179,4 @@ sequenceDiagram
    - `git status` + `git diff`（含 staged / unstaged）把实际改动摆给需求方审阅
    - 把 agent 摘要与真实 diff 逐项对照，标注差异或遗漏
    - 运行编译校验，把结果一并反馈
-6. 需求方确认无误后，等 `commit` / `push` / `提交` 指令才执行完整提交流程（见 项目根 `CLAUDE.md` §二）
+6. 需求方确认无误后，等 `commit` / `push` / `提交` 指令才执行完整提交流程（见宪法 §二）

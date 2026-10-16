@@ -213,11 +213,12 @@ with tempfile.TemporaryDirectory() as d2:
             open(os.path.join(d6, "CLAUDE.md"), "w", encoding="utf-8").write(
                 f"# t\n\n<!-- crules-flutter: v{stamp} @ 2026-01-01 -->\n")
         return d6
-    d6 = stale_project("1.0.25")   # 旧戳 + 假插件 99.99.99 + **队列空**
+    d6 = stale_project("1.0.25")   # 旧戳 + 假插件 99.99.99 + **队列空**（丁-tracked 旧形态：戳在根 CLAUDE.md）
     rc, out = run({"hook_event_name": "Stop", "session_id": "stale-1", "stop_hook_active": False}, d6)
     ac = ac_of(out) if out.strip() else ""
     check("旧戳+队列空 → 陈旧提醒仍响（落点 bug 回归钉：不挂队列分支）",
-          "宪法版本落后" in ac and "1.0.25" in ac and "99.99.99" in ac and "install.sh" in ac)
+          "宪法版本落后" in ac and "1.0.25" in ac and "99.99.99" in ac
+          and "存量迁移批" in ac and "不自动迁移" in ac and "--upgrade" not in ac)   # 1.1.5：旧形态改报迁移批待授权，不催 init（死路）、零 --upgrade（T7）
     rc2, out2 = run({"hook_event_name": "Stop", "session_id": "stale-1", "stop_hook_active": True}, d6)
     check("stop_hook_active 续轮抑制陈旧提醒（防连环）", out2 == "")
     d7 = stale_project(FAKE_PLUG_VER)   # 戳与插件同版
@@ -226,6 +227,14 @@ with tempfile.TemporaryDirectory() as d2:
     d8 = stale_project(None)            # 无戳（老项目/人工合并态；上方各既有断言的 temp 项目均此态=隐式回归）
     rc4, out4 = run({"hook_event_name": "Stop", "session_id": "stale-1", "stop_hook_active": False}, d8)
     check("无戳 → 静默（无从判不催）", out4 == "")
+    d9 = stale_project(None)            # 指针戳形态（1.1.5 丁-Copy）：戳在 .claude/CLAUDE.md，根无 CLAUDE.md
+    open(os.path.join(d9, ".claude", "CLAUDE.md"), "w", encoding="utf-8").write(
+        "<!-- crules-flutter: v1.0.25 -->\n@crules/constitution.md\n")
+    rc5, out5 = run({"hook_event_name": "Stop", "session_id": "stale-2", "stop_hook_active": False}, d9)
+    ac5 = ac_of(out5) if out5.strip() else ""
+    check("指针戳（.claude/CLAUDE.md）陈旧 → 提醒仍响（1.1.5 戳读链）",
+          "宪法版本落后" in ac5 and "1.0.25" in ac5
+          and "/crules-flutter:init" in ac5 and "99.99.99" in ac5)   # 指针形态才催 init 刷副本
 
 print(f"stop-reminder fixture: {'全绿' if fails == 0 else f'{fails} 失败'}")
 sys.exit(1 if fails else 0)

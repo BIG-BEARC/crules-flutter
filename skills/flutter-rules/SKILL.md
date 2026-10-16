@@ -6,7 +6,7 @@ description: Flutter/Dart 技术最佳实践参考——写/审 Flutter 代码�
 # AI rules for Flutter（crules-flutter 技术参考库）
 
 > **定位**：Dart/Flutter 技术参考的**薄索引**——触发只载本文件，具体内容按域 Read `references/` 分文件（progressive disclosure：本 skill 曾是 39KB 单文件，问状态管理会把字体对比度一并拖入上下文）。
-> **优先级（重要）**：与项目根 CLAUDE.md **§七技术栈约定 / §八专项规范** 冲突时，**以项目模板为准**——项目选型（Riverpod/Bloc/Provider、路由、序列化）压过本库通用偏好；状态管理与路由方案永远看项目 §七。
+> **优先级（重要）**：与项目技术栈约定（`.claude/memory/PROJECT.md` §七——宪法 §七预设的所选档）冲突时，**以项目落点为准**——项目选型（Riverpod/Bloc/Provider、路由、序列化）压过本库通用偏好；状态管理与路由方案永远看 PROJECT.md §七。
 > **与 dart-flutter 插件的分工**：执行类内容（测试/分析/生成/修错/路由配置/序列化操作步骤）归 dart-flutter skills（场景映射见本文件「dart-flutter skill 速查」节——1.0.10 自双模板 §十一下沉），本库只留它不覆盖的规范、清单与项目特有内容。
 > **MCP 工具降级**：文中 `dart_format` / `analyze_files` / `pub_dev_search` 等工具不存在时，用等价 CLI（`dart format` / `dart analyze` / `flutter pub add` + pub.dev 检索）替代。
 
@@ -72,8 +72,8 @@ description: Flutter/Dart 技术最佳实践参考——写/审 Flutter 代码�
 
 ## 索引级速记（跨场景高频、一行可答的留这里）
 
-- **lint 基线**：项目根 `analysis_options.yaml`（本包装载时落位）——规则与 checklist 条目的对应关系见该文件内注释；静态分析执行走 dart-flutter `dart-run-static-analysis`（零 warning 是硬门）
-- **State Management / Navigation 未指定时**：优先 Flutter 内置（`ValueNotifier`/`ChangeNotifier` + `ValueListenableBuilder`、`Navigator`）；三方包仅在明确要求时引入——项目已选型时本条不适用（永远看项目 §七）
+- **lint 基线**：人择采纳后的项目 `analysis_options.yaml`（建议稿 `.claude/memory/analysis-options.suggested.yaml`——1.1.5 起人择并入，规则与插件 cache `checklist.md` 条目的对应关系见建议稿内注释）；静态分析执行走 dart-flutter `dart-run-static-analysis`（零 warning 是硬门）
+- **State Management / Navigation 未指定时**：优先 Flutter 内置（`ValueNotifier`/`ChangeNotifier` + `ValueListenableBuilder`、`Navigator`）；三方包仅在明确要求时引入——项目已选型时本条不适用（永远看 PROJECT.md §七）
 - **JSON 序列化**：`json_serializable`（`@JsonSerializable(fieldRename: FieldRename.snake)`）+ `build_runner` 生成，不手写；改模型后必跑 `dart run build_runner build --delete-conflicting-outputs`
 - **结构化日志**：`dart:developer` 的 `log`（name/error/stackTrace 分级）——禁 `print`（lint 已拦，抽查即可）
 - **文档注释**：`///` 一句话总结 + 空行分段；注释放注解**之前**；getter/setter 只文档其一；不为显然实现写复述性注释

@@ -6,15 +6,16 @@
 2. **保留架构决策** —— 关键架构决策的「为什么」
 3. **加速大项目检索** —— 给 AI 一份「地图」，不用每次全库 grep
 
-> git 纳管政策（单一权威见 [MAINTENANCE.md](MAINTENANCE.md)「git 分层」节）：**制度资产进 git、生成物不进**——`patterns.md` / `business-rules.md` / `INVARIANTS.md` / `decisions/` 随仓，`indexes/` / `.pending-updates*`（漂移队列，1.0.30 起按会话分文件）本机。crules-flutter 仓库中本目录是**模板**，随仓库进 git 供分发。
-> 完整维护规则见模板包 `进阶/记忆库体系.md`；本目录运行时规则见 [MAINTENANCE.md](MAINTENANCE.md)。
+> git 纳管政策（单一权威见 [MAINTENANCE.md](MAINTENANCE.md)「git 分层」节）：**制度资产工程自裁纳管（默认本机态）、生成物不进**——`patterns.md` / `business-rules.md` / `INVARIANTS.md` / `decisions/` 要跨机不丢可自行纳管，`indexes/` / `.pending-updates*`（漂移队列，1.0.30 起按会话分文件）本机。crules-flutter 仓库中本目录是**种子模板**（init 种子到工程 `.claude/memory/`，缺则补、永不覆盖）。
+> 完整维护规则见插件 cache `进阶/记忆库体系.md`；本目录运行时规则见 [MAINTENANCE.md](MAINTENANCE.md)。
 
 ## 文件结构
 
 <!-- twin:mem-files -->
 | 文件 | 用途 | 加载时机 |
 |---|---|---|
-| `NAVIGATION.md` | 顶层导航地图，告诉 AI 去哪找东西 | CLAUDE.md §十二 @import 启动内联（启动内联接线） |
+| `NAVIGATION.md` | 顶层导航地图，告诉 AI 去哪找东西 | `.claude/CLAUDE.md` 指针 ③ 行启动内联（丁-Copy 接线，1.1.5） |
+| `PROJECT.md` | 项目事实锚点：§七 技术栈 / §十二 附录·档位 / 支持矩阵指针（宪法副本保持原样、项目事实落此） | `.claude/CLAUDE.md` 指针 ④ 行启动内联；init 填写 |
 | `MAINTENANCE.md` | 自动维护规则，AI 何时该更新本库 | NAVIGATION 指针按需 Read（不常驻） |
 | `patterns.md` | 项目特有代码模式 | 实现新功能前 Read |
 | `business-rules.md` | 业务真实规则（业务可达性，软约束·审查 Gate 拦） | 审查 / 方案评审涉域前 Read |

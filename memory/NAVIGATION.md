@@ -1,12 +1,10 @@
 # 项目代码导航
 
-> AI 在本项目找东西的**第一站**。先看这里，定位到对应索引文件，再 Read 源码确认细节。
->
-> 本文件为**模板**，需按项目实际目录结构填充。
+> AI 在本项目找东西的**第一站**——先看这里定位索引文件，再 Read 源码确认细节。本文件为**模板**，按项目实际填充。
 
 ## 想找什么 → 去哪查（模板，按项目实际改）
 
-> 下表是索引结构示例，术语偏 Flutter / 移动端；非 Flutter 项目按自身技术栈替换（如 widget→组件、view→页面、provider→状态）。Flutter 专项清单见**项目根 `checklist.md`**（安装时随模板落位）。
+> 下表是索引结构示例，术语偏 Flutter / 移动端；非 Flutter 项目按自身技术栈替换（如 widget→组件、view→页面、provider→状态）。Flutter 专项清单见**插件 cache `checklist.md`**（1.1.5 去分发化）。
 
 ### 通用基础设施
 
@@ -55,9 +53,10 @@
 | 同行 / 领域参考系（谁值得看、去哪查） | [reference-map.md](reference-map.md) | — |
 | 平台坑（支持矩阵 / 坑卡检索） | [platform-pitfalls.md](platform-pitfalls.md) | — |
 | 项目特有代码模式 | [patterns.md](patterns.md) | — |
+| 项目事实（技术栈 / 命令 / 档位） | [PROJECT.md](PROJECT.md) | — |
 | 设计决策历史 | decisions/ | — |
 
-> `indexes/*` 与 `decisions/` 在启用记忆库时按需创建（indexes 每个核心目录一个）；上表为占位示例（**占位不用链接格式**——建链须指向已存在文件，全仓死链由 test-self 链接闸看守），按项目实际目录填充。
+> `indexes/*` 与 `decisions/` 在启用记忆库时按需创建（indexes 每个核心目录一个）；上表为占位示例（**占位不用链接格式**——建链须指向已存在文件，死链由 test-self 链接闸看守）。
 
 ## 实现新功能前的强制流程
 

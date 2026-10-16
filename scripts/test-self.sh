@@ -25,7 +25,13 @@ t() { eval "$2" >/dev/null 2>&1; rc=$?
 D=$(mktemp -d /tmp/cf-selftest.XXXXXX)
 mkdir -p "$D/old"
 printf '# 老项目\n' > "$D/old/CLAUDE.md"
-t 1 "bash $SRC/scripts/install.sh $D/old --app"           "install 老项目（无戳）应中止"
+# 1.1.5 install 退役闸：任何形态 exit 1 + 指引 init + 零写入（老项目夹具顺带守 R0——树内仅原 CLAUDE.md）
+t 1 "bash $SRC/scripts/install.sh $D/old --app"           "install 退役拒绝（任意形态，1.1.5）"
+o=$(bash $SRC/scripts/install.sh $D/old --app 2>&1); irc=$?
+[ "$irc" = "1" ] && echo "$o" | grep -q '/crules-flutter:init' \
+  && [ "$(find "$D/old" -type f | wc -l | tr -d ' ')" = "1" ] \
+  && { PASS=$((PASS+1)); echo "PASS  install 退役拒绝指向 init 且零写入（树内仅原 CLAUDE.md）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  install 退役面（rc=$irc）"; }
 t 1 "bash $SRC/scripts/release.sh abc"                     "release 非法版本号应报错"
 t 0 "bash $SRC/scripts/release.sh draft"                    "release draft 应正常出稿（外审②回归断言）"
 t 0 "python3 $SRC/hooks/test_deny_list.py"                 "deny-list fixture 应全绿"
@@ -128,90 +134,20 @@ go=$(bash "$GN/scripts/test-self.sh" 2>&1); grc=$?
 [ "$grc" != "0" ] && echo "$go" | grep -q "须在 git 树内" && ! echo "$go" | grep -q '^PASS' \
   && { PASS=$((PASS+1)); echo "PASS  非 git 树守卫显式拒绝（1.0.13）"; } \
   || { FAIL=$((FAIL+1)); echo "FAIL  非 git 树守卫（rc=$grc——未拒绝 / 未在断言前中止）"; }
-t 1 "bash $SRC/scripts/install.sh $D/old --app --upgrade"  "upgrade 无戳老项目应中止（D3·1.0.6）"
-U=$(mktemp -d /tmp/cf-upg.XXXXXX)
-printf '<!-- crules-flutter: v0.0.1 @ 2026-01-01 -->\n' > "$U/CLAUDE.md"
-o=$(printf 'n\n' | bash $SRC/scripts/install.sh $U --app --upgrade 2>&1); rc=$?
-[ "$rc" = "0" ] && ! ls "$U/checklist.md" >/dev/null 2>&1 && echo "$o" | grep -q 已取消 \
-  && { PASS=$((PASS+1)); echo "PASS  upgrade 拒绝确认零改动（D3·1.0.6）"; } || { FAIL=$((FAIL+1)); echo "FAIL  upgrade 取消路径（rc=$rc）"; }
-rm -rf "$U"   # 原代码从不收尾（靠下一跑开头 rm 兜底）——mktemp 化后兜底消失，须自清
+# 1.1.5：install.sh 分发职责退役——D3 升级确认 / F2 AO 三态 / 1.0.43 三向合并四态断言面随之删除
+#   （机制史见 CHANGELOG 1.0.6–1.0.43；现行升级=重跑 init 刷指针与副本，AO=memory 建议稿人择，
+#    巡检=check-imports.sh；方案 docs/方案-2026-10-15-宪法载体丁-Copy.md C5/C6）
 
-# F2 回归三断言（真机 fixture 固化——2026-08-27 flutter create 28 行注释版产物签入 testdata/）
-T1=$(mktemp -d /tmp/cf-ao1.XXXXXX); T2=$(mktemp -d /tmp/cf-ao2.XXXXXX)
-cp "$SRC/scripts/testdata/scaffold-analysis_options.yaml" "$T1/analysis_options.yaml"
-printf 'include: package:flutter_lints/flutter.yaml\nlinter:\n  rules:\n    - always_use_package_imports\n' > "$T2/analysis_options.yaml"
-o1=$(bash $SRC/scripts/install.sh $T1 --app 2>/dev/null | grep -c UPGRADE)
-[ "$o1" -ge 1 ] && [ -f "$T1/analysis_options.yaml.scaffold-bak" ] && { PASS=$((PASS+1)); echo "PASS  真机脚手架 fixture → UPGRADE（F1 回归）"; } || { FAIL=$((FAIL+1)); echo "FAIL  脚手架应 UPGRADE"; }
-o2=$(bash $SRC/scripts/install.sh $T2 --app 2>/dev/null | grep -c SIDE-CAR)
-[ "$o2" -ge 1 ] && grep -q 'always_use_package_imports' "$T2/analysis_options.yaml" && { PASS=$((PASS+1)); echo "PASS  自定义 lint → SIDE-CAR 伴生且原文保留"; } || { FAIL=$((FAIL+1)); echo "FAIL  自定义应 SIDE-CAR"; }
-printf 'WR-SENTINEL\n' > "$T1/.claude/memory/business-rules.md"
-bash $SRC/scripts/install.sh $T1 --app --force >/dev/null 2>&1
-# 1.0.43：--force 改走三向合并（首装已自存 base）——memory 哨兵 KEEP 不变，CLAUDE.md 零改动→直替（MERGE），
-#   base 快照同体→无冲突无 .new（旧断言的 .new 出现是「无 base 可比」形态，本夹具不成立）
-grep -q 'WR-SENTINEL' "$T1/.claude/memory/business-rules.md" && [ ! -f "$T1/CLAUDE.md.new" ] \
-  && [ -f "$T1/CLAUDE.md.crules-base" ] && { PASS=$((PASS+1)); echo "PASS  force 升级：memory 哨兵 KEEP + CLAUDE.md 经 base 合并直替"; } || { FAIL=$((FAIL+1)); echo "FAIL  force 安全升级"; }
-rm -rf "$T1" "$T2"
-
-# 1.0.43 三向合并四态 fixture（方案 v2 甲 §2 验证设计；夹具 mktemp，评审 #9）
-MM=$(mktemp -d /tmp/cf-mg.XXXXXX)
-# 态① 首装自存 base + 零改动直替
-bash $SRC/scripts/install.sh "$MM" --app >/dev/null 2>&1
-[ -f "$MM/CLAUDE.md.crules-base" ] && grep -qF 'crules-base' "$MM/.gitignore" \
-  && { PASS=$((PASS+1)); echo "PASS  合并态① 首装自存 base + gitignore 伴生物"; } || { FAIL=$((FAIL+1)); echo "FAIL  合并态①（base/gitignore）"; }
-# 态② 自动并：项目侧改一处中段 + 模板侧演进不可达——造 base 落后（改 base 删一行）
-cp "$MM/CLAUDE.md" "$MM/CLAUDE.md.crules-base.bak"
-python3 - "$MM" <<'PYEOF'
-import sys, re
-d = sys.argv[1]
-p = d + "/CLAUDE.md.crules-base"
-t = open(p, encoding="utf-8").read()
-t = t.replace("- **禁止自动提交**：不自动 `git commit` / `git push`\n", "", 1)  # 模拟旧版缺该条
-open(p, "w", encoding="utf-8").write(t)
-open(d + "/CLAUDE.md", "a", encoding="utf-8").write("\n<!-- 项目自注 -->\n")
-PYEOF
-o=$(bash $SRC/scripts/install.sh "$MM" --app --force 2>&1)
-echo "$o" | grep -q 'MERGE CLAUDE.md' && grep -q '禁止自动提交' "$MM/CLAUDE.md" && grep -q '项目自注' "$MM/CLAUDE.md" \
-  && ! grep -q '^<<<<<<<' "$MM/CLAUDE.md" && { PASS=$((PASS+1)); echo "PASS  合并态② 双方各自演进自动并（模板条回+项目注保留）"; } || { FAIL=$((FAIL+1)); echo "FAIL  合并态②（自动并不成立）"; }
-# 态③ 尾部撞戳位窄形自动解（saas-suite 1.0.40 实跑形）：base=模板+旧戳，ours=模板+项目尾节+旧戳，theirs=模板+新戳
-python3 - "$MM" <<'PYEOF'
-import sys, re
-d = sys.argv[1]
-t = open(d + "/CLAUDE.md.crules-base", encoding="utf-8").read()   # 态② 后 base=模板+现行戳快照
-old = "<!-- crules-flutter: v0.0.1 @ 2026-01-01 -->"
-tb = re.sub(r"<!-- crules-flutter: v[0-9.]+ @ [0-9-]+ -->", old, t, count=1)
-open(d + "/CLAUDE.md.crules-base", "w", encoding="utf-8").write(tb)
-open(d + "/CLAUDE.md", "w", encoding="utf-8").write(tb.replace(old, "#### 项目速查\n内容行\n" + old, 1))
-PYEOF
-o=$(bash $SRC/scripts/install.sh "$MM" --app --force 2>&1)
-echo "$o" | grep -q 'MERGE CLAUDE.md' && ! grep -q '^<<<<<<<' "$MM/CLAUDE.md" \
-  && grep -q '#### 项目速查' "$MM/CLAUDE.md" && ! grep -q 'v0.0.1' "$MM/CLAUDE.md" \
-  && [ "$(grep -c 'crules-flutter: v' "$MM/CLAUDE.md")" = "1" ] \
-  && { PASS=$((PASS+1)); echo "PASS  合并态③ 尾部撞戳位窄形自动解（尾节保留、旧戳去、单戳）"; } || { FAIL=$((FAIL+1)); echo "FAIL  合并态③（窄形解未命中或戳残留）"; }
-# 态④ 真冲突呈人：同段两侧语义重写（base 与项目对同一行各自改写）
-printf '共享行 v0\n' > "$MM/checklist.md"
-cp "$MM/checklist.md" "$MM/checklist.md.crules-base"
-printf '共享行 项目侧改\n' > "$MM/checklist.md"
-python3 - "$MM" <<'PYEOF'
-import sys
-d = sys.argv[1]
-t = open(d + "/checklist.md.crules-base", encoding="utf-8").read().replace("v0", "base侧改")
-open(d + "/checklist.md.crules-base", "w", encoding="utf-8").write(t)
-PYEOF
-o=$(bash $SRC/scripts/install.sh "$MM" --app --force 2>&1); grep -q MERGE-CONFLICT <<<"$o" \
-  && grep -q '^<<<<<<<' "$MM/checklist.md" && [ -f "$MM/checklist.md.crules-bak" ] && [ -f "$MM/checklist.md.crules-conflicts" ] \
-  && { PASS=$((PASS+1)); echo "PASS  合并态④ 真冲突带标记写回+.bak+.conflicts"; } || { FAIL=$((FAIL+1)); echo "FAIL  合并态④（冲突呈人链路）"; }
-# 退路：--new-only 强制 .new 人工
-o=$(bash $SRC/scripts/install.sh "$MM" --app --force --new-only 2>&1)
-echo "$o" | grep -q 'UPDATE-NEW' && { PASS=$((PASS+1)); echo "PASS  退路 --new-only 出 .new（D-2）"; } || { FAIL=$((FAIL+1)); echo "FAIL  退路 --new-only"; }
-rm -rf "$MM"
-
-# 0.4.0 批1断言（设计 §5 test-self 行）：落位 8 模板 / init 三处必填 / twin 一致性
+# 0.4.0 批1断言（1.1.5 改口径）：memory 种子 9 模板（含 PROJECT.md 锚点）——init 步骤③配方直拷
+#   （install 退役，夹具按 commands/init.md 配方执行——缺则补、永不覆盖，不再经 install.sh）
 T4=$(mktemp -d /tmp/cf-pitfalls.XXXXXX)
-bash $SRC/scripts/install.sh $T4 --app >/dev/null 2>&1
+mkdir -p "$T4/.claude/memory"
+for f in "$SRC"/memory/*.md; do [ -e "$T4/.claude/memory/$(basename "$f")" ] || cp "$f" "$T4/.claude/memory/$(basename "$f")"; done
 nm=$(ls "$T4/.claude/memory"/*.md 2>/dev/null | wc -l | tr -d ' ')
-[ "$nm" = "8" ] && { PASS=$((PASS+1)); echo "PASS  memory 落位 8 模板"; } || { FAIL=$((FAIL+1)); echo "FAIL  memory 应落位 8 模板（实为 ${nm}）"; }
+[ "$nm" = "9" ] && { PASS=$((PASS+1)); echo "PASS  memory 种子 9 模板（init 配方直拷，缺则补语义）"; } || { FAIL=$((FAIL+1)); echo "FAIL  memory 种子应 9 模板（实为 ${nm}）"; }
 rm -rf "$T4"
-grep -q '支持矩阵' "$SRC/commands/init.md" && grep -q '矩阵' "$SRC/scripts/install.sh" && { PASS=$((PASS+1)); echo "PASS  init 必填三处引导（init.md + install.sh 下一步提示均含矩阵）"; } || { FAIL=$((FAIL+1)); echo "FAIL  init 三处缺矩阵引导"; }
+grep -q '支持矩阵' "$SRC/commands/init.md" && ! grep -q 'install\.sh' "$SRC/commands/init.md" \
+  && { PASS=$((PASS+1)); echo "PASS  init 引导含矩阵且零 install 依赖（正门唯一）"; } || { FAIL=$((FAIL+1)); echo "FAIL  init 引导（矩阵缺失或 install 残留）"; }
 # twin:mem-files 单一权威（0.5.1 断言，1.0.4 精简批减一向——进阶侧表已删改指针，
 # 现只看守 memory/README.md 表 == 实际模板数；加载时机细节随表走）
 act=$(ls "$SRC"/memory/*.md | grep -v 'README.md' | wc -l | tr -d ' ')
@@ -360,13 +296,14 @@ done
 for s in "${gd[@]}"; do grep -qF -- "${s}" "${SRC}/commands/init.md" || { gear_ok=0; echo "  ↳ commands/init.md 缺「${s}」"; }; done
 [ "${gear_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  档位四方同源闸（附录块↔help↔README↔§三收尾行，三档标记/默认/收尾三档/校验层）"; } || { FAIL=$((FAIL+1)); echo "FAIL  档位四方同源闸（见上漂移清单）"; }
 
-# 1.0.7 断言①：Gate 例外台账同源闸——.gate-exceptions 定义四点同源（双模板 Gate 例外节 ↔ MAINTENANCE ↔ install.sh）
-# （外审 🟡2 处置：台账被四处引用、零定义——定义落四处 + 上闸，防「意图先于机制」复发）
+# 1.0.7 断言①：Gate 例外台账同源闸——.gate-exceptions 定义三点同源（双模板 Gate 例外节 ↔ MAINTENANCE）
+# （外审 🟡2 处置：台账被引用、零定义——定义落位 + 上闸，防「意图先于机制」复发；
+#  1.1.5 起第四点 install.sh 随分发退役删除）
 ge_ok=1
-for f in app/CLAUDE.md plugin/CLAUDE.md memory/MAINTENANCE.md scripts/install.sh; do
+for f in app/CLAUDE.md plugin/CLAUDE.md memory/MAINTENANCE.md; do
   grep -qF -- ".gate-exceptions" "${SRC}/${f}" || { ge_ok=0; echo "  ↳ ${f} 缺「.gate-exceptions」"; }
 done
-[ "${ge_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  Gate 例外台账同源闸（双模板 Gate 例外节↔MAINTENANCE↔install.sh）"; } || { FAIL=$((FAIL+1)); echo "FAIL  Gate 例外台账同源闸（见上漂移清单）"; }
+[ "${ge_ok}" = "1" ] && { PASS=$((PASS+1)); echo "PASS  Gate 例外台账同源闸（双模板 Gate 例外节↔MAINTENANCE）"; } || { FAIL=$((FAIL+1)); echo "FAIL  Gate 例外台账同源闸（见上漂移清单）"; }
 
 # 1.0.27 断言：评审包自护条款防删改检查——两张评审卡「缺包即停」条款 + 令牌语法须在位，被删/改时此处变红。
 # 令牌契约见 进阶/Agent编排.md「评审包契约化」；若将来加 hooks 派单闸（派单时机械校验令牌），闸校验的
@@ -499,13 +436,13 @@ else
   FAIL=$((FAIL+1)); echo "FAIL  memory 清单回潮 ×${n_enum:-?}（改指针引用，不抄清单）："; printf '%s\n' "$enum_bad" | tail -n +2
 fi
 
-# ④ checklist 指针限定闸：skills 内提及 checklist 须带「项目根」——skill 随 plugin 缓存分发、
-#    与 checklist.md（装在消费工程根）不同目录，裸写不可解析
-ck_bad=$(grep -rn --include='*.md' 'checklist' "$SRC/skills" | grep -v '项目根' || true)
+# ④ checklist 指针限定闸：skills 与进阶内提及 checklist 须带「插件 cache」——两目录与
+#    checklist.md 同在 plugin cache 版本树（1.1.5 去分发化，checklist 不再装进消费工程根），裸写不可解析
+ck_bad=$(grep -rn --include='*.md' '`checklist\.md`' "$SRC/skills" "$SRC/进阶" 2>/dev/null | grep -v '插件 cache' || true)
 if [ -z "$ck_bad" ]; then
-  PASS=$((PASS+1)); echo "PASS  checklist 指针限定（skills 提及均带「项目根」）"
+  PASS=$((PASS+1)); echo "PASS  checklist 指针限定（skills·进阶 提及均带「插件 cache」）"
 else
-  FAIL=$((FAIL+1)); echo "FAIL  skills 内裸写 checklist（须「项目根 \`checklist.md\`）："; printf '%s\n' "$ck_bad"
+  FAIL=$((FAIL+1)); echo "FAIL  skills·进阶 内裸写 checklist（须「插件 cache \`checklist.md\`）："; printf '%s\n' "$ck_bad"
 fi
 
 # ⑤ checklist 编号对账：通用条目 0–9 连续在位（自述「10 条·编号 0–9」与实际一致）
@@ -890,61 +827,25 @@ else
   FAIL=$((FAIL+1)); echo "FAIL  欠账龄闸红（段序计龄：超限 / 起于无段头 / 段序钟坏；真树红系 09-23 裁决「咬」，展期=附裁决引用）："; printf '%s\n' "$debt_out" | tail -n +2
 fi
 
-# 1.0.34 分发工程批断言（外部评审对账三根因：验证清单多处复制 / 出错兜底继续走 / 落位状态机缺口）：
-# 未知参数即红 / 版本读不到即停 / --yes 无人值守 / 降级默认拒 / 双跑不变 / 伴生哨兵 / 双 json 相等 +
-# release 闸锚 / check-imports 方向三态——共 8 条（37→45）
-# ① 未知参数应报错（原 for-case 无 *）分支，--forc 手误=静默普通安装）
-t 2 "bash $SRC/scripts/install.sh $D/old --app --forc"  "install 未知参数应报错（1.0.34）"
-# ② 版本读不到必须当场停：原 || VER=unknown 兜底照写 vunknown 戳 → 戳守卫（v[0-9]）认不出 →
-#   此后升级全被拦成「老项目无戳」（1.0.21 P0-A 同族，2026-09-22 本机偶发再证实状）。判据 =
-#   rc≠0 + 提示语命中 + 零落盘（rc=1 亦可能来自收尾 E>0，防假红须三条件）
+# 1.0.34 批断言（1.1.5 大裁：install 退役后 ①未知参数 ③--yes ④降级 ⑤双跑 ⑥伴生哨兵随机制删除，
+#   存续=⑧ 双 json / ⑨ 方向三态；版本读不到即停与戳链迁移至 check-imports 侧）——共 2 条
+# ① 源版本读不到必须当场停（1.0.21 P0-A 同族——原 install 兜 vunknown 戳假绿；1.1.5 起读源方=check-imports）
 GVB="$D/verbroke"; rm -rf "$GVB"; mkdir -p "$GVB/scripts" "$GVB/.claude-plugin" "$D/fresh"
-cp "$SRC/scripts/install.sh" "$GVB/scripts/"; printf 'not-json' > "$GVB/.claude-plugin/plugin.json"
-o=$(bash "$GVB/scripts/install.sh" "$D/fresh" --app 2>&1); vrc=$?
-[ "$vrc" != "0" ] && echo "$o" | grep -q "读不到版本" && ! ls "$D/fresh/checklist.md" >/dev/null 2>&1 \
-  && { PASS=$((PASS+1)); echo "PASS  版本读不到显式中止（不写 vunknown 戳，零落盘）"; } \
-  || { FAIL=$((FAIL+1)); echo "FAIL  版本读不到应中止（rc=$vrc）"; }
-# ③ --yes 无人值守升级正门：原 EOF stdin 下 read 落空串静默自动取消（AI 调用场景常态）
-UY=$(mktemp -d /tmp/cf-yes.XXXXXX)
-printf '<!-- crules-flutter: v0.0.1 @ 2026-01-01 -->\n' > "$UY/CLAUDE.md"
-oy=$(printf '' | bash $SRC/scripts/install.sh $UY --app --upgrade --yes 2>&1); yrc=$?
-[ "$yrc" = "0" ] && [ -f "$UY/checklist.md" ] \
-  && { PASS=$((PASS+1)); echo "PASS  --yes 无人值守升级照常执行（EOF stdin 不再静默取消）"; } \
-  || { FAIL=$((FAIL+1)); echo "FAIL  --yes 升级路径（rc=$yrc）"; }
-rm -rf "$UY"
-# ④⑤ 降级默认拒、--allow-downgrade 显式放行：原版本戳只是布尔标志，源旧于戳照样 --force 铺开
-DG=$(mktemp -d /tmp/cf-down.XXXXXX)
-printf '<!-- crules-flutter: v9.9.9 @ 2026-01-01 -->\n' > "$DG/CLAUDE.md"
-od=$(bash $SRC/scripts/install.sh $DG --app --force 2>&1); drc=$?
-og=$(bash $SRC/scripts/install.sh $DG --app --force --allow-downgrade 2>&1); grc=$?
-[ "$drc" = "1" ] && echo "$od" | grep -q "降级须 --allow-downgrade" && [ "$grc" = "0" ] && echo "$og" | grep -q "显式降级放行" \
-  && { PASS=$((PASS+1)); echo "PASS  降级默认拒 + --allow-downgrade 放行（方向盲收口）"; } \
-  || { FAIL=$((FAIL+1)); echo "FAIL  降级守卫（拒 rc=$drc / 放行 rc=$grc）"; }
-rm -rf "$DG"
-# ⑥ 双跑不变闸：同一目标连跑两次 install，第二次后文件树与第一次后逐字节一致——一把伞盖全部
-#   落位文件（含未来新增），替代逐文件幂等断言。原红因：AO 非幂等（首装写基线 → 二次运行被判
-#   「自定义」翻进 SIDE-CAR 分支、多出重复伴生——2026-09-22 实测固化）
-T7=$(mktemp -d /tmp/cf-dbl.XXXXXX)
-bash $SRC/scripts/install.sh "$T7" --app >/dev/null 2>&1
-cp -R "$T7" "$T7.snap"
-bash $SRC/scripts/install.sh "$T7" --app >/dev/null 2>&1
-if diff -r "$T7.snap" "$T7" >/dev/null 2>&1; then
-  PASS=$((PASS+1)); echo "PASS  双跑不变（二次安装零增量——幂等一把伞）"
-else
-  FAIL=$((FAIL+1)); echo "FAIL  双跑有增量（幂等破口）："; diff -r "$T7.snap" "$T7" 2>&1 | head -3
-fi
-rm -rf "$T7" "$T7.snap"
-# ⑦ 伴生哨兵：SIDE-CAR 已存在时默认 SKIP（原每次无条件重拷，冲掉用户已合并的伴生改动）、--force 出 .new
-T8=$(mktemp -d /tmp/cf-sc.XXXXXX)
-printf 'include: package:flutter_lints/flutter.yaml\nlinter:\n  rules:\n    - always_use_package_imports\n' > "$T8/analysis_options.yaml"
-bash $SRC/scripts/install.sh "$T8" --app >/dev/null 2>&1
-printf 'SC-SENTINEL\n' > "$T8/analysis_options.crules-flutter.yaml"
-bash $SRC/scripts/install.sh "$T8" --app >/dev/null 2>&1
-bash $SRC/scripts/install.sh "$T8" --app --force >/dev/null 2>&1
-grep -q 'SC-SENTINEL' "$T8/analysis_options.crules-flutter.yaml" && [ -f "$T8/analysis_options.crules-flutter.yaml.new" ] \
-  && { PASS=$((PASS+1)); echo "PASS  伴生三态（默认 SKIP 保哨兵 / force 出 .new）"; } \
-  || { FAIL=$((FAIL+1)); echo "FAIL  伴生被重拷或无 .new（1.0.34）"; }
-rm -rf "$T8"
+cp "$SRC/scripts/check-imports.sh" "$GVB/scripts/"; printf 'not-json' > "$GVB/.claude-plugin/plugin.json"
+o=$(bash "$GVB/scripts/check-imports.sh" "$D/fresh" 2>&1); vrc=$?
+[ "$vrc" = "1" ] && echo "$o" | grep -q "读不到源版本" && ! echo "$o" | grep -q '未检出' \
+  && { PASS=$((PASS+1)); echo "PASS  源版本读不到显式中止（check-imports 不兜假绿）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  源版本读不到应中止（rc=$vrc）"; }
+# ② check-imports 戳链：指针戳优先——双戳并存（指针 v0.0.1 + 根存量 v9.9.9）时报指针侧，
+#   不把根存量误报成「丁-tracked 待迁移」（双戳并存=刚 init 刷过的正常态，非迁移债）
+T9=$(mktemp -d /tmp/cf-ci.XXXXXX); mkdir -p "$T9/.claude"
+printf '<!-- crules-flutter: v0.0.1 -->\n@crules/constitution.md\n' > "$T9/.claude/CLAUDE.md"
+printf '<!-- crules-flutter: v9.9.9 @ 2026-01-01 -->\n' > "$T9/CLAUDE.md"
+o9=$(bash "$SRC/scripts/check-imports.sh" "$T9" 2>&1); r9=$?
+[ "$r9" = "0" ] && echo "$o9" | grep -q '指针（丁-Copy）' && ! echo "$o9" | grep -q '丁-tracked' \
+  && { PASS=$((PASS+1)); echo "PASS  check-imports 戳链指针优先（双戳并存报指针侧，不误报迁移债）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  check-imports 戳链（rc=$r9）"; }
+rm -rf "$T9"
 # ⑧ 双 json 版本相等（原只锁 README 横幅==plugin.json，marketplace 侧写后不验）+ release 闸防删改锚
 #   （bump 读回断言 / bump·tag 跑 test-self / tag 树干净检查——tag 是消费者实际拿到的工件）
 mk_ver=$(grep -m1 -oE '"version":[[:space:]]*"[0-9]+\.[0-9]+\.[0-9]+"' "${SRC}/.claude-plugin/marketplace.json" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
@@ -965,38 +866,13 @@ oci=$(bash "$GCI/scripts/check-imports.sh" "$D/citgt" 2>&1); circ=$?
   && { PASS=$((PASS+1)); echo "PASS  check-imports 报降级方向（三态收口）"; } \
   || { FAIL=$((FAIL+1)); echo "FAIL  check-imports 方向（rc=$circ）"; }
 
-# 1.0.5 断言：gitignore 幂等落位——首装补四行（1.0.7 增 .gate-exceptions），重装不重复（取代 1.0.4 模板侧文字指引）
-# 1.0.37：行数 4→5（增 .compliance-log——SessionEnd 遵守度事实账）
-T5=$(mktemp -d /tmp/cf-gi.XXXXXX)
-bash $SRC/scripts/install.sh "$T5" --app >/dev/null 2>&1
-gi1=$(grep -c '^\.claude/memory' "$T5/.gitignore" 2>/dev/null) || gi1=0
-bash $SRC/scripts/install.sh "$T5" --app --force >/dev/null 2>&1
-gi2=$(grep -c '^\.claude/memory' "$T5/.gitignore" 2>/dev/null) || gi2=0
-[ "${gi1}" = "5" ] && [ "${gi2}" = "5" ] && { PASS=$((PASS+1)); echo "PASS  gitignore 幂等落位（首装 5 行，force 重装仍 5 行）"; } || { FAIL=$((FAIL+1)); echo "FAIL  gitignore 落位（首装 ${gi1} 行 / 重装 ${gi2} 行，期望 5/5）"; }
-
-# 1.1.3 断言：分发面默认不进 git（2026-10-10 需求方裁）——/CLAUDE.md /checklist.md /进阶/ 三行 +
-#   政策注释首装即落、force 重装不重复（上面 gi2 已重装过一次，此处读数即含幂等验证）。
-#   起因：消费工程进阶六篇曾被功能提交整树扫入并推远端——分发面无 ignore 行即裸奔。
-gd=$(grep -c -xF -e '/CLAUDE.md' -e '/checklist.md' -e '/进阶/' "$T5/.gitignore" 2>/dev/null) || gd=0
-gdc=$(grep -c -F 'crules-flutter：分发面' "$T5/.gitignore" 2>/dev/null) || gdc=0
-[ "${gd}" = "3" ] && [ "${gdc}" = "1" ] \
-  && { PASS=$((PASS+1)); echo "PASS  分发面默认本机态三行幂等落位（含政策注释，force 重装不重复）"; } \
-  || { FAIL=$((FAIL+1)); echo "FAIL  分发面 ignore 落位（三行命中 ${gd}/3，注释 ${gdc}/1）"; }
-rm -rf "$T5"
-
-# 1.0.30 断言：gitignore entry 精确名 → 通配名（.pending-updates → .pending-updates*，队列按会话分文件）。
-# 升级用户旧 gitignore 已有精确行——须迁移旧行而非留下双行近似重复（install.sh 精确行比对不会命中通配 entry）。
-# 1.0.37：老存量 4 行 seed 经升级 = 迁移通配 + 补 .compliance-log → 5 行。
-T5B=$(mktemp -d /tmp/cf-gi2.XXXXXX)
-printf '.claude/memory/indexes/\n.claude/memory/.pending-updates\n.claude/memory/.review-ledger\n.claude/memory/.gate-exceptions\n' > "$T5B/.gitignore"
-bash $SRC/scripts/install.sh "$T5B" --app >/dev/null 2>&1
-gi3=$(grep -c '^\.claude/memory' "$T5B/.gitignore" 2>/dev/null) || gi3=0
-gi_old=$(grep -cxF '.claude/memory/.pending-updates' "$T5B/.gitignore" 2>/dev/null) || gi_old=0
-gi_new=$(grep -cxF '.claude/memory/.pending-updates*' "$T5B/.gitignore" 2>/dev/null) || gi_new=0
-[ "${gi3}" = "5" ] && [ "${gi_old}" = "0" ] && [ "${gi_new}" = "1" ] \
-  && { PASS=$((PASS+1)); echo "PASS  gitignore 升级迁移（旧精确行已换通配新行 + 补 compliance-log，共 5 行）"; } \
-  || { FAIL=$((FAIL+1)); echo "FAIL  gitignore 升级迁移（${gi3} 行 / 旧行 ${gi_old} / 新行 ${gi_new}，期望 5/0/1）"; }
-rm -rf "$T5B"
+# 1.1.5 断言：install.sh gitignore 幂等落位机制随分发职责退役（1.0.5/1.0.30/1.1.3 三段断言面删除）——
+#   .claude/ 整目录 ignore 即全覆盖（MAINTENANCE「git 分层」自查），AI 不代写受控 .gitignore（R0）
+if grep -q 'install\.sh' "$SRC/memory/MAINTENANCE.md"; then
+  FAIL=$((FAIL+1)); echo "FAIL  MAINTENANCE 仍引用 install.sh（分发面残留指引）"
+else
+  PASS=$((PASS+1)); echo "PASS  MAINTENANCE 零 install.sh 残留（1.1.5 退役扫尾）"
+fi
 
 # 1.1.4 断言：消费工程双任务收尾吸收——总览双规 / 覆盖面枚举 / 矩阵证据四落位 + 黑话红线扩禁
 #   （依据：2026-10-14 挂账对照失误复盘 + Wi-Fi 换装孤儿面复盘吸收；红线旧句只禁「造」不禁「用」，
@@ -1021,6 +897,71 @@ j1=$(printf '{"tool_input":{"command":"%s"}}' "$BADCMD")
 r1=$(printf '%s' "$j1" | python3 "$SRC/hooks/deny-list.py" | grep -c '"deny"' || true)
 r2=$(printf '%s' "$j1" | python3 "$SRC/hooks/deny-list.py" | grep -c '"deny"' || true)
 if [ "$r1" = "$r2" ] && [ "$r1" -ge 1 ]; then PASS=$((PASS+1)); echo "PASS  deny-list 重复调用幂等（两次均 deny）"; else FAIL=$((FAIL+1)); echo "FAIL  幂等断言（r1=${r1} r2=${r2}）"; fi
+
+# ── 1.1.5 丁-Copy 批（方案 docs/方案-2026-10-15-宪法载体丁-Copy.md 阶段 2 核心件）──────
+#   载体=未跟踪指针 .claude/CLAUDE.md 四行 + .claude/crules/ 宪法副本（Q6 已裁 2026-10-15）。
+#   断言面：双模板零 @ 内链（副本内相对导入会解析进 .claude/crules/ 空导入）/ 指针配方单源 /
+#   宪法体积官方 4MiB cap / PROJECT.md 锚点种子 / agents×7 联动行 / T7 陈旧文案零 --upgrade /
+#   戳读链 .claude/CLAUDE.md 优先→根回退（存量平滑）。
+n_at=$(grep -c '^@' "$SRC/app/CLAUDE.md" 2>/dev/null); p_at=$(grep -c '^@' "$SRC/plugin/CLAUDE.md" 2>/dev/null)
+[ "${n_at:-1}" = "0" ] && [ "${p_at:-1}" = "0" ] \
+  && { PASS=$((PASS+1)); echo "PASS  丁-Copy 内链清理（双宪法模板零 @ 行）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  内链清理（app ${n_at}/plugin ${p_at} @ 行，期望 0/0）"; }
+
+ptr_files=$(grep -rl '@crules/constitution.md' "$SRC" --include='*.md' --exclude-dir=docs --exclude-dir=.git 2>/dev/null | tr '\n' ' ')
+[ "$ptr_files" = "$SRC/commands/init.md " ] \
+  && { PASS=$((PASS+1)); echo "PASS  指针四行配方单源（仅 commands/init.md）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  配方单源（实际分布：${ptr_files:-无}）"; }
+
+sz_a=$(wc -c < "$SRC/app/CLAUDE.md" | tr -d ' '); sz_p=$(wc -c < "$SRC/plugin/CLAUDE.md" | tr -d ' ')
+[ "$sz_a" -lt 4194304 ] && [ "$sz_p" -lt 4194304 ] \
+  && { PASS=$((PASS+1)); echo "PASS  宪法体积（app ${sz_a}B / plugin ${sz_p}B < 4MiB 官方 cap）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  宪法体积（${sz_a}/${sz_p} ≥ 4MiB）"; }
+
+if [ -f "$SRC/memory/PROJECT.md" ] && grep -q '§七 技术栈' "$SRC/memory/PROJECT.md"; then
+  PASS=$((PASS+1)); echo "PASS  PROJECT.md 锚点模板种子在位（第 9 件 memory 种子）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  PROJECT.md 种子缺失"
+fi
+
+# 1.1.5 评审修正批（外审 R1）：双模板零「复制后手改」旧形态指令——丁-Copy 下副本 pristine、
+# 选择落 PROJECT.md，模板文字不得再引导「复制到项目根/删未选项/在此填写」
+legacy_bad=$(grep -n '【复制后\|复制到项目\|选定后删\|在此填写\|删掉未选' "$SRC/app/CLAUDE.md" "$SRC/plugin/CLAUDE.md" || true)
+if [ -z "$legacy_bad" ]; then
+  PASS=$((PASS+1)); echo "PASS  双模板零旧形态指令（复制后必填/删未选项族清零，1.1.5 评审 R1）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  双模板残留旧形态指令（丁-Copy 副本 pristine，选择落 PROJECT.md）："; printf '%s\n' "$legacy_bad"
+fi
+
+n_ag=$(grep -l '开工先 Read `.claude/memory/PROJECT.md`' "$SRC"/agents/*.md 2>/dev/null | wc -l | tr -d ' ')
+[ "${n_ag:-0}" = "7" ] \
+  && { PASS=$((PASS+1)); echo "PASS  agents×7 联动行补 PROJECT.md（C8）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  agents 联动行（${n_ag:-0}/7）"; }
+
+if grep -q -- '--upgrade' "$SRC/hooks/stop-reminder.py"; then
+  FAIL=$((FAIL+1)); echo "FAIL  T7 陈旧文案仍含 --upgrade 引导"
+else
+  PASS=$((PASS+1)); echo "PASS  T7 陈旧文案零 install.sh --upgrade 引导（催 init 刷指针）"
+fi
+
+stamp_rc=$(python3 - "$SRC" <<'PY'
+import os, sys, tempfile
+sys.path.insert(0, os.path.join(sys.argv[1], "hooks"))
+from _common import constitution_stamp
+d = tempfile.mkdtemp(prefix="cf-stamp-")
+os.makedirs(os.path.join(d, ".claude"))
+open(os.path.join(d, "CLAUDE.md"), "w", encoding="utf-8").write("<!-- crules-flutter: v1.0.0 @ x -->\n")
+r1 = constitution_stamp(d)                                    # 仅根（丁-tracked 存量）→ 根戳
+open(os.path.join(d, ".claude", "CLAUDE.md"), "w", encoding="utf-8").write("<!-- crules-flutter: v9.9.9 -->\n")
+r2 = constitution_stamp(d)                                    # 指针在场 → 指针戳优先
+os.remove(os.path.join(d, ".claude", "CLAUDE.md")); os.remove(os.path.join(d, "CLAUDE.md"))
+r3 = constitution_stamp(d)                                    # 皆无 → None
+print("ok" if (r1, r2, r3) == ("1.0.0", "9.9.9", None) else f"bad {r1} {r2} {r3}")
+PY
+)
+[ "$stamp_rc" = "ok" ] \
+  && { PASS=$((PASS+1)); echo "PASS  戳读链（.claude/CLAUDE.md 优先 → 根回退 → None）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  戳读链（${stamp_rc}）"; }
 
 rm -rf "$D"
 echo "== 脚本自测：PASS=$PASS FAIL=$FAIL =="

@@ -62,4 +62,4 @@ class _MyDropdownState extends State<MyDropdown> {
 ## 通用纪律
 
 - 私有 `Widget` 子类优于「返回 Widget 的私有方法」（build 拆分同理——const 化与重建粒度都受益）
-- `build()` 内禁重活（请求 / 复杂计算）——自反馈死循环经典来源（见项目根 `checklist.md` 反模式节）
+- `build()` 内禁重活（请求 / 复杂计算）——自反馈死循环经典来源（见插件 cache `checklist.md` 反模式节）

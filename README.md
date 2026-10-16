@@ -3,7 +3,7 @@
 面向 **Flutter 工程**的 AI 协作规则 plugin：把「AI 怎么跟你安全地干活」固化成机制——危险命令硬拦、改动先过方案确认、交付必过审查、经验自动沉淀。
 独立自持（源自 crules fork，2026-09 起 1.0.0 独立演进，史见 [CHANGELOG](CHANGELOG.md)）；许可 **MIT**（[LICENSE](LICENSE)）。
 
-> 当前状态：1.1.4（版本编年史见 [CHANGELOG](CHANGELOG.md)）
+> 当前状态：1.1.5（版本编年史见 [CHANGELOG](CHANGELOG.md)）
 
 ---
 
@@ -13,8 +13,8 @@
 |---|---|---|
 | 守护 | hooks 自动生效：破坏性 git/rm 命令硬拦（强推/硬重置等，拦了就请你人工执行）、高危形态（下载执行 / sudo / chmod -R / filter-branch）弹窗由你裁夺、memory 漂移自动记队列、会话收尾提醒补索引、会话结束落一行遵守度事实账（只记计数与布尔、不含对话内容） | 无（全自动；高危形态弹窗确认） |
 | 分工 | 7 个角色 agent 按职责自动挂载（写 UI → frontend、排障 → error、审查 → reviewer 只报不改…） | 无（自动触发） |
-| 规范 | 项目根协作规则（双 Gate 流程 / 证据分级 / 提交纪律）+ Flutter 审查清单 + lint 基线 + 方案骨架 | 接入时必填三处（见下） |
-| 沉淀 | 记忆库 8 模板（业务事实 / 技术不变量 / 平台坑库…）+ `/distill` 知识定稿闸 | 日常顺手更新，收尾过闸 |
+| 规范 | 宪法（`.claude/CLAUDE.md` 四行指针 + `.claude/crules/constitution.md` 副本——双 Gate / 证据分级 / 提交纪律）+ 审查清单与进阶篇（插件 cache 即读）+ AO 建议稿（人择） | init 引导逐项（见下） |
+| 沉淀 | 记忆库 9 模板（项目事实锚点 / 业务事实 / 技术不变量 / 平台坑库…）+ `/distill` 知识定稿闸 | 日常顺手更新，收尾过闸 |
 
 ## 快速开始
 
@@ -27,27 +27,27 @@ claude plugin install crules-flutter@crules-flutter-market --scope user
 /crules-flutter:init
 ```
 
-**init 之后必填三处**（init 会逐处引导）：
+**init 引导必填项**（逐项问、全落 `.claude/memory/PROJECT.md` 等 memory 件——宪法副本永不改）：
 
-1. `CLAUDE.md` §七——技术栈三选一（Riverpod / Bloc / Provider 预设，选定删其余；App 形态另含适配方案与字体策略两选）
-2. `CLAUDE.md` §十二——项目附录（项目名 / 构建·分析·测试命令）＋档位预设三选一（默认标准）
-3. `.claude/memory/platform-pitfalls.md` 头部——**支持矩阵**（目标平台 + 各端实测版本上限；init 出机械读初稿，人核对补实测）
+1. 技术栈（App 三选一 + 适配方案 / 字体策略，或 Plugin 二选一）＋档位三选一（轻量〔light〕 / 标准〔normal〕 / 完整〔full〕，默认标准）→ `PROJECT.md` §七 + 档位行
+2. 项目附录（项目名 / 构建·分析·测试命令，协作偏好可选）→ `PROJECT.md` §十二
+3. **支持矩阵** → `.claude/memory/platform-pitfalls.md` 头部（目标平台 + 各端实测版本上限；init 出机械读初稿，人核对补实测）
 
 **装完日常零记忆负担**：agent/skill/hooks 全自动触发；只在交付收尾时走「机械验证 → review → 沉淀」三档化时序（下图，随任务规模裁剪件头），会话结束 Stop hook 会提醒补记忆库索引。
 
-**第一次用？** 15 分钟走一遍最小闭环见 `进阶/上手教程.md`（init 随模板落位到项目根）。
+**第一次用？** 15 分钟走一遍最小闭环见插件 cache `进阶/上手教程.md`（1.1.5 去分发化——进阶不落项目根，cache 即读）。
 
 ### VSCode 扩展环境（无独立 claude CLI）
 
-上方 `claude plugin marketplace add / install` 需要独立 claude CLI——VSCode 扩展环境（扩展内置 Claude Code、机器无独立 CLI）没有。替代：**用扩展内嵌的 claude 二进制代跑同款命令**（二进制随扩展升级换路径，不写死——在扩展安装目录现查）；装好后一切等价——`/crules-flutter:*` 命令、hooks、`plugin update`（同以内嵌二进制代跑）直接可用。项目内模板升级与 init 的源定位走 cache glob（见下方「升级」节），不依赖独立 CLI。
+上方 `claude plugin marketplace add / install` 需要独立 claude CLI——VSCode 扩展环境（扩展内置 Claude Code、机器无独立 CLI）没有。替代：**用扩展内嵌的 claude 二进制代跑同款命令**（二进制随扩展升级换路径，不写死——在扩展安装目录现查）；装好后一切等价——`/crules-flutter:*` 命令、hooks、`plugin update`（同以内嵌二进制代跑）直接可用。init / 升级的源定位走 cache glob（见下方「升级」节），不依赖独立 CLI。
 
 ### 场景 → 入口（权威全表见 `/crules-flutter:help`）
 
 | 场景 | 入口 |
 |---|---|
 | 新工程接入 | `/crules-flutter:init`（必填三处） |
-| 日常开发 / 写方案 / 引依赖 / 排障 | 根 `CLAUDE.md` 双 Gate · flutter-rules skill · `platform-pitfalls` 坑库 · `error` agent |
-| 交付收尾 | `checklist.md` + reviewer → `/crules-flutter:distill` |
+| 日常开发 / 写方案 / 引依赖 / 排障 | 宪法双 Gate（`.claude/CLAUDE.md` 指针载入）· flutter-rules skill · `platform-pitfalls` 坑库 · `error` agent |
+| 交付收尾 | checklist（插件 cache 即读）+ reviewer → `/crules-flutter:distill` |
 | 复刻 / 重写 / 迁移既有模块 | **parity-rewrite** skill（对照清单钉住原行为 → 逐项重建 → 测试矩阵验证一致） |
 
 **出问题看哪**（排查序）：行为不符预期 → `/crules-flutter:help` 查场景归属 → 仍不明 → `memory/MAINTENANCE.md` → `CHANGELOG.md` 查能力引入版本。
@@ -56,7 +56,7 @@ claude plugin install crules-flutter@crules-flutter-market --scope user
 
 | 命令 | 用途 |
 |---|---|
-| `/crules-flutter:init` | 工程接入（落位 + 必填三处引导） |
+| `/crules-flutter:init` | 工程接入（丁-Copy 落位 + 必填项引导；重跑 = 升级刷新） |
 | `/crules-flutter:help` | 场景使用地图（什么场景用什么） |
 | `/crules-flutter:distill [--scope <需求>]` | 知识沉淀定稿（候选分组预览、逐组人工裁决后落盘） |
 | `/crules-flutter:diagram <文件>` | 存量人读文档补 mermaid 图 |
@@ -66,7 +66,7 @@ claude plugin install crules-flutter@crules-flutter-market --scope user
 
 <!-- gen:gear-note -->
 <!-- 仓内维护者勿手改：本块由 canonical/gear-note.md 生成 -->
-**收尾档按任务规模三档判定，与项目档位无关**：极简（单点修复 / 文案 / 注释，无行为面变化）＝机械验证贴输出 + 一行汇报，review 豁免记 Gate 例外台账、无沉淀件头；标准＝下图主体（现行时序）；重型（跨域大改 / 公开 API / 资损面）＝标准 + 校验层（下图 alt 块）。**项目档位**（init 一问定，写 §十二 附录预设块，无块 = 默认标准）：轻量〔light〕＝记忆库关·编排关·极简收尾占比高；标准〔normal〕＝日常工程默认；完整〔full〕＝编排开·plan-reviewer 默认启用。两轴独立——轻量档大需求仍走 plan-reviewer、大改仍走重型收尾；档位只改行为件头，不减常驻 token。
+**收尾档按任务规模三档判定，与项目档位无关**：极简（单点修复 / 文案 / 注释，无行为面变化）＝机械验证贴输出 + 一行汇报，review 豁免记 Gate 例外台账、无沉淀件头；标准＝下图主体（现行时序）；重型（跨域大改 / 公开 API / 资损面）＝标准 + 校验层（下图 alt 块）。**项目档位**（init 一问定，写 `.claude/memory/PROJECT.md` 档位行，无行 = 默认标准）：轻量〔light〕＝记忆库关（停维护；PROJECT.md 档位锚点留）·编排关·极简收尾占比高；标准〔normal〕＝日常工程默认；完整〔full〕＝编排开·plan-reviewer 默认启用。两轴独立——轻量档大需求仍走 plan-reviewer、大改仍走重型收尾；档位只改行为件头，不减常驻 token。
 <!-- /gen:gear-note -->
 
 ```mermaid
@@ -88,37 +88,30 @@ sequenceDiagram
     U-->>AI: 确认+授权提交(feat+docs 两笔)
 ```
 
-## init 往工程里放什么
+## init 往工程里放什么（丁-Copy，1.1.5 起）
 
-三种情况自动判定：**全新工程** → 直接写入；**带本包版本戳的旧装** → 按升级处理；**已有 CLAUDE.md 且无戳**（老项目）→ **不自动装**，中止转人工合并（防覆盖既有规则）。`memory/` 无论何时**永不覆盖（含 --force）**——落地后即项目制度资产。
+**全部落 `.claude/`（未跟踪本机态）——受控文件零接触，消费工程 git 仓库与文档零 crules 元素**。分流自动判定：`.claude/CLAUDE.md` 有戳（已接入）→ 刷新路径（副本对拍 + 指针重写即刷戳，引导仅补未填项）；根 `CLAUDE.md` 有戳（丁-tracked 老形态）→ 不自动迁移（存量原子切 = 阶段 4 一次性授权批，提醒≠代执行）；项目自有宪法（根 `CLAUDE.md` 无戳）→ 可共存。副本已存在且对拍不一致 = 被手改信号，呈 diff 呈人裁决后继续。
 
 | 落位物 | 位置 | 说明 |
 |---|---|---|
-| `CLAUDE.md`（App / Plugin 模板二选一 + 版本戳） | 项目根 | 协作规则本体；分发面默认不进 git（见下） |
-| `checklist.md` | 项目根 | 审查清单（通用 10 条编号 0–9 + Flutter 专项）；分发面默认不进 git（见下） |
-| `analysis_options.yaml` | 项目根 | 三态落位：flutter 脚手架默认 → 升级替换（原文件留 `.scaffold-bak`）；已有自定义 → 落伴生文件待人工合并；无 → 写入 |
-| `.gitignore` 5+3 行 | 项目根 | memory 本机生成物五行（索引 / 漂移队列 `.pending-updates*` / review 台账 / Gate 例外台账 / 遵守度事实账 `.compliance-log`——幂等；1.0.30 起队列行改通配，升级时旧精确行自动迁移）+ **分发面三行 `/CLAUDE.md` `/checklist.md` `/进阶/`**（1.1.3 起，2026-10-10 裁：默认不进 git；跟随仓库=删对应行后 `git add`，已跟踪者退跟踪=`git rm --cached`——ignore 不影响已跟踪文件，重装补行对 opted-in 工程无害） |
-| `进阶/` 6 篇 | 项目根 | 上手教程 / 工程化流程 / 审查纪律 / 方案评审闭环 / Agent 编排 / 记忆库体系；分发面默认不进 git（见上） |
-| `memory/` 8 模板 | `.claude/memory/` | 制度资产（含 `reference-map.md` 分域参考系 / `platform-pitfalls.md` 平台坑库） |
+| 指针四行 | `.claude/CLAUDE.md` | 版本戳行 + 宪法导入行 + memory 导入行 ×2——全内部相对导入零审批面；`-p` 直载与 compact 后重读均实测通过（四行配方单源见 `commands/init.md`，勿他处复制） |
+| 宪法副本 | `.claude/crules/constitution.md` | App / Plugin 二选一；pristine（项目事实不写入、可哈希对拍），不按档删改 |
+| memory 种子 9 件 | `.claude/memory/` | 含 `PROJECT.md` 项目事实锚点 / `reference-map.md` 分域参考系 / `platform-pitfalls.md` 平台坑库——缺则补、**永不覆盖**（落地即项目制度资产） |
+| AO 建议稿 | `.claude/memory/analysis-options.suggested.yaml` | 人择通道：采纳 = 手工并入项目 `analysis_options.yaml`（受控文件，AI 不代写）后置 `.claude/memory/.crules-state` 的 `ao_adopted=1` |
 
-agents 不复制——plugin 已自动挂载 7 角色（`crules-flutter:frontend` 等）。
+agents 不复制——plugin 已自动挂载 7 角色（`crules-flutter:frontend` 等）；checklist / 进阶不再落项目根——插件 cache 即读（去分发化）。整体回退：删 `.claude/CLAUDE.md` 指针连同 `.claude/crules/` 即净（`.claude/memory/` 为项目资产，去留自裁）。
 
 ## 升级
 
-`plugin update` 只更新 plugin 通道（hooks / agents / skill / 命令）；项目内模板升级一条命令（定位 plugin cache 最新版脚本，从那运行）：
+`plugin update` 更新 plugin 通道（hooks / agents / skill / 命令 / 模板源）；工程侧**重跑 init** 即刷版本（幂等）：
 
 ```bash
-SRC=$(ls -d ~/.claude/plugins/cache/*/crules-flutter/*/scripts/install.sh 2>/dev/null | sort -V | tail -1)
-[ -n "$SRC" ] || { echo "❌ 未找到 plugin cache——先装 plugin，或把 SRC 手动指向本仓克隆路径"; exit 1; }
-bash "$SRC" <项目根> --app --upgrade    # 巡检版本差 → 确认 → --force 三向合并升级（memory 永不覆盖）
-# 无人值守加 --yes（跳过 y/N 确认；不给则 EOF/关闭 stdin 默认保守取消）
-# 源旧于项目戳时默认拒（防误降级），确要降级加 --allow-downgrade 显式放行
-# --new-only 退回 .new 伴生全人工对照（1.0.42 及以前的升级语义）
+/crules-flutter:init    # 刷新路径：副本对拍 + 指针重写即刷戳；memory 永不覆盖、引导仅补未填项
 ```
 
-手动等价：`check-imports.sh <项目根>` 查版本差 → `install.sh <项目根> --app --force`。
+巡检（cache 内跑）：`bash scripts/check-imports.sh <项目根>`——戳读链 `.claude/CLAUDE.md` 指针戳优先 → 根 `CLAUDE.md`（丁-tracked 存量）回退；查版本差与 memory 模板演进。
 
-**三向合并语义**（1.0.43）：对 base（上轮自存快照 `.crules-base`，历史工程首轮退 cache 旧版模板）零改动直替；项目与模板各自演进自动并；仅 CLAUDE.md 尾部撞戳位窄形自动解；真冲突带冲突标记写回 + `.crules-conflicts` 摘要呈人（`.crules-bak` 先备份，解标记前戳与 base 不更新）；无 base 可比或 `--new-only` 退 `.new` 伴生。memory/ 永不覆盖；项目自改的 §七技术栈 / §十二附录是合并主体，冲突裁决时勿弃——历史逐版本细节查 [CHANGELOG](CHANGELOG.md)。
+1.1.3–1.1.4 的 install.sh 三向合并升级语义（`--upgrade` / `--force` / base 快照）已随分发职责退役（1.1.5）；存量丁-tracked 工程迁移 = 阶段 4 一次性授权批。
 
 **记忆库兜底**：`/crules-flutter:update-memory`——索引全量刷新（日常仍以「写代码顺手更新」为主，见 `.claude/memory/MAINTENANCE.md`）。
 
@@ -134,6 +127,7 @@ bash "$SRC" <项目根> --app --upgrade    # 巡检版本差 → 确认 → --fo
 | 停用（可逆） | `claude plugin disable crules-flutter@crules-flutter-market` |
 | 恢复 | `claude plugin enable crules-flutter@crules-flutter-market`（**完整形态**，纯名会 not found；**新会话生效**——当前会话不装载 hooks，别在旧会话验证） |
 | 彻底卸 | `claude plugin uninstall crules-flutter@crules-flutter-market` + `claude plugin marketplace remove crules-flutter-market` |
+| 项目级整体回退 | 删 `.claude/CLAUDE.md` 指针连同 `.claude/crules/`（crules 落物全在 `.claude/` 本机态——受控文件零残留；`.claude/memory/` 为项目资产、去留自裁） |
 
 **与其他规则 plugin 共存**：同一项目二选一（勿与其他全量规则包双装）；同机器不同项目各装各的无冲突——万一两套 hooks 同项目双跑：deny-list 并集拦截（任一 deny 即 deny，deny > ask 优先级官方明确，保守无害）、pending-updates 队列按会话分文件（1.0.30 起，各会话互不写同一文件；仅无 session_id 的旧宿主退化为共享单文件，POSIX 经 flock、Windows 原子追加）。
 
@@ -176,13 +170,13 @@ bash "$SRC" <项目根> --app --upgrade    # 巡检版本差 → 确认 → --fo
 |---|---|---|
 | 双 Gate | 非平凡改动先需求确认（要解决的问题/范围/验收）、再方案确认（七要素） | 双模板 §三 |
 | 收尾三档 | 极简（机械验证+一行）/ 标准（+review）/ 重型（+校验层）——按**任务规模**判 | 双模板 §三 |
-| 项目档位 | 轻量〔light〕/ 标准〔normal〕/ 完整〔full〕——init 一次定，改行为件头不减常驻 | 双模板 §十二 |
+| 项目档位 | 轻量〔light〕/ 标准〔normal〕/ 完整〔full〕——init 一次定，改行为件头不减常驻 | `PROJECT.md` 档位行（定义：双模板 §十二） |
 | 证据 5 级 | 静态 → 构建 → 测试环境 → 目标环境 → 生产，逐级不可互推 | 双模板 §四 |
-| 可达性 L0-L2 | 代码路径成立 / 触发条件存在 / 业务真实可达——**AI 能力上限是 L1** | 进阶/审查与复核纪律 |
-| 校验层 | review 发现的隔离子代理二次质检（重型收尾专启），三值结论 + 分流 fail-closed；「更优方案」系校验者主张非已验证事实 | 进阶/审查与复核纪律 |
+| 可达性 L0-L2 | 代码路径成立 / 触发条件存在 / 业务真实可达——**AI 能力上限是 L1** | 插件 cache 进阶/审查与复核纪律 |
+| 校验层 | review 发现的隔离子代理二次质检（重型收尾专启），三值结论 + 分流 fail-closed；「更优方案」系校验者主张非已验证事实 | 插件 cache 进阶/审查与复核纪律 |
 | 沉淀闸 | 直写（复盘/索引/描述性 patterns）/ 走闸（业务规则/不变量/坑卡）二分 | MAINTENANCE「沉淀直写与走闸」 |
 | 沉淀闸档位 | 分流（默认）/ 全闸 / 降级宽松——独立字段，AI 不得自行升降 | distill「档位」 |
-| 提速档 | standing instruction 走 Gate 例外，须圈死范围/规模/验证档三要素 | 双模板 §十二 |
+| 提速档 | standing instruction 走 Gate 例外，须圈死范围/规模/验证档三要素 | `PROJECT.md` §十二（定义：双模板 §十二） |
 | 两类台账 | `.review-ledger`（裁决，供四数聚合）/ `.gate-exceptions`（豁免，供事后审计）——均不进 git | distill §7 / §三 Gate 例外 |
 | 遵守度事实账 | `.compliance-log`——SessionEnd hook 每会话落一行**事实**（计数/布尔，无正文），量化「宪法被遵守几成」；记而不判，聚合裁决未接线（批3 裁） | hooks/compliance-audit.py / docs/普查-2026-09-22 |
 | 观测带数 | 每次 minor 的 CHANGELOG 必带：常驻基线快照 + distill 四数 | README「每次 minor 例行」 |

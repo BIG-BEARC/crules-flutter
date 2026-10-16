@@ -50,15 +50,19 @@ def plugin_version():
 
 
 def constitution_stamp(root):
-    """项目 CLAUDE.md 的 crules-flutter 版本戳（install.sh STAMP 同形态，首匹配同 install.sh
-    grep head -1 行为）；无文件 / 无戳 → None（老项目人工合并态——陈旧检测对 None 静默）"""
-    try:
-        with open(os.path.join(root, "CLAUDE.md"), encoding="utf-8") as f:
-            text = f.read()
-    except OSError:
-        return None
-    m = re.search(r"<!-- crules-flutter: v(\d+\.\d+\.\d+)", text)
-    return m.group(1) if m else None
+    """项目宪法版本戳读链（1.1.5 丁-Copy 迁移）：`.claude/CLAUDE.md` 指针戳优先 → 回退根
+    CLAUDE.md（丁-tracked 存量态平滑）；各文件内首匹配同 check-imports.sh grep head -1 行为。
+    皆无文件 / 无戳 → None（老项目人工合并态——陈旧检测对 None 静默）"""
+    for rel in (os.path.join(".claude", "CLAUDE.md"), "CLAUDE.md"):
+        try:
+            with open(os.path.join(root, rel), encoding="utf-8") as f:
+                text = f.read()
+        except OSError:
+            continue
+        m = re.search(r"<!-- crules-flutter: v(\d+\.\d+\.\d+)", text)
+        if m:
+            return m.group(1)
+    return None
 
 
 def version_key(ver):

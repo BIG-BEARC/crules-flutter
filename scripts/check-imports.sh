@@ -1,24 +1,34 @@
 #!/usr/bin/env bash
-# crules-flutter 安装痕迹巡检（fork 简化版：无轻装 @ 导入，只查版本戳 vs 源版本）
+# crules-flutter 安装痕迹巡检——戳读链 1.1.5 起：`.claude/CLAUDE.md` 指针戳（丁-Copy）优先 → 根 CLAUDE.md（丁-tracked 存量）回退
 set -uo pipefail
 SRC=$(cd "$(dirname "$0")/.." && pwd)
 [ $# -ge 1 ] || { echo "用法: bash scripts/check-imports.sh <消费项目根>"; exit 2; }
-TARGET=$1; CM="$TARGET/CLAUDE.md"
-[ -f "$CM" ] || { echo "❌ 未找到 $CM"; exit 2; }
+TARGET=$1
 # 1.0.34：SRC_VER 读不到原兜「?」→ 落 🟢「未检出戳」假绿（失败被伪装成状态）。改 grep 直读 + 读不到
-#   即停（与 install.sh 同 idiom，版本号纯 ASCII 码页无关）；版本差改三态报方向——原只说「差」不分
-#   升降，源更旧时也建议「重跑 install.sh」等于劝人降级
+#   即停（版本号纯 ASCII 码页无关）；版本差三态报方向——源更旧时劝人刷等于劝人降级，故旧向只报不动
 SRC_VER=$(grep -m1 -oE '"version":[[:space:]]*"[0-9]+\.[0-9]+\.[0-9]+"' "$SRC/.claude-plugin/plugin.json" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
 [ -n "$SRC_VER" ] || { echo "❌ 读不到源版本（$SRC/.claude-plugin/plugin.json）——中止"; exit 1; }
-STAMP=$(grep -oE '<!-- crules-flutter: v[0-9]+\.[0-9]+\.[0-9]+' "$CM" | head -1 | sed 's/.*v//')
-if [ -n "$STAMP" ]; then
-  if [ "$STAMP" = "$SRC_VER" ]; then echo "✅ 版本戳 v$STAMP 与源一致"
-  elif [ "$(printf '%s\n%s\n' "$STAMP" "$SRC_VER" | sort -V | head -1)" = "$SRC_VER" ]; then
-    echo "🟡 源更旧：项目装自 v${STAMP}，源现为 v${SRC_VER}——降级须 install.sh --allow-downgrade 显式放行，勿直接重装"
-  else
-    echo "🟡 可升级：项目装自 v${STAMP}，源现为 v${SRC_VER}——重跑 install.sh 或人工合并，聚焦两版本间变更"
+# 1.1.5：戳读链迁移（同 hooks/_common.py constitution_stamp——指针优先，根回退存量平滑）
+STAMP=""; STAMP_FORM=""
+for cm in "$TARGET/.claude/CLAUDE.md" "$TARGET/CLAUDE.md"; do
+  [ -f "$cm" ] || continue
+  STAMP=$(grep -oE '<!-- crules-flutter: v[0-9]+\.[0-9]+\.[0-9]+' "$cm" | head -1 | sed 's/.*v//')
+  if [ -n "$STAMP" ]; then
+    case "$cm" in
+      */.claude/CLAUDE.md) STAMP_FORM="指针（丁-Copy）" ;;
+      *) STAMP_FORM="根 CLAUDE.md（丁-tracked 存量——迁移=阶段 4 授权批）" ;;
+    esac
+    break
   fi
-else echo "🟢 未检出 crules-flutter 戳（早期安装或非本包装载）"
+done
+if [ -n "$STAMP" ]; then
+  if [ "$STAMP" = "$SRC_VER" ]; then echo "✅ 版本戳 v$STAMP 与源一致（${STAMP_FORM}）"
+  elif [ "$(printf '%s\n%s\n' "$STAMP" "$SRC_VER" | sort -V | head -1)" = "$SRC_VER" ]; then
+    echo "🟡 源更旧：项目 ${STAMP_FORM} v${STAMP}，源现为 v${SRC_VER}——勿刷（plugin update 回滚态由需求方裁）"
+  else
+    echo "🟡 可升级：项目 ${STAMP_FORM} v${STAMP}，源现为 v${SRC_VER}——跑 /crules-flutter:init 刷指针与副本，聚焦两版本间变更"
+  fi
+else echo "🟢 未检出 crules-flutter 戳（早期安装或非本包装载——新装走 /crules-flutter:init）"
 fi
 
 # memory 模板演进提示（v0.4.0）——只报告「源侧新增文件」+「源仓 git 两版本间模板 diff」，

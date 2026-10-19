@@ -973,6 +973,48 @@ else
   FAIL=$((FAIL+1)); echo "FAIL  init 哈希写键兜底＋自检脱钩（解释器探测或自检呈报行或对账计数缺失——写键失败须可见）"
 fi
 
+# 1.2.2 止损执行批（2026-10-19 六行全裁）六闸——降格/同钟/不接线/瘦身/裁决闭合/外审降格
+# ① 开关上限硬闸降格为例行自查（止损单 #5）：硬闸触发语清除＋例行自查语落位
+zg_a=0
+grep -q '触发「收敛成新档位」复核' "$SRC/README.md" && zg_a=1
+grep -q '列轮次化清点例行自查项' "$SRC/README.md" || zg_a=1
+[ "${zg_a}" = "0" ] && { PASS=$((PASS+1)); echo "PASS  开关上限降格闸（硬闸触发语已清、例行自查语在位——止损单 #5）"; } || { FAIL=$((FAIL+1)); echo "FAIL  开关上限降格闸（README 单项开关治理行仍含硬闸语或缺例行自查语）"; }
+
+# ② 蜜月期同钟（止损单 #3）：用量门触发随四数线同钟裁
+grep -q '沉淀闸蜜月期.*同钟' "$SRC/README.md" \
+  && { PASS=$((PASS+1)); echo "PASS  蜜月期同钟闸（触发系用量门、随四数止损线同钟——止损单 #3）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  蜜月期同钟闸（README 蜜月期行缺同钟注——用量门永不触发病形未挂钟）"; }
+
+# ③ 聚合永不接线三面（止损单 #2）：README 概念地图＋MAINTENANCE＋欠账清单触发面
+zg_c=0
+grep -q '聚合永不接线' "$SRC/README.md" || zg_c=1
+grep -q '聚合永不接线' "$SRC/memory/MAINTENANCE.md" || zg_c=1
+grep -q '批3 聚合产出' "$SRC/docs/清单-版本缺口与欠账.md" && zg_c=1
+[ "${zg_c}" = "0" ] && { PASS=$((PASS+1)); echo "PASS  聚合永不接线闸（三面同步——账降格原始事实账、「待接线」债销——止损单 #2）"; } || { FAIL=$((FAIL+1)); echo "FAIL  聚合永不接线闸（README/MAINTENANCE 缺裁定语或欠账清单触发面仍挂批3 聚合产出）"; }
+
+# ④ gear-note 瘦身闸（止损单 #6）：canonical 源 12 锚串存活＋两剪除串不在（预设块不动由渲染闸守）
+zg_d=0
+for s in '轻量〔light〕' '标准〔normal〕' '完整〔full〕' '默认标准' '按任务规模三档' '单点修复' '跨域大改' '公开 API' '资损面' 'review 豁免' 'Gate 例外台账' '校验层'; do
+  grep -qF -- "$s" "$SRC/canonical/gear-note.md" || { zg_d=1; echo "  ↳ canonical/gear-note.md 缺「$s」"; }
+done
+grep -qF '停维护；PROJECT.md 档位锚点留' "$SRC/canonical/gear-note.md" && { zg_d=1; echo "  ↳ 剪除串残留：停维护；PROJECT.md 档位锚点留（§十二预设块已逐字覆盖）"; }
+grep -qF '极简收尾占比高' "$SRC/canonical/gear-note.md" && { zg_d=1; echo "  ↳ 剪除串残留：极简收尾占比高（预设块「极简占比高」已覆盖）"; }
+[ "${zg_d}" = "0" ] && { PASS=$((PASS+1)); echo "PASS  档位条文瘦身闸（12 锚串存活＋剪除串清零——语义唯一源归预设块，止损单 #6）"; } || { FAIL=$((FAIL+1)); echo "FAIL  档位条文瘦身闸（见上漂移清单）"; }
+
+# ⑤ 止损单裁决闭合闸（六行）：裁决列无空白＋行 4 降格合并裁决在册
+zg_e=0
+grep -qE '\|[[:space:]]*\|[[:space:]]*$' "$SRC/docs/清单-存量机制止损候选.md" && zg_e=1
+grep -q '降为选项文本' "$SRC/docs/清单-存量机制止损候选.md" || zg_e=1
+[ "${zg_e}" = "0" ] && { PASS=$((PASS+1)); echo "PASS  止损单裁决闭合闸（六行裁决列全落＋行 4 降格合并裁决在册）"; } || { FAIL=$((FAIL+1)); echo "FAIL  止损单裁决闭合闸（裁决列存空白或行 4 裁决缺失）"; }
+
+# ⑥ major 前外审降格闸（止损单 #4）：硬触发节撤除＋选项合并语与防超卖要件在位
+zg_f=0
+grep -q '^### major 版本前' "$SRC/README.md" && zg_f=1
+grep -q '硬触发随止损批降格并入本条' "$SRC/README.md" || zg_f=1
+grep -q '覆盖面以账本为准' "$SRC/README.md" || zg_f=1
+grep -q 'model 档位复核' "$SRC/README.md" || zg_f=1
+[ "${zg_f}" = "0" ] && { PASS=$((PASS+1)); echo "PASS  major 前外审降格闸（硬触发节已撤、要件并入定期外审选项行——止损单 #4）"; } || { FAIL=$((FAIL+1)); echo "FAIL  major 前外审降格闸（硬触发节残留或合并要件缺失）"; }
+
 stamp_rc=$(python3 - "$SRC" <<'PY'
 import os, sys, tempfile
 sys.path.insert(0, os.path.join(sys.argv[1], "hooks"))

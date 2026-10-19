@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 # pending-updates.py 写侧 fixture（1.0.30 队列分文件）——sid 路由 / 回退 / D8 向上定根 / 去重 / 净化 /
 #   边界 / R5 落盘正斜杠归一 / R3 异型字段 fail-open / N1 顶层形状 / N2 旧行自愈，共 12 条检查
-import json, os, subprocess, sys, tempfile
+import json
+import os
+import subprocess
+import sys
+import tempfile
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -34,7 +38,7 @@ def payload(path, sid="s1"):
 
 def lines_of(queue):
     with open(queue, encoding="utf-8") as f:
-        return [l.strip() for l in f if l.strip()]
+        return [ln.strip() for ln in f if ln.strip()]
 
 with tempfile.TemporaryDirectory() as d:
     setup_project(d)

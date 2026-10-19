@@ -143,7 +143,7 @@ def find_ledger(cwds):
                     p = os.path.join(mem, name)
                     try:
                         with open(p, encoding="utf-8", errors="replace") as f:
-                            out[name] = sum(1 for l in f if l.strip())
+                            out[name] = sum(1 for ln in f if ln.strip())
                     except OSError:
                         out[name] = None
                 return d, out

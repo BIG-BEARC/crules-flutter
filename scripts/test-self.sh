@@ -761,6 +761,13 @@ tags = {t.lstrip('v') for t in r.stdout.split() if re.match(r'^v?\d+\.\d+\.\d+$'
 heads = set(re.findall(r'^## (\d+\.\d+\.\d+)', open(os.path.join(root, 'CHANGELOG.md'), encoding='utf-8').read(), re.M))
 # 1.1.0 滚动适配实跑勘误：全量正则被 0.6.x fork 前史段头咬红——0.x 无 tag 非缺口、不属 tag 纪律面，major≥1 过滤
 heads = {v for v in heads if int(v.split('.')[0]) >= 1}
+# 评审 P0-3：git 仓而 tag 集为空 = 检出环境缺 tag（浅克隆/未取 tag），闸瞎了——按红拒绝盲跑；
+#   SKIP 仅限非 git 树（上方 rc≠0 分支）。实证：CI checkout 默认 fetch-depth=1 不取 tag，
+#   零 tag 仓模拟 unreg=49 应红而本地 51 tag 全绿——同断言两环境结论相反即此盲区。
+if not tags and heads:
+    print('BAD')
+    print('  ↳ 环境 tag 集为空而 CHANGELOG 有 1.x 段头——浅克隆/未取 tag（CI 需 fetch-depth: 0），闸拒绝盲跑')
+    sys.exit(0)
 # 当前版本豁免：release 链路 = bump（CHANGELOG 头先落）→ commit → tag 后打——
 # tag 未打的当轮被扫即红是时序假缺口非登记缺口（1.0.41 首咬自证）；tag 必达闸兜其后
 mver = re.search(r'"version":\s*"(\d+\.\d+\.\d+)"', open(os.path.join(root, '.claude-plugin', 'plugin.json'), encoding='utf-8').read())

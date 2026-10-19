@@ -3,7 +3,12 @@
 #   抑制 / 队列非空出 additionalContext）+ 批B F1 git 快查 + 1.0.30 队列分文件八项（sid 路由 / legacy 回退 /
 #   孤儿只报不删 / 新鲜不报 / sid 净化 / D5 已入队并集 / 读侧闸 / R6 文案指向 / R5 反斜杠归一 / N1 顶层形状）
 #   + 宪法陈旧提醒四态，共 22 条检查
-import json, os, subprocess, sys, tempfile, time
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import time
 
 # 驱动自身 print 含中文（1.0.21 Windows 实机 P0-A，与 deny-list.py 同批）：宿主码页非 UTF-8
 #   （简中 936 / 繁中 950…）时抛 UnicodeEncodeError 整跑即崩。读侧无需动——bytes.decode()

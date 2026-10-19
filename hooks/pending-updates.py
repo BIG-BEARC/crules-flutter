@@ -11,7 +11,9 @@
 #   会话收尾主控看到队列非空即提示补索引（MAINTENANCE.md 自检清单）。
 # 输入契约 fail-open（批A F10①，1.0.11）：stdin 非法 JSON → exit 0 静默——输入由宿主构造风险低，
 #   fail-closed 恐误伤非 JSON 探活；本 hook 本就不阻止任何操作，静默即等价「无待办」
-import json, os, sys
+import json
+import os
+import sys
 from _common import find_project_root, sanitize_sid  # 1.0.39 共享实现收编（hooks/_common.py）
 
 # 进程期 AV 弹框压制（1.0.33，三 hook 同款同改；2026-09-22 A/B 实测）：Windows 注入型管控 agent
@@ -68,7 +70,7 @@ try:
         with open(queue, encoding="utf-8") as f:
             # 读旧行**一并归一**（复读 N2）：队列若含 1.0.30 前 Windows 反斜杠行，再次入队时须
             #   自愈为单行正斜杠，否则同一文件在队列留正/反斜杠两行（去重按原始串比对）且永不自愈
-            lines = {l.strip().replace("\\", "/") for l in f if l.strip()}
+            lines = {ln.strip().replace("\\", "/") for ln in f if ln.strip()}
     # 入队路径落盘**统一正斜杠**（1.0.30 R5 实测修）：Windows 上 os.path.relpath 返回反斜杠，
     #   而 git status --porcelain 恒输出正斜杠（本机实测签名 M skills/flutter-rules/...）——
     #   不归一则读侧 `path not in known` 在 Windows 恒不匹配，「已入队不重复报」与 D5 声称双双失效
@@ -78,12 +80,15 @@ try:
             import fcntl
             fcntl.flock(f, fcntl.LOCK_EX)           # 防并发 async hook 读-改-写竞态
         except ImportError:
-            pass  # Windows 无 fcntl（D3，2026-09-05）：降级无锁追加——O_APPEND 单行写具原子性，竞态窗口远小于「完全不记」
+            pass  # Windows 无 fcntl（D3，2026-09-05）：降级为无锁读-改-写（上方 flock 后 truncate+整文件重写）——
+                  # 并发 async hook 窗口可丢条目（观测件、可接受）；Windows 实机批再裁 O_APPEND/锁方案。
+                  # （2026-10-19 评审 P0-4 注释如实化：原注「O_APPEND 单行写具原子性」描述的是未采用的机制）
         f.seek(0)
         # 归一须两处都做：本行是 flock 后为防竞态的重读，**同样含旧行**——初版只归一了上面那次读取，
         #   被 N2 断言当场抓住（队列留正/反斜杠两行）
-        lines |= {l.strip().replace("\\", "/") for l in f.read().splitlines() if l.strip()}
-        f.seek(0); f.truncate()
+        lines |= {ln.strip().replace("\\", "/") for ln in f.read().splitlines() if ln.strip()}
+        f.seek(0)
+        f.truncate()
         f.write("\n".join(sorted(lines)) + "\n")
 except Exception:
     pass

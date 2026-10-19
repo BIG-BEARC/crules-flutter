@@ -20,7 +20,11 @@
 #   git status 快查，检出未入队的 A/D/? 源文件并入提醒。**设计取舍**：git 快查**不独立触发**
 #   （未提交改动是开发常态，独立触发会在每次 Stop 重复打扰）——仅作队列非空时的补充信息，
 #   故「纯 Bash 落盘会话」仍不提醒（诚实边界，待观测后定是否加状态文件去重）。耗时受 timeout 5s 约束
-import json, os, subprocess, sys, time
+import json
+import os
+import subprocess
+import sys
+import time
 from _common import (constitution_stamp, find_project_root, plugin_version,
                      sanitize_sid, version_key,
                      _hook_utf8_streams)  # 1.0.39 共享实现收编 / 1.0.40 陈旧检测三件入共享（hooks/_common.py）
@@ -46,14 +50,14 @@ _hook_utf8_streams()
 def read_lines(path):
     try:
         with open(path, encoding="utf-8") as f:
-            return [l.strip() for l in f if l.strip()]
+            return [ln.strip() for ln in f if ln.strip()]
     except OSError:
         return []
 
 def norm_paths(ls):
     """队列行路径归一为正斜杠——与写侧落盘归一（pending-updates.py 1.0.30 R5 实测修）对位；
     兼容 1.0.30 之前 Windows 落下的反斜杠旧队列行，否则 git 正斜杠路径与之恒不匹配"""
-    return {l.replace("\\", "/") for l in ls}
+    return {ln.replace("\\", "/") for ln in ls}
 
 def git_source_changes(root, known):
     """git status 检出未入队的源文件变更（A/D/?）——Bash 落盘盲区补充；非 git 仓/超时静默返回 []

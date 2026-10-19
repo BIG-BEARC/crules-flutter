@@ -3,11 +3,20 @@ name: ci
 on:
   push:
   pull_request:
+# 2026-10-19 评审 P0-3：无并发组＝每 push 全量排队；16 小时/版节奏下堆积淹没首红信号
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        # fetch-depth: 0＝取全史与 tag——版本缺口闸（test-self）依赖本地 tag 对账；
+        # 默认浅克隆零 tag 曾致该闸在 CI 恒假红（2026-10-19 Actions 实况：145 runs 全 failure，
+        # 唯一红步即脚本自测），同日新设「环境 tag 集为空」自盲检测双保险
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v6
         with:
           python-version: "3.x"
@@ -29,6 +38,11 @@ jobs:
         # 1.0.39（裁决 D-3）：手列 9 文件清单改 compileall 扫目录——加文件零维护（此前每次
         # 新增 hook/脚本都要手补清单，1.0.37 实证税；release/CI 双清单历史漏过同族）
         run: python3 -m compileall -q hooks scripts
+      - name: ruff 静态检查（hooks+scripts——编译不查未用名/未定义名，2026-10-19 评审 B2；显式 E4/E7/E9/F 钉死经典集，0.17 起上游默认已扩面不随）
+        if: always()
+        run: |
+          python3 -m pip install --quiet ruff
+          ruff check --select E4,E7,E9,F hooks scripts
       - name: deny-list.ps1 双驱 fixture（批F2；ubuntu runner 预装 pwsh）
         if: always()
         # 证据级声明：PS Core on Linux ≠ Windows PowerShell 行为全同——本步锁「语法 + 判据逻辑 +

@@ -19,7 +19,11 @@ fixture 原则：该拦全拦（含 v37 外审 5 绕过、1.0.8 拼合绕过 10 
 1.0.23 起**判定主体改进程内**（exec 闸源码，闸本体零改动；165 次 spawn → 个位数），保真锚点与
 契约面仍走真子进程，`--diff` 可对全量用例两路并跑比对——改动 harness 或闸本体后须重跑一次。
 """
-import io, json, os, subprocess, sys
+import io
+import json
+import os
+import subprocess
+import sys
 
 # 编码显式化（1.0.21，Windows 实机 P0-A，与 deny-list.py 同批）：①驱动自身 print 含中文，
 #   宿主码页非 UTF-8 时抛 UnicodeEncodeError 整跑即崩；②子进程输出自 1.0.21 起为显式 UTF-8，

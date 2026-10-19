@@ -5,7 +5,11 @@
 #   「写出来的东西读侧认不认」——1.0.30 R5（写侧反斜杠落盘、读侧 git 正斜杠恒不匹配）正是
 #   这个盲区咬过的实账；_common 收编后同源函数不会再漂，但队列**格式契约**仍是两文件约定，
 #   只有互调能锁。
-import json, os, subprocess, sys, tempfile
+import json
+import os
+import subprocess
+import sys
+import tempfile
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -111,7 +115,7 @@ with tempfile.TemporaryDirectory() as d:
     run(WRITER, write_event(fp, "conv-5"), d)
     run(WRITER, write_event(fp, "conv-5"), d)  # 重触发
     q = os.path.join(d, ".claude", "memory", ".pending-updates.conv-5")
-    lines = [l.strip() for l in open(q, encoding="utf-8") if l.strip()]
+    lines = [ln.strip() for ln in open(q, encoding="utf-8") if ln.strip()]
     check("重复写去重单行 + 正斜杠深层路径", lines == ["lib/features/deep.dart"])
     rc, out = reminder_out("conv-5", d)
     ctx = ctx_of(out)

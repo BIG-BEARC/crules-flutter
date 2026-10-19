@@ -23,7 +23,11 @@
 #   tool_result 的 deny 字样检测在内存内子串命中即弃，result 文本不进账。
 # 并发落盘：单行 <4KB，POSIX O_APPEND 原子；Windows 无 flock 沿 pending-updates D3 口径（窗口远小于不记）。
 # 编码/AV 纪律：1.0.21 P0-A 三流钉 UTF-8；1.0.33 SetErrorMode——**四 hook 同款同改**（本文件为第四位）。
-import json, os, re, sys, time
+import json
+import os
+import re
+import sys
+import time
 from _common import (MAX_SID, constitution_stamp, find_project_root, plugin_version,
                      version_key,
                      _hook_utf8_streams)  # 1.0.39 共享实现收编 / 1.0.40 陈旧检测共用（hooks/_common.py）
@@ -194,7 +198,7 @@ def ledger_lines(mem):
     for name in (".gate-exceptions", ".review-ledger"):
         try:
             with open(os.path.join(mem, name), encoding="utf-8", errors="replace") as fh:
-                out[name] = sum(1 for l in fh if l.strip())
+                out[name] = sum(1 for ln in fh if ln.strip())
         except OSError:
             out[name] = None
     return out

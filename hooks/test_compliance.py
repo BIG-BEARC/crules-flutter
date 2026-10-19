@@ -4,7 +4,11 @@
 #   权限拒/派单令牌/弱签名三项）+ sidechain 跳过 + 解析坏行计数 + 截断（env 时间闸）+ 甄别列
 #   （markers 只看末条 / closing_q）+ ledger 快照两态 + plugin_ver 打标 + sid 截断 + append 多次
 #   触发 + 隐私红线（正文不入账）。
-import json, os, subprocess, sys, tempfile
+import json
+import os
+import subprocess
+import sys
+import tempfile
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -41,8 +45,8 @@ def tr(text):
 def write_tp(d, name, lines):
     p = os.path.join(d, name)
     with open(p, "w", encoding="utf-8") as f:
-        for l in lines:
-            f.write((l if isinstance(l, str) else json.dumps(l, ensure_ascii=False)) + "\n")
+        for ln in lines:
+            f.write((ln if isinstance(ln, str) else json.dumps(ln, ensure_ascii=False)) + "\n")
     return p
 
 def run(payload, cwd, env=None):
@@ -56,7 +60,7 @@ def read_log(d):
     if not os.path.exists(p):
         return None
     with open(p, encoding="utf-8") as f:
-        return [json.loads(l) for l in f if l.strip()]
+        return [json.loads(ln) for ln in f if ln.strip()]
 
 def setup(with_nav=True):
     d = tempfile.mkdtemp()

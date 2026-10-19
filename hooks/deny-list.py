@@ -55,7 +55,10 @@
 #     （| tee | bash）只看首段——形态匹配非语义分析。解释器族（1.0.11 扩）：须紧贴管道符
 #     （路径 /usr/bin/python3、env python3、sudo -u root python3 带参前缀均不盖）；
 #     python3? 不匹配 python2（EOL 不再扩）；`| python3 -m json.tool` 格式化惯用法误弹（ask 无害）
-import json, os, re, sys
+import json
+import os
+import re
+import sys
 
 # 进程期 AV 弹框压制（1.0.33，三 hook 同款同改；2026-09-22 A/B 实测）：Windows 注入型管控 agent
 #   会使进程中途访问违例并弹模态框——hook 挂起等点击直至超时；脚本内 SetErrorMode(0x2) 即无框

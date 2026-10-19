@@ -17,13 +17,17 @@
 #       由 git.exe 自身 argv 大小写敏感语义自持（`git stash CLEAR` git 亦拒——不判非漏，py parity；
 #       review R5 头注订正：原「子命令 IgnoreCase」表述过宽，折叠的只是签名词面）；
 #       fixture 锁：GIT RESET --hard 拦（签名词面）、git branch -D 拦而 -d 无 f 放（旗标区分）
-#   D-c rm 别名域双标尺：CMDLET_SIG 族（Remove-Item|ri|rm|del|erase|rd|rmdir）→ Get-RmFlags
+#   D-c rm 别名域双标尺：CMDLET_SIG 族（\b 词边界 IgnoreCase：Remove-Item|ri|rm|del|erase|rd|rmdir
+#       ——2026-10-19 评审 P0-1 与 py RM_SIG 同纪律换界，/ 路径调用 rm.exe 形入拦）→ Get-RmFlags
 #       三源并集：bash 捆绑短字母仅限 ^[rf]+$ 形（-rf/-f/-r；**长名不做字母扫描**——review R1：
 #       -Force 内含 r 会假置 Recurse、-WhatIf 内含 f 假置 Force，dry-run 被误拦）∪ PS 前缀缩写
 #       （方向=全称.StartsWith(输入)，故 -R/-re 置 Recurse、-f/-fo 置 Force，5.1 歧义报错串也拦——
 #       错命令无放行价值；py 侧 -R 系既存 FN，ps 侧前缀规则天然覆盖，双源差异声明于此）∪
 #       cmd 形 /s /q /f（不区分大小写，入参先小写）；git 域 Get-GitFlags 逐字等价 py
 #       （git.exe 自解析 argv，PS 缩写不参与；长名表小写后比对，--FORCE→force 与 py 现状差异系 D-b）
+#       已知 FN（2026-10-19 执行期实核，夹具锁 allow）：捆绑大写形 -RF 两源皆不置位（bash 字母域
+#       保大小写照 py、PS 前缀域只吃前缀形）→ /BIN/RM -RF 放行——GNU rm 与 PS 参数解析本就拒该形
+#       （invalid option / 参数名无匹配），无害；收紧属判据变更呈需求方另裁
 #   D-d pathspec 尾分隔符 TrimEnd('/','\')：PS 当前目录惯用 .\（git restore .\ 真实丢弃）
 #   D-e 白名单自展开（Resolve-PsPath）：hook 收模型手写**字面串**（$env:TEMP\x 未经 shell 求值）——
 #       $env:NAME\、%NAME%、~/ ~\ 展开；未知变量/残留 $ % → UNRESOLVED 即拒（deny 方向）；
@@ -34,6 +38,9 @@
 #       curl.exe 真二进制并存，词形非锚定全收）、右加 iex/Invoke-Expression + cmd/powershell；
 #       新形态 ①' iex (iwr …) 括号形（无管道）与 iwr … | iex；icacls /T（chmod -R 等价）；
 #       Start-Process -Verb RunAs（sudo 等价）；Set-Acl 不收（改 ACL 系 Windows 日常，FP 面广——边界）
+# 签名设计纪律（2026-10-19 评审批入册，与 py 同款）：①命令签名一律 \b 词边界，禁自造边界类；
+#   ②签名命中后旗标/路径解析域=子命令之后（$after），禁全段解析；③新增签名/判据先补调用形态
+#   夹具（路径 /bin/x、command x、env x、xargs x 四形）再改判据——fixture-first。
 # v1 已知不拦（诚实边界，deny 方向 FN）：
 #   - powershell -EncodedCommand <base64>：整体旁路一切明文判据（bash「两步法」的 PS 强敌版）
 #   - 字符串拼接/变量间接构造命令（git $op、"git pu"+"sh"）、splatting（Remove-Item @a）
@@ -63,7 +70,7 @@ $script:DENYLIST_NL = [char]10
 # ========== stdin 与出口 JSON 只在入口段——驱动点源 in-process 测判据、黑盒 spawn 测契约） ==========
 
 $DENYLIST_GIT_SIG = [regex]::new('\bgit\b[^;|]*?\b(push|reset|clean|branch|checkout|restore|switch|stash)\b', 'IgnoreCase')
-$DENYLIST_CMDLET_SIG = [regex]::new('(^|[\s(`$!&;|])(Remove-Item|ri|rm|del|erase|rd|rmdir)\b', 'IgnoreCase')
+$DENYLIST_CMDLET_SIG = [regex]::new('\b(Remove-Item|ri|rm|del|erase|rd|rmdir)\b', 'IgnoreCase')
 $DENYLIST_REDIR = [regex]::new('^(\d*|\*)[<>]')
 $DENYLIST_PFE = [regex]::new('^(?<name>\w+)(?<rest>[\\/].*)?$')
 $DENYLIST_PCT = [regex]::new('^%(?<name>[^%]+)%(?<rest>.*)$')
@@ -80,22 +87,22 @@ function Get-DenyListDecision([string]$rawCmd) {
             $sub = $m.Groups[1].Value.ToLowerInvariant()
             $after = $seg.Substring($m.Index + $m.Length)
             if ($sub -eq 'push') {
-                $fl = Get-GitFlags $seg
+                $fl = Get-GitFlags $after
                 if ($fl.short.Contains('f') -or $fl.long.Contains('force')) {
                     return @{kind = 'deny'; reason = '破坏性命令（git push --force）：请人工确认后自行执行；确需强推建议人工用 --force-with-lease'} }
-                if ($fl.long.Contains('delete') -or [regex]::IsMatch($seg, '\s:[^\s]')) {
+                if ($fl.long.Contains('delete') -or [regex]::IsMatch($after, '\s:[^\s]')) {
                     return @{kind = 'deny'; reason = '破坏性命令（git push 删除远端分支）：请人工确认后自行执行'} }
-                if ([regex]::IsMatch($seg, '(^|\s)\+\S+')) {
+                if ([regex]::IsMatch($after, '(^|\s)\+\S+')) {
                     return @{kind = 'deny'; reason = '破坏性命令（git push +refspec 强制覆盖远端）：请人工确认后自行执行'} }
             } elseif ($sub -eq 'reset') {
-                if ($seg.Contains('--hard')) {
+                if ($after.Contains('--hard')) {
                     return @{kind = 'deny'; reason = '破坏性命令（git reset --hard）：请人工确认后自行执行'} }
             } elseif ($sub -eq 'clean') {
-                $fl = Get-GitFlags $seg
+                $fl = Get-GitFlags $after
                 if (($fl.short.Contains('f') -or $fl.long.Contains('force')) -and -not ($fl.short.Contains('n') -or $fl.long.Contains('dry-run'))) {
                     return @{kind = 'deny'; reason = '破坏性命令（git clean -f）：请人工确认后自行执行'} }
             } elseif ($sub -eq 'branch') {
-                $fl = Get-GitFlags $seg
+                $fl = Get-GitFlags $after
                 if ($fl.short.Contains('D') -or (($fl.short.Contains('d') -or $fl.long.Contains('delete')) -and ($fl.short.Contains('f') -or $fl.long.Contains('force')))) {
                     return @{kind = 'deny'; reason = '破坏性命令（git branch -D 强删分支）：请人工确认后自行执行'} }
             } elseif ($sub -eq 'stash') {
@@ -344,7 +351,7 @@ $DENYLIST_WARN_SIGS = @(
 # py 归一段（re.sub×3 内联，无符号名）↔ Normalize-DenyList（D-a：无 \<word> 步；反引号并入删除）
 # py blocked / warned ↔ $DENYLIST_TAIL + Write-DenyListDecision（手工模板 + \ " 转义）
 # py GIT_SIG ↔ $DENYLIST_GIT_SIG（IgnoreCase，D-b）
-# py RM_SIG ↔ $DENYLIST_CMDLET_SIG（别名域扩集，D-c；边界类 & 1.0.35 双源对齐）
+# py RM_SIG ↔ $DENYLIST_CMDLET_SIG（别名域扩集，D-c；\b 词边界统一 2026-10-19 评审 P0-1）
 # py strip_quotes ↔ Get-StripQuotes
 # py parse_flags ↔ Get-GitFlags
 # py checkout_discards ↔ Test-CheckoutDiscards（D-d）

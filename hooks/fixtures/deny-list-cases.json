@@ -752,6 +752,78 @@
    "lang": "ps",
    "src": "批F2 ps 新增",
    "note": "提权等价（sudo 等价）"
+  },
+  {
+   "cmd": "/bin/rm -rf /home/u/data",
+   "expect": "deny",
+   "src": "2026-10-19 评审 P0-1 路径调用形态"
+  },
+  {
+   "cmd": "/usr/bin/rm -rf /etc/nginx",
+   "expect": "deny",
+   "src": "2026-10-19 评审 P0-1 路径调用形态"
+  },
+  {
+   "cmd": "command rm -rf /home/u/data",
+   "expect": "deny",
+   "src": "调用形态矩阵：command 包裹"
+  },
+  {
+   "cmd": "env rm -rf /home/u/data",
+   "expect": "deny",
+   "src": "调用形态矩阵：env 包裹"
+  },
+  {
+   "cmd": "xargs rm -rf /home/u/data",
+   "expect": "deny",
+   "src": "调用形态矩阵：xargs 管道段"
+  },
+  {
+   "cmd": "git add -f push.txt",
+   "expect": "allow",
+   "src": "2026-10-19 评审 P0-2 文件名含族词"
+  },
+  {
+   "cmd": "git tag -f push.txt",
+   "expect": "allow",
+   "src": "P0-2 同族：族词出现在非族子命令的文件名"
+  },
+  {
+   "cmd": "/usr/bin/git push --force origin main",
+   "expect": "deny",
+   "src": "路径调用形态·git 族对照（现行已拦，入夹具防回退）"
+  },
+  {
+   "cmd": "x=$(rm -rf /home/u/data)",
+   "expect": "deny",
+   "src": "回归锁：$() 内嵌（旧类 ( 已拦）——防迁移丢拦截"
+  },
+  {
+   "cmd": "git -C /x push --force",
+   "expect": "deny",
+   "src": "解析域迁移回归：全局旗标在前"
+  },
+  {
+   "cmd": "git --no-pager push origin +main",
+   "expect": "deny",
+   "src": "解析域迁移回归：+refspec 判定"
+  },
+  {
+   "cmd": "Remove-Item -RECURSE -FORCE C:\\data",
+   "expect": "deny",
+   "lang": "ps",
+   "src": "ps 侧 D-b IgnoreCase×\\b 声明域（cmdlet 名与长旗标名折叠；执行期由原 /BIN/RM -RF 例重写而来）"
+  },
+  {
+   "cmd": "/BIN/RM -RF /home/u/data",
+   "expect": "allow",
+   "lang": "ps",
+   "src": "已知 FN 锁（执行期裁定）：捆绑大写 -RF 两源皆不置位放行——GNU rm/PS 参数本就拒该形无害；收紧属判据变更呈需求方另裁，锁此防无声漂移"
+  },
+  {
+   "cmd": "tar --exclude=rm -rf out.tar dir",
+   "expect": "deny",
+   "src": "已知边界入档（评审 o8）：\\b 命中旗标值 =rm 后旗标域吞并宿主 -rf 误归 rm——deny 方向取舍，夹具锁定防悄然漂移"
   }
  ]
 }

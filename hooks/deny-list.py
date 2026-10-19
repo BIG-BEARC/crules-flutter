@@ -39,6 +39,11 @@
 #     （release.sh 的 test-self 全套是此路线的发行前闸——1.0.34 起由「py_compile+夹具」升级为本 fixture
 #      子进程实跑本 hook，语法错误连 fixture 一起红；CI compileall 步为编译层二次覆盖，1.0.39 起扫目录）；③两解释器皆缺 → exit 127 放行
 #     （README 声明：终极防线回 Claude Code 原生权限确认）；④宿主超时的 hook 按官方口径本就不拦
+# 签名设计纪律（2026-10-19 评审批入册）：①命令签名一律 \b 词边界，禁自造边界类（枚举必漏）；
+#   ②签名命中后旗标/路径解析域=子命令 m.end(1) 之后，禁全段解析；③新增签名/判据先补调用形态
+#   夹具（路径 /bin/x、command x、env x、xargs x 四形）再改判据——fixture-first。
+#   已知边界（夹具已锁，评审 o8）：\b 命中旗标值内 rm（tar --exclude=rm）后旗标域自命中点
+#   起算、吞并宿主旗标（-rf 误归 rm）而 deny——deny 方向取舍（放行面更险），入档不改。
 # 边界与局限（诚实声明）：
 #   - 非锚定搜索会把字符串里的破坏命令（含引号内原文——1.0.8 归一后成立）一并拦下——
 #     按 deny-by-default 哲学接受，误拦走白名单调整
@@ -169,10 +174,11 @@ def warned(why):
     sys.exit(0)
 
 GIT_SIG = re.compile(r"\bgit\b[^;|]*?\b(push|reset|clean|branch|checkout|restore|switch|stash)\b")
-# RM_SIG 边界类含 &（1.0.35）：`true &rm -rf /home` 里 & 只是结束前一条命令（bash 后台符），
-#   rm 照跑——原缺 & 时 py 侧漏拦、ps1 侧（边界类早有 &）拦，双源未声明漂移即此。
-#   `;rm` `|rm` 无需入类（分段先行切到独立段后 ^rm 即命中），& 不是 py 分段符故必须补。
-RM_SIG = re.compile(r"(^|[\s(`$!&])rm\b")
+# RM_SIG 边界纪律（2026-10-19 评审 P0-1 统一）：命令签名一律 \b 词边界（同 GIT_SIG），禁自造
+#   边界类——枚举类必漏（实证：缺 / 使 /bin/rm、/usr/bin/rm 全放行；1.0.35 补 & 同病）。
+#   \b 覆盖原类全部字符（空白与 (`$!& 皆非词字符）另覆盖 / ；`xargs rm`/`command rm`/`env rm`
+#   均命中。rm 分支已按 r.start() 跳前缀取 token，换边界后天然兼容。
+RM_SIG = re.compile(r"\brm\b")
 
 def strip_quotes(tok):
     """剥配对引号：'"."'→'.'（带空格的引号路径 split 不开，属既有局限，头注声明）"""
@@ -233,22 +239,24 @@ for part in re.split(r";|&&|\|\||\||\r?\n", cmd):
     m = GIT_SIG.search(seg)
     if m:
         sub = m.group(1)
+        args = seg[m.end(1):]   # 解析域纪律（评审 P0-2）：旗标/路径判定一律取子命令之后——
+                                # 全段解析会把文件名里的族词（push.txt）与段内他处旗标混入本子命令
         if sub == "push":
-            short, longs = parse_flags(seg.split())
+            short, longs = parse_flags(args.split())
             if "f" in short or "force" in longs:
                 blocked("破坏性命令（git push --force）：请人工确认后自行执行；确需强推建议人工用 --force-with-lease")
-            if "delete" in longs or re.search(r"\s:[^\s]", seg):
+            if "delete" in longs or re.search(r"\s:[^\s]", args):
                 blocked("破坏性命令（git push 删除远端分支）：请人工确认后自行执行")
-            if re.search(r"(^|\s)\+\S+", seg):
+            if re.search(r"(^|\s)\+\S+", args):
                 blocked("破坏性命令（git push +refspec 强制覆盖远端）：请人工确认后自行执行")
-        elif sub == "reset" and "--hard" in seg:
+        elif sub == "reset" and "--hard" in args:
             blocked("破坏性命令（git reset --hard）：请人工确认后自行执行")
         elif sub == "clean":
-            short, longs = parse_flags(seg.split())
+            short, longs = parse_flags(args.split())
             if ("f" in short or "force" in longs) and not ("n" in short or "dry-run" in longs):
                 blocked("破坏性命令（git clean -f）：请人工确认后自行执行")
         elif sub == "branch":
-            short, longs = parse_flags(seg.split())
+            short, longs = parse_flags(args.split())
             if "D" in short or (("d" in short or "delete" in longs) and ("f" in short or "force" in longs)):
                 blocked("破坏性命令（git branch -D 强删分支）：请人工确认后自行执行")
         elif sub == "stash":

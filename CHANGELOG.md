@@ -1,5 +1,15 @@
 # crules-flutter CHANGELOG
 
+## 1.1.10 · deny-list 判定统一——签名 \b 词边界＋git 族解析域收敛子命令后（评审 P0 双机制化）
+
+> 依据链：方案 docs/方案-2026-10-19-评审缺陷机制化修复.md 批A（plan-reviewer 隔离评审毕：3 major 全聚集批C C4、不涉本批；需求方 2026-10-19「继续」开工）＋本仓综合评审 P0-1（路径调用 rm 绕过）/P0-2（文件名含族词误拦）。
+
+- **P0-1 签名边界统一（py RM_SIG＋ps1 CMDLET_SIG 双源同改）**：自造边界类 `(^|[\s(`$!&;|])` 一律改 `\b` 词边界（同 GIT_SIG 纪律）——枚举类必漏（实证：缺 `/` 使 `/bin/rm`、`/usr/bin/rm` 双源全放行；1.0.35 补 `&` 同病）。`\b` 覆盖原类全部字符另覆盖 `/`：路径调用（`/bin/rm`、`C:\...\rm.exe`）与 `command/env/xargs rm` 包裹形入拦。已知边界入档（夹具锁）：`\b` 命中旗标值内 rm（`tar --exclude=rm`）后旗标域自命中点起算吞并宿主 `-rf` 而 deny——deny 方向取舍不改。
+- **P0-2 git 族解析域统一**：push/reset/clean/branch 四分支旗标/路径判定域由全段收敛到子命令之后（py `m.end(1)`；ps1 复用分支头既有 `$after`，对齐 stash/checkout 惯例）——修「文件名含族词误拦」：`git add -f push.txt`、`git tag -f push.txt` 双源 deny→allow。
+- **头注设计纪律双源入册**：①签名一律 `\b` 禁自造边界类（枚举必漏）；②解析域=子命令之后禁全段解析；③新增签名/判据先补调用形态夹具（路径/command/env/xargs 四形）再改判据——fixture-first。
+- **执行期裁定（夹具 14 例；方案 13 例之一实核为缺陷）**：原 `/BIN/RM -RF`（拟 ps deny）经实核两源皆放行——SIG 换界后确命中大写 RM，但 Get-RmFlags 捆绑大写形不置位（bash 字母域保大小写照 py×PS 前缀域只吃前缀形），GNU rm/PS 参数解析本就拒该形＝无害 FN。重写为 `Remove-Item -RECURSE -FORCE C:\data`（锁 D-b IgnoreCase 域，现码即绿）＋原形转 allow FN 锁（未来翻红即强制重裁）；D-c 头注与对照表行同批落。收紧捆绑大写形属判据变更，呈需求方另裁。
+- **验证**：fixture-first 全程——14 例先落 → py 驱动初红恰 5（路径×2＋族词误拦×2＋tar 边界×1）→ 双源改判 → 全绿＋`--diff` 187 例两路并跑同判 0（闸本体改动保真义务）；ps1 驱动本机无 PowerShell 落 CI pwsh 步（Windows 实机最终闸口径不变）。
+
 ## 1.1.9 · /diagnose 单会话因果诊断命令——superpowers7 吸收批阶段 3 收官 + 方案/评审双删档
 
 > 依据链：方案 docs/方案-2026-10-16-superpowers7吸收批.md §4.4/§7 阶段 3（Q4 已裁默认案：本命令管单会话因果、批3 管跨会话聚合，互补不重叠）+ 排期点头（需求方 2026-10-19「继续」）。方案/评审两篇随批删档（阶段 0–3 全毕终态；活引用先去位再删——D3 归欠账清单 ⚪ 行、8.x 重验义务归 README minor 例行），docs 7→5（当日 12→5）。

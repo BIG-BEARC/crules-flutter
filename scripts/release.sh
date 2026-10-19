@@ -5,6 +5,8 @@
 #   scripts/release.sh verify-cache <特征串>  在 cache 最大版本目录 grep 特征串（update 后的生效验证）
 #   scripts/release.sh draft                CHANGELOG 建议段草稿（自顶部段日期后的 commits，stdout 人工过滤）
 #   scripts/release.sh tag <ver>            校验 HEAD 双 json 版本一致 + 工作树干净 + 全套 test-self 后打 tag 并推 origin（幂等；防 tag 指向 bump 前旧树 / bump 后偷改树）
+# bump 前双查（2026-09-22 一夜两撞蒸馏 · 2026-10-19 收）：`git log --oneline -3` + `grep '"version"'
+#   .claude-plugin/plugin.json`——多会话工作树里版本占号冲突本身无害，有害的是带着旧号继续写。
 # 说明：**bump 最后跑**——cache 是全仓库快照（含 README/docs/scripts），务必全部改动收尾后再
 #       release.sh <ver>，中途再改文件则同版本不刷新（v31 W2：update 按版本号刷 cache），须再 bump；
 #       plugin update 本脚本不代跑（完整形态实测为 `claude plugin update crules-flutter@crules-flutter-market`，

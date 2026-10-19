@@ -1000,5 +1000,19 @@ done
   && { PASS=$((PASS+1)); echo "PASS  1.1.7 吸收批三落位（D6 双模板 7.0.0 口径 / D5 description 触发-only / D1 改条文纪律四件）"; } \
   || { FAIL=$((FAIL+1)); echo "FAIL  1.1.7 落位（D6 ${sp_ok} / D5 ${d5_ok} / D1 ${d1_ok}，见上漂移清单）"; }
 
+# 1.1.8 吸收批三落位：_common.py 事件契约三课 / release.sh bump 前双查 / 回放处置戳与复盘删档
+e3_ok=1
+for s in '事件契约三课' 'Stop 每个 assistant 回合都触发' '字段级不存在' 'per-hook timeout 可上调'; do
+  grep -qF -- "${s}" "${SRC}/hooks/_common.py" || { e3_ok=0; echo "  ↳ _common.py 缺「${s}」"; };
+done
+grep -qF -- 'bump 前双查' "${SRC}/scripts/release.sh" || { e3_ok=0; echo "  ↳ release.sh 缺「bump 前双查」"; }
+grep -qF -- 'git log --oneline -3' "${SRC}/scripts/release.sh" || { e3_ok=0; echo "  ↳ release.sh 缺双查命令原文"; }
+grep -qF -- '处置已裁（2026-10-19）' "${SRC}/docs/验证-2026-09-24-规则集事故回放.md" || { e3_ok=0; echo "  ↳ 回放文档缺处置戳"; }
+grep -qF -- '前提塌陷自然消解' "${SRC}/docs/验证-2026-09-24-规则集事故回放.md" || { e3_ok=0; echo "  ↳ 回放文档缺缺口消解案"; }
+[ -f "${SRC}/docs/复盘-2026-09-22-遵守度测量批2.md" ] && { e3_ok=0; echo "  ↳ 复盘-批2 应删档未删（三课已收 _common.py、双查已收 release.sh）"; }
+[ "${e3_ok}" = "1" ] \
+  && { PASS=$((PASS+1)); echo "PASS  1.1.8 吸收批三落位（事件契约三课 / bump 前双查 / 回放处置戳+复盘删档）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  1.1.8 落位（见上漂移清单）"; }
+
 echo "== 脚本自测：PASS=$PASS FAIL=$FAIL =="
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1

@@ -8,6 +8,14 @@
 #   Python 将脚本所在目录置于 sys.path[0]，`import _common` 直接可用，无需路径样板。
 # 改动纪律：本文件被全部 python hook import——语法/行为错误爆炸半径为四 hook 齐坏；
 #   防线=CI/test-self 的 compileall（1.0.39 起自动覆盖本文件）+ 各 hook fixture 子进程实跑。
+# 事件契约三课（2026-09-22 遵守度批2 复盘蒸馏 · 2026-10-19 裁收入；写新 hook / 改事件挂点前先读）：
+#   ① Stop 每个 assistant 回合都触发，SessionEnd 才是会话终结——「收尾对账 / 会话级记账」类
+#     职责只属 SessionEnd，挂 Stop = 每轮全量重扫（1.0.37 设计期实踩，stop-reminder 头注即证据）。
+#   ② SessionEnd 各 hook 默认共享 1.5s 预算、per-hook timeout 可上调、输出 fire-and-forget 无人读
+#     ——重活 hook 须自带上调 timeout + 内部时间闸 + 截断入账（实践形态见 compliance-audit.py：
+#     timeout 30 + BUDGET_S 10s + truncated:true），否则大样本被静默 kill 读成「零违反」。
+#   ③ 观测件防泄漏优先「字段级不存在」——schema 里就没有正文容器 + fixture 断言锁，
+#     而非「运行时不打印」：前者坏不了，后者每改必审。
 import json
 import os
 import re

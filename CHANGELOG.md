@@ -2,6 +2,12 @@
 
 > 体例（1.2.0 起增量生效）：每版＝段头＋≤5 行摘要；依据链 / 裁决记录 / 观测带数长段落 `docs/changelog-annex/<YYYY-MM>.md` 对应锚点。存量条目不回改。
 
+## 1.2.1 · init 哈希写键兜底＋落位自检（终审修复批）
+
+- **缺陷**：init 哈希写键 heredoc 硬依赖 `python3`——只装 `python` 无别名机器（Windows 常见）写键静默失败，stop-reminder 宪法对拍闸在该机终身不生效且零提示（hooks 面四条皆有 `python3→python` 兜底链，消费面独缺）。
+- **修复**：解释器 `command -v python3 || command -v python` 探测兜底（同 hooks 家规）；自检区新增「state 哈希键」行显式呈报缺失——对拍闸不生效不允许静默；收尾汇报落位清单并入哈希键成败，自检四条→五条。
+- **验证**：test-self 62→63/0（新增兜底＋自检锚串断言，RED 62/1→GREEN）；ruff／hook 测试五件／render-blocks 9×13 全绿。
+
 ## 1.2.0 · CHANGELOG 前向体例＋存量止损呈裁（批D：机制入册 minor）
 
 - **前向体例（双职能拆账，增量止血）**：段头＋≤5 行摘要留 CHANGELOG（段序＝龄闸时钟，闸零改动），长内容进 `docs/changelog-annex/<YYYY-MM>.md` 锚链——条均 2.8KB→约 0.4KB；存量条目零迁移。

@@ -1,5 +1,15 @@
 # crules-flutter CHANGELOG
 
+## 1.1.12 · 承诺对拍落地＋同文收编＋台账视图（批C：宪法哈希对拍／agents×7＋checklist 双载体收源／check-imports 段序投影）
+
+> 依据链：方案 docs/方案-2026-10-19-评审缺陷机制化修复.md 批C＋本仓综合评审 P1-6（宪法副本漂移零检测）/m5（agents×7＋checklist↔进阶 同文无闸）/P1-8（掉队台账靠叙事）。
+
+- **宪法副本 sha256 对拍（P1-6，补设计-实现落差）**：init 落位写 `constitution_sha256` 入 `.claude/memory/.crules-state`（读改写保留既有键＋`ao_adopted` 缺省幂等共存）；stop-reminder 陈旧通道并挂哈希对拍——副本被手改/损坏（戳不动）从不可检测变 Stop 即催；state 无键（存量工程）与副本缺（丁-tracked/轻量）双静默，下次 init 补键向后兼容。fixture-first：四分支三例先落 → ②一例红 → 双端落码 → 全绿；test-self 双锚（init 写键＋hook 验键同在）防两端再脱钩。边界两条入档：人裁另 cp 后对拍催＝自愈路径（init 重算即消）；人裁保留手改＝键与副本恰配永不催（基线语义＝落位时点快照）。
+- **agents×7 同文段收编 canonical（m5，防漂移从检测前移到构造）**：记忆库联动＋进阶定位双段（7 卡逐字 md5 同一）收源 canonical/agent-memory-nav.md；段 1 角色指针行各卡手写不入源（aggregate-exception 围栏外先例）。渲染 8 块 × 11 文件失败 0＋`--check` 幂等。
+- **checklist↔进阶 双载体收编（m5，已漂移根治）**：canonical/review-core.md 取 checklist 演化版条 0-9（含条 9 资损红线）；进阶侧陈旧 0-8 fork 短句版整块删除换渲染（**漂移修正，权威落点不变**），条 2/3 指针尾巴围栏外并一行保留、前言补实证口径行（「口径见头部」自引不悬空）；0前/规则全集矩阵/行为等价性等进阶独有内容全留围栏外。渲染 9 块 × 13 文件失败 0；指针限定闸／编号 0-9 对账／坑库速查三关联闸复核绿。test-self 渲染副本构造随扫描面同构扩容（agents 全量＋checklist＋进阶——不拷则守卫①c 报缺围栏，机制按设计咬合），新块按既有模式补锚串四行。
+- **check-imports 多工程台账视图（P1-8，派生零维护）**：掉队距离＝CHANGELOG 段序 index 差（随跑随算投影，不建台账文件——「状态散在叙事」的病根修法）；多根一次跑齐；lag 前缀匹配禁 $ 尾锚（M1 同款）＋CHANGELOG 不可读守卫（防 `[ "" -gt 0 ]` 静默落错分支）；⑨ 三态方向闸 fixture 同批适配（GCI 补两段 CHANGELOG，戳段序 1 − 源段序 2 = −1 → 源更旧，既有断言原样过守卫不削）；README 巡检行多根化。
+- **验证与实跑观测**：test-self 62/0（61＋哈希双锚；黑话闸当场咬出 init.md 注释内码「评审 P1」上消费面、改大白话——自守卫活证）＋ruff 0＋stop-reminder 26 检查全绿＋render 幂等双绿。实跑三 POS 工程（只读）：saas-cashier／saas-cashier-light 指针戳 v1.1.6、saas_cashier_wait_table 未检出戳（跑时源 v1.1.11 计掉队 5 版，1.1.12 收口后为 6）——刷新择机呈需求方，本批不代执行。
+
 ## 1.1.11 · CI 自盲双修＋ruff 静态闸＋pending-updates 注释如实化（评审 P0-3/B2/P0-4）
 
 > 依据链：方案 docs/方案-2026-10-19-评审缺陷机制化修复.md 批B＋本仓综合评审 P0-3（闸自盲）/B2（ruff 缺位）/P0-4（注释与代码不符）。

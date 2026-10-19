@@ -3,7 +3,7 @@
 面向 **Flutter 工程**的 AI 协作规则 plugin：把「AI 怎么跟你安全地干活」固化成机制——危险命令硬拦、改动先过方案确认、交付必过审查、经验自动沉淀。
 独立自持（源自 crules fork，2026-09 起 1.0.0 独立演进，史见 [CHANGELOG](CHANGELOG.md)）；许可 **MIT**（[LICENSE](LICENSE)）。
 
-> 当前状态：1.1.11（版本编年史见 [CHANGELOG](CHANGELOG.md)）
+> 当前状态：1.1.12（版本编年史见 [CHANGELOG](CHANGELOG.md)）
 
 ---
 
@@ -111,7 +111,7 @@ agents 不复制——plugin 已自动挂载 7 角色（`crules-flutter:frontend
 /crules-flutter:init    # 刷新路径：副本对拍 + 指针重写即刷戳；memory 永不覆盖、引导仅补未填项
 ```
 
-巡检（cache 内跑）：`bash scripts/check-imports.sh <项目根>`——戳读链 `.claude/CLAUDE.md` 指针戳优先 → 根 `CLAUDE.md`（丁-tracked 存量）回退；查版本差与 memory 模板演进。
+巡检（cache 内跑）：`bash scripts/check-imports.sh <项目根> [更多根…]`——多工程视图一次跑齐；戳读链 `.claude/CLAUDE.md` 指针戳优先 → 根 `CLAUDE.md`（丁-tracked 存量）回退；掉队距离＝CHANGELOG 段序投影（随跑随算，零台账文件），另查 memory 模板演进。
 
 1.1.3–1.1.4 的 install.sh 三向合并升级语义（`--upgrade` / `--force` / base 快照）已随分发职责退役（1.1.5）；存量丁-tracked 工程迁移 = 阶段 4 一次性授权批。
 

@@ -967,6 +967,12 @@ else
   FAIL=$((FAIL+1)); echo "FAIL  宪法哈希对拍双锚脱钩（init 写键或 stop-reminder 验键缺失——两端须同批动）"
 fi
 
+if grep -q 'command -v python3 || command -v python' "$SRC/commands/init.md" && grep -q 'state 哈希键缺失' "$SRC/commands/init.md" && grep -q '自检五条输出' "$SRC/commands/init.md"; then
+  PASS=$((PASS+1)); echo "PASS  init 哈希写键解释器兜底＋落位自检行（只装 python 机器闸不静默失效——2026-10-19 终审修复）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  init 哈希写键兜底＋自检脱钩（解释器探测或自检呈报行或对账计数缺失——写键失败须可见）"
+fi
+
 stamp_rc=$(python3 - "$SRC" <<'PY'
 import os, sys, tempfile
 sys.path.insert(0, os.path.join(sys.argv[1], "hooks"))

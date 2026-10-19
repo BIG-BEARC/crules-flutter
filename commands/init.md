@@ -58,8 +58,11 @@ for f in "$SRC"/memory/*.md; do
   [ -e "$ROOT/.claude/memory/$(basename "$f")" ] || cp "$f" "$ROOT/.claude/memory/$(basename "$f")"
 done
 
-# 宪法副本哈希入 state（副本内容漂移此前零检测面，机制化于 2026-10-19）——读改写保留既有键
-python3 - "$ROOT/.claude/crules/constitution.md" "$ROOT/.claude/memory/.crules-state" <<'PY'
+# 宪法副本哈希入 state（副本内容漂移此前零检测面，机制化于 2026-10-19）——读改写保留既有键。
+# 解释器 python3→python 兜底探测（hooks 同规：只装 python 无 python3 别名的机器也落位）；
+#   两解释器皆缺或写键失败，自检区「state 哈希键」行显式呈报——对拍闸不生效不允许静默。
+PYBIN="$(command -v python3 || command -v python || true)"
+if [ -n "$PYBIN" ]; then "$PYBIN" - "$ROOT/.claude/crules/constitution.md" "$ROOT/.claude/memory/.crules-state" <<'PY'
 import hashlib, os, sys
 src, state = sys.argv[1], sys.argv[2]
 sha = hashlib.sha256(open(src, "rb").read()).hexdigest()
@@ -72,6 +75,7 @@ d["constitution_sha256"] = sha
 d.setdefault("ao_adopted", "0")   # state 首建时补 AO 缺省（与下 ④ 行幂等共存）
 open(state, "w", encoding="utf-8").write("".join(f"{k}={v}\n" for k, v in d.items()))
 PY
+fi
 
 # ④ 本机态标记（AO 人择通道记账）
 [ -f "$ROOT/.claude/memory/.crules-state" ] || printf 'ao_adopted=0\n' > "$ROOT/.claude/memory/.crules-state"
@@ -83,6 +87,9 @@ PY
 [ "$(grep -c '^@' "$ROOT/.claude/CLAUDE.md")" = "3" ]                      # 指针 ③ 行导入
 cmp -s "$SRC/$KIND/CLAUDE.md" "$ROOT/.claude/crules/constitution.md"       # 副本逐字
 ! grep -q '^@' "$ROOT/.claude/crules/constitution.md"                      # 宪法源零 @ 内链（1.1.5 清理恒真）
+grep -q '^constitution_sha256=' "$ROOT/.claude/memory/.crules-state" 2>/dev/null \
+  && echo "state 哈希键已落位" \
+  || echo "❌ state 哈希键缺失——副本对拍闸在本机不生效（解释器缺或写键失败），收尾汇报如实呈报"
 # R0 自检：对比基线，只看 init 期间**新增**的 tracked 变动（存量脏行不归因于 init）
 git -C "$ROOT" status --porcelain 2>/dev/null | sort > "/tmp/crules-init-after.$$" || : > "/tmp/crules-init-after.$$"
 if git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
@@ -121,7 +128,7 @@ rm -f "/tmp/crules-init-baseline.$$" "/tmp/crules-init-after.$$"
 
 ### 7. 收尾汇报
 
-落位清单（指针/副本 sha256/种子件数）＋自检四条输出＋R0 机械证据（基线对比输出贴出）＋一句「删 `.claude/CLAUDE.md` 指针（连同 `.claude/crules/`）即整体回退；`.claude/memory/` 为项目资产，去留自裁」。
+落位清单（指针/副本 sha256/种子件数/state 哈希键成败）＋自检五条输出＋R0 机械证据（基线对比输出贴出）＋一句「删 `.claude/CLAUDE.md` 指针（连同 `.claude/crules/`）即整体回退；`.claude/memory/` 为项目资产，去留自裁」。
 
 ## 依据
 

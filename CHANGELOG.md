@@ -1,5 +1,14 @@
 # crules-flutter CHANGELOG
 
+> 体例（1.2.0 起增量生效）：每版＝段头＋≤5 行摘要；依据链 / 裁决记录 / 观测带数长段落 `docs/changelog-annex/<YYYY-MM>.md` 对应锚点。存量条目不回改。
+
+## 1.2.0 · CHANGELOG 前向体例＋存量止损呈裁（批D：机制入册 minor）
+
+- **前向体例（双职能拆账，增量止血）**：段头＋≤5 行摘要留 CHANGELOG（段序＝龄闸时钟，闸零改动），长内容进 `docs/changelog-annex/<YYYY-MM>.md` 锚链——条均 2.8KB→约 0.4KB；存量条目零迁移。
+- **止损线自带**：连续三个 minor 未用附件 → 裁体例回原形；docs 轮次化清点范围补 annex 目录。
+- **存量机制止损裁决单**：`docs/清单-存量机制止损候选.md` 六行呈裁件（证据列＋空白裁决列），本批不执行裁剪；版本缺口闸不在候选（批B 自盲修复后为活闸）。
+- 依据链／锚串纪律／裁决单行明细：[changelog-annex/2026-10.md](docs/changelog-annex/2026-10.md)。
+
 ## 1.1.12 · 承诺对拍落地＋同文收编＋台账视图（批C：宪法哈希对拍／agents×7＋checklist 双载体收源／check-imports 段序投影）
 
 > 依据链：方案 docs/方案-2026-10-19-评审缺陷机制化修复.md 批C＋本仓综合评审 P1-6（宪法副本漂移零检测）/m5（agents×7＋checklist↔进阶 同文无闸）/P1-8（掉队台账靠叙事）。

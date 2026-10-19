@@ -1,5 +1,15 @@
 # crules-flutter CHANGELOG
 
+## 1.1.11 · CI 自盲双修＋ruff 静态闸＋pending-updates 注释如实化（评审 P0-3/B2/P0-4）
+
+> 依据链：方案 docs/方案-2026-10-19-评审缺陷机制化修复.md 批B＋本仓综合评审 P0-3（闸自盲）/B2（ruff 缺位）/P0-4（注释与代码不符）。
+
+- **版本缺口闸自盲检测（P0-3）**：git 仓而 tag 集为空＝检出环境缺 tag（浅克隆/未取 tag），旧闸将环境问题误诊为「版本缺口未登记」——Actions 实况坐实：145 runs 全 failure、唯一红步即脚本自测（假红非假绿，闸在 CI 从未真绿）。新闸遇此按红拒绝盲跑（明示 CI 需 fetch-depth: 0），SKIP 仅限非 git 树；零 tag 假仓红基线（错诊）→ 新闸诊断换正 → 真仓 61/0 不受扰，三段机械证据齐。
+- **CI 配方三件**：checkout `fetch-depth: 0`（版本缺口闸在 CI 首次有 tag 可对账）；workflow 级 `concurrency` cancel-in-progress（防 push 排队堆积淹没首红）；新增 ruff 静态检查步（hooks+scripts）。
+- **ruff 闸经典集钉死（B2）**：显式 `--select E4,E7,E9,F`——ruff 0.17 起上游默认已扩面（实跑 98 告警含 BLE001/S110/PLW1510 等风格语义类，全修属大扫除超批授权面），显式钉死兼防上游再漂。存量 20 例清零：E741 歧义名 `l`→`ln` ×10（其中 test_compliance 循环体漏改被 F821 当场咬出——全量回归即合同）、E401 单行多 import ×9（ruff 安全自修纯拆行）、E702 分号句 ×1；测试文件同标准。
+- **pending-updates 注释如实化（P0-4，行为零改）**：Windows 降级分支原注「降级无锁追加——O_APPEND 单行写具原子性」描述的是未采用的机制，实况为 flock 后 truncate+整文件重写的无锁读-改-写（并发窗口可丢条目，观测件可接受）；注释按实况改写，Windows 实机批再裁锁方案。
+- **验证**：ruff 0＋compileall＋deny-list py 驱动 0 失败＋`--diff` 187 例两路并跑同判 0（闸本体 import 拆行属本体改动，保真义务照跑）＋pending-updates/stop-reminder/compliance/queue-contract 四测试套全绿＋test-self 61/0；B1 自盲分支经零 tag 假仓独立验证（test-self 61 断言不含多仓场景，既定口径）。
+
 ## 1.1.10 · deny-list 判定统一——签名 \b 词边界＋git 族解析域收敛子命令后（评审 P0 双机制化）
 
 > 依据链：方案 docs/方案-2026-10-19-评审缺陷机制化修复.md 批A（plan-reviewer 隔离评审毕：3 major 全聚集批C C4、不涉本批；需求方 2026-10-19「继续」开工）＋本仓综合评审 P0-1（路径调用 rm 绕过）/P0-2（文件名含族词误拦）。

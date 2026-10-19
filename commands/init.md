@@ -58,6 +58,21 @@ for f in "$SRC"/memory/*.md; do
   [ -e "$ROOT/.claude/memory/$(basename "$f")" ] || cp "$f" "$ROOT/.claude/memory/$(basename "$f")"
 done
 
+# 宪法副本哈希入 state（副本内容漂移此前零检测面，机制化于 2026-10-19）——读改写保留既有键
+python3 - "$ROOT/.claude/crules/constitution.md" "$ROOT/.claude/memory/.crules-state" <<'PY'
+import hashlib, os, sys
+src, state = sys.argv[1], sys.argv[2]
+sha = hashlib.sha256(open(src, "rb").read()).hexdigest()
+d = {}
+if os.path.exists(state):
+    for ln in open(state, encoding="utf-8"):
+        if "=" in ln:
+            k, v = ln.strip().split("=", 1); d[k] = v
+d["constitution_sha256"] = sha
+d.setdefault("ao_adopted", "0")   # state 首建时补 AO 缺省（与下 ④ 行幂等共存）
+open(state, "w", encoding="utf-8").write("".join(f"{k}={v}\n" for k, v in d.items()))
+PY
+
 # ④ 本机态标记（AO 人择通道记账）
 [ -f "$ROOT/.claude/memory/.crules-state" ] || printf 'ao_adopted=0\n' > "$ROOT/.claude/memory/.crules-state"
 ```

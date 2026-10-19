@@ -2,7 +2,8 @@
 # stop-reminder.py fixture 回归（A3 起，1.0.30 扩，1.0.40 加陈旧提醒四态）——原四态（无队列静默 / 空队列静默 / stop_hook_active
 #   抑制 / 队列非空出 additionalContext）+ 批B F1 git 快查 + 1.0.30 队列分文件八项（sid 路由 / legacy 回退 /
 #   孤儿只报不删 / 新鲜不报 / sid 净化 / D5 已入队并集 / 读侧闸 / R6 文案指向 / R5 反斜杠归一 / N1 顶层形状）
-#   + 宪法陈旧提醒四态，共 22 条检查
+#   + 宪法陈旧提醒四态＋宪法副本哈希对拍四态（2026-10-19 评审 P1-6），共 26 条检查
+import hashlib
 import json
 import os
 import subprocess
@@ -240,6 +241,40 @@ with tempfile.TemporaryDirectory() as d2:
     check("指针戳（.claude/CLAUDE.md）陈旧 → 提醒仍响（1.1.5 戳读链）",
           "宪法版本落后" in ac5 and "1.0.25" in ac5
           and "/crules-flutter:init" in ac5 and "99.99.99" in ac5)   # 指针形态才催 init 刷副本
+
+    # —— 宪法副本哈希对拍闸（2026-10-19 评审 P1-6）：init 落位记 sha256 入 state，副本事后被手改 → Stop 即催 ——
+    #   四分支：①键与副本一致 → 静默；②不一致 → 提醒含「哈希与落位态不一致」；③state 无键（存量工程）→ 静默；
+    #   ④副本文件缺（丁-tracked/轻量形态）→ 静默
+    def hash_project():
+        dx = tempfile.mkdtemp()
+        os.makedirs(os.path.join(dx, ".claude", "crules"))
+        os.makedirs(os.path.join(dx, ".claude", "memory"))
+        open(os.path.join(dx, ".claude", "memory", "NAVIGATION.md"), "w", encoding="utf-8").close()
+        open(os.path.join(dx, ".claude", "CLAUDE.md"), "w", encoding="utf-8").write(
+            f"<!-- crules-flutter: v{FAKE_PLUG_VER} -->\n@crules/constitution.md\n")
+        open(os.path.join(dx, ".claude", "crules", "constitution.md"), "w", encoding="utf-8").write("# constitution body\n")
+        return dx
+    d10 = hash_project()
+    st10 = os.path.join(d10, ".claude", "memory", ".crules-state")
+    open(st10, "w", encoding="utf-8").write(
+        "constitution_sha256="
+        + hashlib.sha256(open(os.path.join(d10, ".claude", "crules", "constitution.md"), "rb").read()).hexdigest() + "\n")
+    rc6, out6 = run({"hook_event_name": "Stop", "session_id": "hash-1", "stop_hook_active": False}, d10)
+    check("哈希对拍①键与副本一致 → 静默", rc6 == 0 and out6 == "")
+    open(os.path.join(d10, ".claude", "crules", "constitution.md"), "w", encoding="utf-8").write("# tampered body\n")
+    rc7, out7 = run({"hook_event_name": "Stop", "session_id": "hash-1", "stop_hook_active": False}, d10)
+    ac7 = ac_of(out7) if out7.strip() else ""
+    check("哈希对拍②副本被手改 → 提醒含「哈希与落位态不一致」",
+          rc7 == 0 and "哈希与落位态不一致" in ac7 and "/crules-flutter:init" in ac7)
+    d11 = hash_project()   # ③ state 无键（存量工程）→ 静默
+    rc8, out8 = run({"hook_event_name": "Stop", "session_id": "hash-1", "stop_hook_active": False}, d11)
+    check("哈希对拍③state 无键（存量工程）→ 静默", rc8 == 0 and out8 == "")
+    d12 = hash_project()
+    open(os.path.join(d12, ".claude", "memory", ".crules-state"), "w", encoding="utf-8").write(
+        "constitution_sha256=" + "0" * 64 + "\n")
+    os.remove(os.path.join(d12, ".claude", "crules", "constitution.md"))   # ④ 副本缺 → 静默
+    rc9, out9 = run({"hook_event_name": "Stop", "session_id": "hash-1", "stop_hook_active": False}, d12)
+    check("哈希对拍④副本文件缺（丁-tracked/轻量）→ 静默", rc9 == 0 and out9 == "")
 
 print(f"stop-reminder fixture: {'全绿' if fails == 0 else f'{fails} 失败'}")
 sys.exit(1 if fails else 0)

@@ -48,6 +48,14 @@ EXPECTED = {
     # 「逐字双写无闸」正是防漂移批点名的病形复发）
     "redline-evidence": ["app/CLAUDE.md", "plugin/CLAUDE.md"],
     "redline-review-check": ["app/CLAUDE.md", "plugin/CLAUDE.md"],
+    # 2026-10-19 评审批：agents 7 卡逐字同文双段（记忆库联动＋进阶定位）收源——同文 ×7 无闸，
+    # 改一忘六必漂移；段 1 角色指针行各卡手写不入源（同 aggregate-exception「围栏外手写」先例）
+    "agent-memory-nav": ["agents/backend.md", "agents/error.md", "agents/frontend.md",
+                         "agents/i18n.md", "agents/platform.md", "agents/plan-reviewer.md",
+                         "agents/reviewer.md"],
+    # 2026-10-19 评审批：checklist 通用 0-9（演化真相版）收源——进阶侧 0-8 fork 短句版系陈旧
+    # 副本（条 4/6/8 已在 checklist 长成巨条，双载体实漂移）；进阶独有前言/0前/指针尾巴留围栏外
+    "review-core": ["checklist.md", "进阶/审查与复核纪律.md"],
 }
 
 
@@ -70,8 +78,8 @@ def scan_targets():
     """分发面候选文件：README + app/ plugin/ commands/ agents/ 下全部 .md——守卫①c 的扫描面
     （含未登记文件，如 commands/init.md——堵「围栏落在未登记文件」的隐身，review R1；
     agents/ 系 1.0.35 随 aggregate-exception 块扩入）"""
-    files = ["README.md"]
-    for d in ("app", "plugin", "commands", "agents"):
+    files = ["README.md", "checklist.md"]
+    for d in ("app", "plugin", "commands", "agents", "进阶"):
         p = os.path.join(ROOT, d)
         if os.path.isdir(p):
             files += [f"{d}/{f}" for f in sorted(os.listdir(p)) if f.endswith(".md")]

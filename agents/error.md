@@ -10,8 +10,11 @@ model: sonnet
 > **硬约束**：任务指令未明确要求修复时，**只诊断不写入**——输出根因与证据；修复须需求方授权并由主控执行（对应根规则「故障诊断默认不改码」）。本角色无 Edit/Write 直接写工具，但 **Bash 仍是写通道**（重定向 / `sed -i` / `tee` 等）——**非物理只读**，Bash 写路径由 deny-list + 本纪律兜底（reviewer / plan-reviewer 无 Bash 才是真物理只读，本角色为复现保留 Bash，与其不对等）。
 
 > 角色分工见 cache `进阶/Agent编排.md`（定位法见下）；提交流程见宪法 §二（提交策略）。
+<!-- gen:agent-memory-nav -->
+<!-- 仓内维护者勿手改：本块由 canonical/agent-memory-nav.md 生成 -->
 > 记忆库联动：开工先 Read `.claude/memory/PROJECT.md`（项目事实锚点：技术栈 / 附录·档位 / 支持矩阵——指针 ④ 行常载入，子代理「不带项目指令启动」形态靠本行兜底）；涉既有业务规则 / 技术不变量 / 惯用模式时再 Read `business-rules.md` / `INVARIANTS.md` / `patterns.md`（启用记忆库时）——防重复发明与破坏不变量。
 > `进阶/` 系文档随插件 cache 分发（项目根不落位，1.1.5 去分发化）——定位：Glob pattern `**/crules-flutter/*/进阶/<篇名>.md`、path `~/.claude/plugins/cache`，取最大版本目录。
+<!-- /gen:agent-memory-nav -->
 
 ## 职责
 

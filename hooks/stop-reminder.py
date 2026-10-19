@@ -20,6 +20,7 @@
 #   git status 快查，检出未入队的 A/D/? 源文件并入提醒。**设计取舍**：git 快查**不独立触发**
 #   （未提交改动是开发常态，独立触发会在每次 Stop 重复打扰）——仅作队列非空时的补充信息，
 #   故「纯 Bash 落盘会话」仍不提醒（诚实边界，待观测后定是否加状态文件去重）。耗时受 timeout 5s 约束
+import hashlib
 import json
 import os
 import subprocess
@@ -120,6 +121,21 @@ if plug_ver and stamp_ver:
             stale = (f"宪法版本落后：根 CLAUDE.md v{stamp_ver}（丁-tracked 旧形态·随 git 跟踪），"
                      f"插件已 v{plug_ver}——旧分发形态已退役；升级 = 存量迁移批（一次性授权、"
                      "待需求方批），init 对此形态不自动迁移、暂缓跑。")
+
+# 宪法副本哈希对拍闸（2026-10-19 评审 P1-6）：init 落位记 sha256，副本事后被手改/损坏 → 催。
+#   state 无键（存量工程）静默，下次 init 刷副本时补键；副本文件缺（丁-tracked/轻量）静默。
+try:
+    _st = {s.split("=", 1)[0]: s.split("=", 1)[1]
+           for s in read_lines(os.path.join(mem, ".crules-state")) if "=" in s}
+    _want = _st.get("constitution_sha256")
+    _cons = os.path.join(root, ".claude", "crules", "constitution.md")
+    _got = hashlib.sha256(open(_cons, "rb").read()).hexdigest() if (
+        _want and os.path.exists(_cons)) else None
+    if _want and _got and _want != _got:
+        stale += ("\n宪法副本哈希与落位态不一致——副本被手改或损坏：跑 /crules-flutter:init"
+                  "（对拍不一致会呈 diff 呈裁决，不静默覆盖）。")
+except Exception:
+    pass
 
 def emit(context):
     print(json.dumps({"hookSpecificOutput": {"hookEventName": "Stop",

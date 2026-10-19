@@ -202,11 +202,15 @@ cp "$SRC/scripts/render-blocks.py" "$T6/scripts/"
 cp "$SRC"/canonical/*.md "$T6/canonical/"
 cp "$SRC/app/CLAUDE.md" "$T6/app/"; cp "$SRC/plugin/CLAUDE.md" "$T6/plugin/"
 cp "$SRC/commands/help.md" "$T6/commands/"; cp "$SRC/README.md" "$T6/"
-# agents/ 两卡随 1.0.35 aggregate-exception 块入扫描面（scan_targets 含 agents/——不拷则守卫①c 报缺围栏）
-cp "$SRC/agents/backend.md" "$SRC/agents/frontend.md" "$T6/agents/"
+# checklist.md＋进阶/ 随 review-core 块（2026-10-19 评审批）入扫描面——副本与仓内扫描面同构，零维护
+cp "$SRC/checklist.md" "$T6/"
+cp -R "$SRC/进阶" "$T6/进阶"
+# agents/ 七卡随 aggregate-exception（1.0.35）＋agent-memory-nav（2026-10-19 评审批）入扫描面
+# （scan_targets 含 agents/——不拷则守卫①c 报缺围栏；全量拷与仓内扫描面同构，新增卡零维护）
+cp "$SRC"/agents/*.md "$T6/agents/"
 rout=$(python3 "$T6/scripts/render-blocks.py" 2>&1); rrc=$?
 same=1
-for p in app/CLAUDE.md plugin/CLAUDE.md commands/help.md README.md agents/backend.md agents/frontend.md; do cmp -s "$T6/$p" "$SRC/$p" || same=0; done
+for p in app/CLAUDE.md plugin/CLAUDE.md commands/help.md README.md agents/*.md checklist.md "进阶/审查与复核纪律.md"; do cmp -s "$T6/$p" "$SRC/$p" || same=0; done
 # 锚串守卫（review R2）：canonical 清空/截断时 render 双侧对称 → 比对仍绿；锚串**直查仓内**
 # 目标文件（不经比对），堵「整段静默消失」——P3 删旧 byte 断言后这是各块的关键防线之一
 # 1.0.40（verify 族普查）：锚串改在**围栏区间内**查找——全文件 grep 的残余暴露=同文件叙事句
@@ -224,7 +228,9 @@ for a in "app/CLAUDE.md|gear-preset|轻量〔light〕" "plugin/CLAUDE.md|gear-pr
          "commands/help.md|gear-note|收尾档按任务规模三档判定" "README.md|gear-note|收尾档按任务规模三档判定" \
          "agents/backend.md|aggregate-exception|判定线 = 是否引入第二个" "agents/frontend.md|aggregate-exception|判定线 = 是否引入第二个" \
          "app/CLAUDE.md|redline-evidence|必须引用皆有实测依据" "plugin/CLAUDE.md|redline-evidence|必须引用皆有实测依据" \
-         "app/CLAUDE.md|redline-review-check|方案评审必核两件事" "plugin/CLAUDE.md|redline-review-check|方案评审必核两件事"; do
+         "app/CLAUDE.md|redline-review-check|方案评审必核两件事" "plugin/CLAUDE.md|redline-review-check|方案评审必核两件事" \
+         "agents/backend.md|agent-memory-nav|记忆库联动：开工先 Read" "agents/reviewer.md|agent-memory-nav|记忆库联动：开工先 Read" \
+         "checklist.md|review-core|资损红线" "进阶/审查与复核纪律.md|review-core|资损红线"; do
   af="${a%%|*}"; rest="${a#*|}"; bid="${rest%%|*}"; as="${rest#*|}"
   in_fence "$af" "$bid" "$as" || { anchor_bad=1; echo "  ↳ $af 围栏 $bid 内缺锚串「$as」——canonical 疑似清空/截断"; }
 done
@@ -869,6 +875,9 @@ GCI="$D/cifake"; rm -rf "$GCI"; mkdir -p "$GCI/scripts" "$GCI/.claude-plugin" "$
 cp "$SRC/scripts/check-imports.sh" "$GCI/scripts/"
 printf '{\n  "version": "0.0.1"\n}\n' > "$GCI/.claude-plugin/plugin.json"
 printf '<!-- crules-flutter: v9.9.9 @ 2026-01-01 -->\n' > "$D/citgt/CLAUDE.md"
+# lag 改段序投影后需 CHANGELOG 可读且两版均在序（评审 M3 适配——守卫不削）：戳 9.9.9 段序 1、
+# 源 0.0.1 段序 2 → ia−ib=−1 → 落「源更旧」分支，既有断言原样通过
+printf '## 9.9.9 · a\n## 0.0.1 · b\n' > "$GCI/CHANGELOG.md"
 oci=$(bash "$GCI/scripts/check-imports.sh" "$D/citgt" 2>&1); circ=$?
 [ "$circ" = "0" ] && echo "$oci" | grep -q "源更旧" \
   && { PASS=$((PASS+1)); echo "PASS  check-imports 报降级方向（三态收口）"; } \
@@ -950,6 +959,12 @@ if grep -q -- '--upgrade' "$SRC/hooks/stop-reminder.py"; then
   FAIL=$((FAIL+1)); echo "FAIL  T7 陈旧文案仍含 --upgrade 引导"
 else
   PASS=$((PASS+1)); echo "PASS  T7 陈旧文案零 install.sh --upgrade 引导（催 init 刷指针）"
+fi
+
+if grep -q 'constitution_sha256' "$SRC/commands/init.md" && grep -q 'constitution_sha256' "$SRC/hooks/stop-reminder.py"; then
+  PASS=$((PASS+1)); echo "PASS  宪法哈希对拍双锚（init 写键＋stop-reminder 验键同在——2026-10-19 评审 P1-6）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  宪法哈希对拍双锚脱钩（init 写键或 stop-reminder 验键缺失——两端须同批动）"
 fi
 
 stamp_rc=$(python3 - "$SRC" <<'PY'

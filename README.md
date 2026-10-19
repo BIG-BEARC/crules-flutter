@@ -49,10 +49,11 @@ claude plugin install crules-flutter@crules-flutter-market --scope user
 | 日常开发 / 写方案 / 引依赖 / 排障 | 宪法双 Gate（`.claude/CLAUDE.md` 指针载入）· flutter-rules skill · `platform-pitfalls` 坑库 · `error` agent |
 | 交付收尾 | checklist（插件 cache 即读）+ reviewer → `/crules-flutter:distill` |
 | 复刻 / 重写 / 迁移既有模块 | **parity-rewrite** skill（对照清单钉住原行为 → 逐项重建 → 测试矩阵验证一致） |
+| 会话出问题要归因（为什么慢 / 为什么没按宪法走） | `/crules-flutter:diagnose`（单会话因果诊断，只诊断不下判罚） |
 
 **出问题看哪**（排查序）：行为不符预期 → `/crules-flutter:help` 查场景归属 → 仍不明 → `memory/MAINTENANCE.md` → `CHANGELOG.md` 查能力引入版本。
 
-### 命令面板（×5）
+### 命令面板（×6）
 
 | 命令 | 用途 |
 |---|---|
@@ -60,6 +61,7 @@ claude plugin install crules-flutter@crules-flutter-market --scope user
 | `/crules-flutter:help` | 场景使用地图（什么场景用什么） |
 | `/crules-flutter:distill [--scope <需求>]` | 知识沉淀定稿（候选分组预览、逐组人工裁决后落盘） |
 | `/crules-flutter:diagram <文件>` | 存量人读文档补 mermaid 图 |
+| `/crules-flutter:diagnose` | 单会话事后归因诊断（五维扫描；每发现必附转录行号引用，无引用即无发现） |
 | `/crules-flutter:update-memory` | 记忆库索引全量刷新（兜底） |
 
 ### 收尾时序三档（review 主工位）
@@ -147,7 +149,7 @@ agents 不复制——plugin 已自动挂载 7 角色（`crules-flutter:frontend
 
 - **基线复测**：`/context` 快照，**新装 / 消费工程各落一档**——实测数**不落本节**、随 minor CHANGELOG 条落（见下条观测带数①；本节留快照句必过期——1.0.7 的数挂到 1.0.32 才被发现即实证）。口径：15K 线度量**本包模板常驻负担**，单位 **token**（即 `/context` 显示值）；`/context` 的 Memory files 混入项目自身内容——破线先分离归因（模板 vs 项目 CLAUDE.md 膨胀），项目侧膨胀应裁项目侧 / 走记忆库下沉，而非触发模板瘦身（历史测量记录见 CHANGELOG）
 - **观测带数**（防度量体系「建了没人看」）：CHANGELOG 的 minor 条目固定带两数——① 常驻基线快照（新装 / 消费工程各一档）② distill 四数（总发现数 / 采纳率 / 误报率 / 按验证状态分桶的误报率——与 distill §7 同源；`<30` 样本记数不计率，**0<N<30 悬空态显式进度行「样本 N/30」、禁渲染「无」**）；数据源 = 消费工程 `.review-ledger`，本仓不汇聚（本机私域口径不变）。**四数止损线**（1.0.9 外审 🟡3 处置；1.0.11 批C 改**时间触发**——版本里程碑可能长期不达，时间线更硬；1.0.31 条件修正）：**2026-12-31 前累计仍未跨 30**（自 1.0.3 建制起）→ 按「治理从简」砍四数、只留 ledger 原始账——不维护一套永不产出的指标；**到期未达标先诊断再砍**：「distill 调用数低」（真无人用，砍）与「调用在而 ledger 回填断链」（reviewer 尾提醒未落，修链）两因分开裁，防活机制错杀（2026-09-24 批A）；配套：distill §7 空态输出显式异常行（不静默「无数」）、reviewer 复核结论尾固定提醒主控回填。**首个 distill 周期**列观测项第一——它跑通与否决定沉淀闸整套机制是资产还是死重
-- **skill 平台坑节扫描**：Flutter / 平台大版本出现 → 扫 skill 坑节标【待重验】→ 核验刷新
+- **skill 平台坑节扫描**：Flutter / 平台大版本出现 → 扫 skill 坑节标【待重验】→ 核验刷新；superpowers 上游大版本（吸收事实锚 7.0.0）→ 重验叠加条款与改条文纪律口径（superpowers7 吸收批 §8 遗留义务，2026-10-19 随批归位）
 - **预设栈审视**：app 模板 §七 预设的包维护态与争议项按「最后核验」日期例行刷新
 - **docs 轮次化**：清点 `docs/`——状态戳已「已落地 / 已废弃」且所属批全部落地的方案 / 评审 / 复盘，正文归档或删（结论已被代码与 CHANGELOG 吸收，git 可寻回；**被分发面引用的 docs 先去引用再删**，防悬空指针）；裁决中途的保留至批落地。**可删判定外置核实**：以 git tag / 落地 commit / 实物在树为准，状态戳与依据链转述只作线索（1.1.2 实证：10 篇可删中 5 篇戳过期）；删前逐篇本体挂起项扫描（待裁 / 待批 / 另批族词）零命中方可删。**落地批同批回写所闭 docs 状态戳为终态**（戳失真在本源生成，清点端只兜底）。**清点挂钩 minor 位跳变的收口批同轮**——`grep -n "^> 状态" docs/*.md` 跑一遍（再积压一次则评估上闸）。**裁决索引即状态戳**：每篇头部 `> 状态：…` 必含下一步动作（如「待需求方逐条裁 §6」），全部等待态一查即得（读的是本体，无第二份索引可漂移）
 - **同文块改动（1.0.12 起）**：各**逐字同文**内容块（档位预设节 / 收尾时序行 / Gate 例外段 / help↔README 档位说明段 / agents 双卡聚合例外判定线句 / §一 两条「引用实测依据」「评审两核」红线；块数以 scripts/render-blocks.py 登记表为准）已生成化——改 `canonical/<id>.md` 后跑 `python3 scripts/render-blocks.py` 重新生成，**勿直接改目标文件的围栏区**（`<!-- gen:… -->` 之间由生成器接管；CI 生成闸 + 锚串守卫会红）。**尾随空行语义**：canonical 文件尾的空行被剥离（需块内尾随空行须写进正文）
@@ -194,5 +196,5 @@ agents 不复制——plugin 已自动挂载 7 角色（`crules-flutter:frontend
 | 沉淀闸档位 | 分流（默认）/ 全闸 / 降级宽松——独立字段，AI 不得自行升降 | distill「档位」 |
 | 提速档 | standing instruction 走 Gate 例外，须圈死范围/规模/验证档三要素 | `PROJECT.md` §十二（定义：双模板 §十二） |
 | 两类台账 | `.review-ledger`（裁决，供四数聚合）/ `.gate-exceptions`（豁免，供事后审计）——均不进 git | distill §7 / §三 Gate 例外 |
-| 遵守度事实账 | `.compliance-log`——SessionEnd hook 每会话落一行**事实**（计数/布尔，无正文），量化「宪法被遵守几成」；记而不判，聚合裁决未接线（批3 裁） | hooks/compliance-audit.py / docs/普查-2026-09-22 |
+| 遵守度事实账 | `.compliance-log`——SessionEnd hook 每会话落一行**事实**（计数/布尔，无正文），量化「宪法被遵守几成」；记而不判，聚合裁决未接线（批3 裁） | hooks/compliance-audit.py（普查篇已轮次化删档 2026-10-19，git 史可查） |
 | 观测带数 | 每次 minor 的 CHANGELOG 必带：常驻基线快照 + distill 四数 | README「每次 minor 例行」 |

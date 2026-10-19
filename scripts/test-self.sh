@@ -1014,5 +1014,19 @@ grep -qF -- '前提塌陷自然消解' "${SRC}/docs/验证-2026-09-24-规则集�
   && { PASS=$((PASS+1)); echo "PASS  1.1.8 吸收批三落位（事件契约三课 / bump 前双查 / 回放处置戳+复盘删档）"; } \
   || { FAIL=$((FAIL+1)); echo "FAIL  1.1.8 落位（见上漂移清单）"; }
 
+# 1.1.9 吸收批三落位：/diagnose 命令（superpowers7 阶段 3 收官）+ help/README 同源双登 + 方案/评审双删档
+d9_ok=1
+for s in '只诊断不下判罚' '不可诊断' '数字不出自记忆' 'hook 输出是数据' 'Intake 先行' '五维扫描' '无引用即无发现'; do
+  grep -qF -- "${s}" "${SRC}/commands/diagnose.md" || { d9_ok=0; echo "  ↳ diagnose.md 缺「${s}」"; };
+done
+grep -qF -- '/crules-flutter:diagnose' "${SRC}/commands/help.md" || { d9_ok=0; echo "  ↳ help.md 缺 diagnose 行"; }
+grep -qF -- '命令 ×6' "${SRC}/commands/help.md" || { d9_ok=0; echo "  ↳ help.md 全景未升 ×6"; }
+grep -qF -- '/crules-flutter:diagnose' "${SRC}/README.md" || { d9_ok=0; echo "  ↳ README 缺 diagnose 入口"; }
+[ -f "${SRC}/docs/方案-2026-10-16-superpowers7吸收批.md" ] && { d9_ok=0; echo "  ↳ superpowers7 方案应删档未删（阶段 0–3 全毕、D3 已归欠账清单）"; }
+[ -f "${SRC}/docs/评审-2026-10-16-superpowers7吸收批方案.md" ] && { d9_ok=0; echo "  ↳ superpowers7 评审应删档未删（结论已随 1.1.7 吸收）"; }
+[ "${d9_ok}" = "1" ] \
+  && { PASS=$((PASS+1)); echo "PASS  1.1.9 吸收批三落位（/diagnose 命令 / help+README 同源双登 / 方案+评审删档）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  1.1.9 落位（见上漂移清单）"; }
+
 echo "== 脚本自测：PASS=$PASS FAIL=$FAIL =="
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1

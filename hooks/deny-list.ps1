@@ -399,8 +399,9 @@ try {
     $raw = $reader.ReadToEnd()
 } catch { Invoke-DenyListSelfFailure 'stdin 读取失败' }
 if ([string]::IsNullOrWhiteSpace($raw)) {
-    # 空 stdin = 参数根本没到（宿主**总会**送 JSON）。Windows 侧是 exec form 直起 powershell.exe、
-    #   无 `||` 兜底链，但姿态双源一致：判不了就 ask，不静默放行（py 侧该情形的正源是兜底链二次读）。
+    # 空 stdin = 参数根本没到（宿主**总会**送 JSON）。Windows 侧 1.0.24 起 PowerShell 匹配器同挂
+    #   `|| ps1` 兜底链——空 stdin 正源与 py 侧同型：首解释器读完 stdin 后非零退出，兜底二次读拿空。
+    #   姿态双源一致：判不了就 ask，不静默放行。
     Invoke-DenyListSelfFailure 'stdin 为空（参数未送达）'
 }
 $cmdIn = $null

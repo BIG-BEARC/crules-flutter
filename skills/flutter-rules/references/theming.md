@@ -68,7 +68,7 @@ final ButtonStyle myButtonStyle = ButtonStyle(
 
 ## 资源与网络图
 
-- assets 在 `pubspec.yaml` 声明目录；跨 package 加载子工程资源须带 `package` 参数（见项目模板 §八）
+- assets 在 `pubspec.yaml` 声明目录；跨 package 加载子工程资源须带 `package` 参数（见 `references/general.md` app 全栈通用——原项目模板 §八.1，1.3.0 下沉）
 - `Image.network` 必配 `loadingBuilder` + `errorBuilder`；缓存图用 `cached_network_image`
 
 ## 无障碍（A11Y）

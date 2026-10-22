@@ -4,7 +4,7 @@
 
 ## §七 技术栈（init 三选一后填）
 
-- 本项目最终技术栈：【待填·init】（App：A1 弹性+断点 / A2 设计稿缩放 / A3 自选；Plugin：插件 / 工具库二选一记「本项目最终类型」；字体策略一行）
+- 本项目最终技术栈：【待填·init】（App 适配：A1 弹性+断点 / A2 设计稿缩放 / A3 自选——方案全文见 flutter-rules skill `references/layout.md` 适配节；Plugin：类型二选一记「本项目最终类型」——全文见 `references/state-management.md`；字体策略一行）
 
 ## §十二 项目附录（init 填）
 

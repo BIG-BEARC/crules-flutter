@@ -164,14 +164,38 @@ said=$(sed -n 's/.*进阶 \([0-9][0-9]*\) 篇 + memory \([0-9][0-9]*\) 模板.*/
 # 1.0.11 批C F4：常驻面字数预算闸——防「无意间回潮」（1.0.10 刚做过一轮 −0.7k 下沉）。
 # 口径 = **字符数**（python len，UTF-8 解码后）——勿用 `wc -m`：macOS 未设 locale 时按字节计
 # （实测同一文件 wc -m 27915〔字节〕vs len 14769〔字符〕，批C 本人即踩此坑并写错结论）。
-# 锚值 = 批C 实测（app 15833 / plugin 14532），留 ~12% 裕量；超线须显式裁（裁模板 or
+# 锚值 = 1.3.0 分层批实测（app 15495 / plugin 14760），留 ~10% 裕量；超线须显式裁（裁模板 or
 # 上调预算并记 CHANGELOG），不静默过。
-zen_app=$(python3 -c "import sys;print(sum(len(open(f,encoding='utf-8').read()) for f in sys.argv[1:]))" "$SRC/app/CLAUDE.md" "$SRC/memory/NAVIGATION.md")
-zen_plu=$(python3 -c "import sys;print(sum(len(open(f,encoding='utf-8').read()) for f in sys.argv[1:]))" "$SRC/plugin/CLAUDE.md" "$SRC/memory/NAVIGATION.md")
-if [ "${zen_app:-0}" -le 18000 ] && [ "${zen_plu:-0}" -le 16500 ]; then
-  PASS=$((PASS+1)); echo "PASS  常驻面字数预算（app ${zen_app}/18000，plugin ${zen_plu}/16500 字符）"
+# 口径修订（1.3.0，1.2.3 呈报项就地清偿）：直计补 memory/PROJECT.md（指针 ④ 行常驻面——旧口径
+# 只算 CLAUDE.md+NAVIGATION 少计一件）；上调预算即违反「常驻净零」规则，须需求方显式裁决留痕。
+zen_app=$(python3 -c "import sys;print(sum(len(open(f,encoding='utf-8').read()) for f in sys.argv[1:]))" "$SRC/app/CLAUDE.md" "$SRC/memory/NAVIGATION.md" "$SRC/memory/PROJECT.md")
+zen_plu=$(python3 -c "import sys;print(sum(len(open(f,encoding='utf-8').read()) for f in sys.argv[1:]))" "$SRC/plugin/CLAUDE.md" "$SRC/memory/NAVIGATION.md" "$SRC/memory/PROJECT.md")
+if [ "${zen_app:-0}" -le 17000 ] && [ "${zen_plu:-0}" -le 16200 ]; then
+  PASS=$((PASS+1)); echo "PASS  常驻面字数预算（app ${zen_app}/17000，plugin ${zen_plu}/16200 字符）"
 else
-  FAIL=$((FAIL+1)); echo "FAIL  常驻面超预算（app ${zen_app}/18000，plugin ${zen_plu}/16500）——裁模板或显式上调预算记 CHANGELOG"
+  FAIL=$((FAIL+1)); echo "FAIL  常驻面超预算（app ${zen_app}/17000，plugin ${zen_plu}/16200）——裁模板或显式上调预算记 CHANGELOG"
+fi
+
+# 1.3.0 分层批：下沉指针行断言（呈裁稿 §五 指针行防漂 m4）——双 face 下沉点指针＋接收件在位，
+# 防后续批删指针 / 搬内容不同步（新同文面按 1.1.10 批C agents 收编先例机械化）。
+ptr_ok=1
+ptr_n_app=$(grep -c '已下沉' "$SRC/app/CLAUDE.md")
+ptr_n_plu=$(grep -c '已下沉' "$SRC/plugin/CLAUDE.md")
+[ "$ptr_n_app" -ge 9 ] || { ptr_ok=0; echo "MISS  app 下沉指针行 ${ptr_n_app}（须 ≥9）"; }
+[ "$ptr_n_plu" -ge 6 ] || { ptr_ok=0; echo "MISS  plugin 下沉指针行 ${ptr_n_plu}（须 ≥6）"; }
+for t in "app/CLAUDE.md|references/state-management.md" "app/CLAUDE.md|references/layout.md" "app/CLAUDE.md|references/general.md" "app/CLAUDE.md|references/architecture.md" "plugin/CLAUDE.md|references/state-management.md" "plugin/CLAUDE.md|references/general.md" "plugin/CLAUDE.md|references/architecture.md"; do
+  f=${t%%|*}; r=${t##*|}
+  grep -q "$r" "$SRC/$f" || { ptr_ok=0; echo "MISS  下沉指针缺：$f → $r"; }
+done
+grep -q 'superpowers＋dart-flutter 协作' "$SRC/skills/flutter-rules/SKILL.md" || { ptr_ok=0; echo "MISS  SKILL.md 协作节缺"; }
+for rf in state-management general architecture; do
+  [ -f "$SRC/skills/flutter-rules/references/$rf.md" ] || { ptr_ok=0; echo "MISS  接收件缺：references/$rf.md"; }
+done
+grep -q '屏幕适配方案' "$SRC/skills/flutter-rules/references/layout.md" || { ptr_ok=0; echo "MISS  layout.md 适配节缺"; }
+if [ "$ptr_ok" = 1 ]; then
+  PASS=$((PASS+1)); echo "PASS  下沉指针行＋接收件在位（app ×${ptr_n_app}／plugin ×${ptr_n_plu}＋协作节＋4 接收面）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  下沉指针/接收件漂移（见 MISS 行）"
 fi
 
 # 0.4.1 断言（A1 回归）：模板 AO 内容过真 dart analyzer 零 warning（死配置零容忍——

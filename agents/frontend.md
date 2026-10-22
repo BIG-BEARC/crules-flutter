@@ -51,7 +51,7 @@ model: sonnet
 
 ## UI 编码规则
 
-- 间距 / 圆角 / 字号等遵循项目 §七 所选适配方案（勿自带适配库假设——A2 screenutil 已停更，见项目模板注记）
+- 间距 / 圆角 / 字号等遵循项目 §七 所选适配方案（勿自带适配库假设——A2 screenutil 已停更；方案全文见 flutter-rules skill `references/layout.md` 适配节）
 - 所有颜色从主题 / 常量类获取，禁止 inline 写颜色字面量
 - 主题适配优先用统一主题扩展（`ThemeExtension`）
 - 通用文本样式走主题 / 常量类，组件内只允许局部微调

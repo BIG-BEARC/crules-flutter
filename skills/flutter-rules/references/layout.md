@@ -1,6 +1,6 @@
 # 布局 / Overflow / 叠层 / 浮层
 
-> 触发场景：布局选型、修 overflow / unbounded、叠层与浮层实现时 Read 本文件。来源：flutter-rules skill 布局节（B1 瘦身浓缩）。
+> 触发场景：布局选型、修 overflow / unbounded、叠层与浮层、屏幕适配选型、字体策略实现时 Read 本文件。来源：flutter-rules skill 布局节（B1 瘦身浓缩）；2026-10-22 并入宪法模板 §七 屏幕适配 / 字体策略（1.3.0 分层批）。
 
 ## Row / Column 主轴分配
 
@@ -63,3 +63,27 @@ class _MyDropdownState extends State<MyDropdown> {
 
 - 私有 `Widget` 子类优于「返回 Widget 的私有方法」（build 拆分同理——const 化与重建粒度都受益）
 - `build()` 内禁重活（请求 / 复杂计算）——自反馈死循环经典来源（见插件 cache `checklist.md` 反模式节）
+
+## 屏幕适配方案（三选一——选定结果记 PROJECT.md §七；1.3.0 自宪法模板 §七 下沉）
+
+**A1 弹性优先 + 断点（默认推荐·多端 / 长期项目）**
+弹性组件（Expanded/Flexible/Wrap）优先 → LayoutBuilder 断点（Compact<600 /
+Medium<840/Expanded≥840 三档语义化）→ 字号/间距走 ThemeExtension 离散档位。
+禁连续缩放系数（与系统字体缩放冲突、多端破版）。桌面端可按需扩 large/extra-large 档。
+
+**A2 设计稿缩放（按稿像素还原·单端项目）**
+flutter_screenutil（.w/.h 按稿缩放）。注：5.9.3 后 ~28 个月无稳定版（维护缓慢）；
+.sp 与系统字体缩放需显式协调；平板/桌面不适用。仅限存量沿用与像素还原型单端新项目。
+
+**A3 自定义**（在此描述）
+
+## 字体策略（公共·任一适配档皆必选；1.3.0 自宪法模板 §七 下沉）
+
+- **关键字体打包进 app**，不依赖系统回退：Android 机型 OEM ROM 可能裁剪 Roboto/
+  中文字重（字重只剩两档）；Windows 可能缺可用中文字体——按目标平台打包（如 Roboto
+  全字重 + 桌面中文字体），pubspec 显式声明 family 与字重映射（离线 / 内网设备的
+  google_fonts 禁用口径与坑卡见 [theming.md](theming.md)「自定义字体分场景」）
+- **统一注入点**：平台条件 fontFamily 走统一 TextStyle 工厂/getter；**禁内联
+  TextStyle**（内联即绕过注入，桌面端/OEM 机型即现字体缺陷）
+- fontFamilyFallback 显式声明兜底链
+- 打印等设备无法渲染的字形（维语/阿拉伯语等）：文字渲染为图的兜底链路

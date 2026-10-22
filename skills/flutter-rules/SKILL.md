@@ -1,6 +1,6 @@
 ---
 name: flutter-rules
-description: Flutter/Dart 技术最佳实践参考——写/审 Flutter 代码时查找风格、架构、主题、布局、颜色、字体、无障碍等规范细节用；状态管理纪律（预设 A / Riverpod）与测试选型（TDD 适用范围）用 references/state-management.md、testing.md；写设计方案 / 出方案时用「方案骨架」（references/design-doc.md）；引平台依赖、写平台代码、升级或排障时查「平台坑库」（references/platform-pitfalls.md）；选 dart-flutter skill 时查「dart-flutter skill 速查」节。与 dart-flutter skills 重叠处以 dart-flutter skills 为准，本 skill 是补充参考（清单/规范类内容为主，按域拆 references/ 分文件按需 Read）。
+description: Flutter/Dart 技术最佳实践参考——写/审 Flutter 代码时查找风格、架构、主题、布局、颜色、字体、无障碍等规范细节用；技术栈预设族全文（app 预设 A/B/C＋plugin 类型 A/B——原双模板 §七，1.3.0 下沉）与状态管理纪律用 references/state-management.md、testing.md（TDD 适用范围）；分层架构用 references/architecture.md；通用与 plugin 专项规范用 references/general.md；写设计方案 / 出方案时用「方案骨架」（references/design-doc.md）；引平台依赖、写平台代码、升级或排障时查「平台坑库」（references/platform-pitfalls.md）；选 dart-flutter skill 时查「dart-flutter skill 速查」节。与 dart-flutter skills 重叠处以 dart-flutter skills 为准，本 skill 是补充参考（清单/规范类内容为主，按域拆 references/ 分文件按需 Read）。
 ---
 
 # AI rules for Flutter（crules-flutter 技术参考库）
@@ -17,8 +17,10 @@ description: Flutter/Dart 技术最佳实践参考——写/审 Flutter 代码�
 | 写设计方案 / 出方案 / PRD | [references/design-doc.md](references/design-doc.md) | 方案骨架（章节模板 / 裁剪档位 / Gate 映射 / 6.2 自测用例表生命周期 / 行业参考查证纪律）+ 配图约定（图型对照 / AI 常驻文件不加图） |
 | 引依赖 / 写平台代码 / 升级 SDK / 平台排障 | [references/platform-pitfalls.md](references/platform-pitfalls.md) | 平台坑库（三归属坑卡带出处与最后核验 / 入预置门槛 / 维护义务——维护者侧内容也在此，不占消费侧常驻） |
 | 主题 / 颜色 / 字体 / 暗黑 / Material 3 / A11Y | [references/theming.md](references/theming.md) | ThemeExtension 设计令牌（copyWith/lerp 全例）/ ColorScheme.fromSeed / WidgetStateProperty / WCAG 对比度 / Semantics / google_fonts |
-| 布局 / Overflow / 叠层 / 浮层 | [references/layout.md](references/layout.md) | Expanded-Flexible-Wrap 边界 / 滚动容器选型 / Stack 定位 / OverlayPortal 浮层全例 |
-| 状态管理（预设 A / Riverpod 纪律） | [references/state-management.md](references/state-management.md) | Notifier 模式 / Provider 就近组织 / ConsumerWidget vs ConsumerStatefulWidget 强制 / autoDispose 生命周期（选 A 时生效） |
+| 布局 / Overflow / 叠层 / 浮层 / 屏幕适配 / 字体策略 | [references/layout.md](references/layout.md) | Expanded-Flexible-Wrap 边界 / 滚动容器选型 / Stack 定位 / OverlayPortal 浮层全例 / 适配三选一（A1/A2/A3）/ 字体策略（1.3.0 自双模板 §七 下沉） |
+| 技术栈预设族（app 预设 A/B/C＋plugin 类型 A/B）/ 状态管理 | [references/state-management.md](references/state-management.md) | 预设族全文与选型注记（1.3.0 自双模板 §七 下沉）/ Notifier 模式 / Provider 就近组织 / ConsumerWidget vs ConsumerStatefulWidget 强制 / autoDispose 生命周期（选 A 时生效） |
+| 分层 / 架构纪律 | [references/architecture.md](references/architecture.md) | app 分层架构（MVVM/Repository）/ plugin 架构纪律与类型 A/B 额外纪律（1.3.0 自双模板 §十 下沉） |
+| 通用工程规范 / plugin 专项 | [references/general.md](references/general.md) | app 全栈通用（assets / 文件头 / import 排序）/ plugin 专项（平台通道选型 / pub 发布检查）（1.3.0 自双模板 §八 下沉） |
 | 测试选型 / 补测（TDD 适用范围） | [references/testing.md](references/testing.md) | App 按层分档表 + plugin 公开 API 全覆盖表 / 同构批量红绿细则 |
 | 接入 / 调试打印机（蓝牙 / USB / 网口 / 内置 / 标签）、打印排障 | [references/printer.md](references/printer.md) | 打印域（蓝牙·USB·网口链路卡 / 打印专项跨链路 / 一体机内置 / 标签 TSPL） |
 | 接入 / 调试电子秤、数字客显、串口设备排障 | [references/scale.md](references/scale.md) | 秤·客显串口设备域（串口 RS232 公共底座 / 电子秤含 USB 秤 / 数字客显——平行双实现并为一文件） |
@@ -69,6 +71,22 @@ description: Flutter/Dart 技术最佳实践参考——写/审 Flutter 代码�
 | 打包 C/C++ 为代码资产（类型 A） | `dart-setup-ffi-assets` |
 | 修运行时错误（配合 LSP/热重载） | `dart-fix-runtime-errors` |
 | 构建命令行工具（若 plugin 含 CLI） | `dart-build-cli-app` |
+
+## superpowers＋dart-flutter 协作（1.3.0 自双模板 §九 下沉）
+
+| 层 | 插件 | 职责 |
+|---|---|---|
+| 流程层 | **superpowers** | brainstorming→writing-plans→worktree→TDD→subagent→verification→review→finishing 工程闭环 |
+| 技术层 | **dart-flutter** | App：每个 Flutter 任务怎么写对（架构/路由/i18n/测试/序列化/响应式）；plugin：Dart/Flutter 任务怎么写对（测试/分析/模式匹配/序列化/FFI） |
+| 工具层 | **dart-flutter** Dart MCP + Stop hooks | 暴露 Dart 工具；会话停止自动 `dart-format` + `dart-analyze` |
+
+> 未装 superpowers / dart-flutter 时本节可忽略——本节定义的是叠加协作，非前置依赖。
+
+**核心心智模型**：superpowers 说「做什么」（先写失败测试→看它失败→写最小实现），dart-flutter 说「Flutter/Dart 里怎么做」。两者分层，**不冲突**。**触发规则**：每个任务开始前先检查是否有 skill 适用（superpowers 的 1% 规则）。
+
+### TDD 适用范围
+
+App / plugin 按层分档表与同构批量红绿细则见 [references/testing.md](references/testing.md)——涉测试选型 / 补测时按需加载。plugin 极契合 TDD——大量纯函数和明确的公开 API，**public API 默认全覆盖**。
 
 ## 索引级速记（跨场景高频、一行可答的留这里）
 

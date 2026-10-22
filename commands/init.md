@@ -109,7 +109,7 @@ rm -f "/tmp/crules-init-baseline.$$" "/tmp/crules-init-after.$$"
 
 ### 5. 引导必填（AI 交互——**全部写 `.claude/memory/PROJECT.md`**，宪法副本永不改）
 
-1. **§七 技术栈**：App 三选一（含适配方案 A1 弹性+断点〔默认推荐〕/ A2 设计稿缩放 / A3 自定义）或 Plugin 类型二选一；**字体策略**公共必选（离线/内网设备提示字体打包路线，坑卡「系统字体回退不可信」）→ 写 PROJECT.md「§七」节
+1. **§七 技术栈**：App 三选一（含适配方案 A1 弹性+断点〔默认推荐〕/ A2 设计稿缩放 / A3 自定义）或 Plugin 类型二选一（方案全文在 flutter-rules skill `references/layout.md` 适配节 / `references/state-management.md` 预设族——1.3.0 自宪法下沉）；**字体策略**公共必选（离线/内网设备提示字体打包路线，坑卡「系统字体回退不可信」）→ 写 PROJECT.md「§七」节
 2. **档位预设三选一**（轻量〔light〕/ 标准〔normal〕/ 完整〔full〕，无档位行 = 默认标准）→ 写 PROJECT.md 档位行。**不可配置项**（deny-list hook / 协作红线 / lint 硬拦）无开关，不引导配置。**轻量档另触发**：仅删指针 ③ 行（NAVIGATION 常驻导入关）——指针 ④ 行与 PROJECT.md **必留**（档位行 / §七 / §十二 是 agents·skills·宪法覆写的锚点，删即断链）；其余 memory 种子留着、停维护即「记忆库关」（不删文件，将来升档零成本）
 3. **项目附录 3 必填**：项目名 / 构建·分析·测试命令 /（协作偏好可选项）→ PROJECT.md「§十二」节
 4. **支持矩阵三段式** → `.claude/memory/platform-pitfalls.md` 头部：①机械读（`ls` 平台目录、`grep minSdk` / `platform :ios`；解析失败保留占位符不瞎填）②人核对（未发版平台划掉）③人补（实测上限、现场设备实态）

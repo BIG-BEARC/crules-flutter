@@ -192,38 +192,19 @@
 
 ## 七、技术栈约定
 
-> 本项目使用 Flutter App 开发。下方列了 3 套主流预设 + 1 个自定义模板。
-> **选定结果落 `.claude/memory/PROJECT.md` §七——本件保持原样（预设全文留作参照）。**
-> 涉及这些技术时，优先调用 dart-flutter 对应 skill，不另造轮子。
-> 预设条目按「最后核验」日期维护（**最后核验：2026-09-05**）；栈审视与 skill 坑节维护义务并列，每次 minor 例行刷新。
+> 本项目使用 Flutter App 开发。3 套主流预设全文已下沉 **flutter-rules** skill `references/state-management.md`（自定义模板留本件）；**选定结果落 `.claude/memory/PROJECT.md` §七——本件保持原样**；条目维护随下沉件；涉这些技术优先 dart-flutter skill，不另造轮子。
 
 ### 预设 A：Riverpod + go_router + Dio（现代主流）
 
-- 状态管理：`flutter_riverpod`（优先 `Notifier`/`AsyncNotifier`，避免过时 `StateNotifier`）
-- 路由：`go_router`（声明式，`MaterialApp.router`）
-- 网络：`dio` + `interceptors`（鉴权/日志/重试）；接口规模大可加 `retrofit`（声明式 codegen 层，与 Dio 非互斥）
-- 序列化：`json_serializable` + `build_runner`（`.g.dart` 生成，不手写）
-- 本地存储：`shared_preferences`（轻 KV）或 `drift`（结构化）；`hive` 原版已停更（稳定版停于 2022-06）——NoSQL 需求用社区延续 `hive_ce`
-- 国际化：官方 `flutter_localizations` + `gen-l10n`（或 `slang`）；`easy_localization` 维护缓慢，不推荐新项目
-- 主题/适配：暗黑模式走统一 `ThemeExtension`；适配优先 `MediaQuery` / `LayoutBuilder` 断点方案——`flutter_screenutil` 已停更（2024-05 起）且平板 / 桌面多端有短板
+> 全文已下沉 `references/state-management.md`。
 
 ### 预设 B：Bloc + go_router + Dio（事件驱动、强约束）
 
-- 状态管理：`flutter_bloc`（`Bloc`/`Cubit`，事件驱动，适合中大团队）
-- 路由：`go_router`
-- 网络：`dio`
-- 序列化：`freezed` + `json_serializable`（不可变模型 + 联合类型）
-- 本地存储：`hive_ce`（hive 原版已停更 2022-06——社区延续版，口径同预设 A 存储注记）
-- 国际化：`flutter_localizations` + `intl`
+> 全文已下沉（同上）。
 
 ### 预设 C：Provider + http（仅极端克制依赖时选——整体偏旧，常规项目选 A/B）
 
-- 状态管理：`provider` + `ChangeNotifier`
-- 路由：`Navigator 1.0`（命名路由）
-- 网络：`http` 包
-- 序列化：`dart:convert` 手写 `fromJson`/`toJson`（选 C 即接受手写维护成本——skill 默认 `json_serializable` 生成不手写，此为本预设克制依赖的例外）
-- 本地存储：`shared_preferences`
-- 国际化：`flutter_localizations` + `intl`
+> 全文已下沉（同上）。
 
 ### 自定义模板（以上都不合适时填这里）
 
@@ -243,26 +224,11 @@
 
 ### 屏幕适配方案（三选一——选定结果记 PROJECT.md §七）
 
-**A1 弹性优先 + 断点（默认推荐·多端 / 长期项目）**
-弹性组件（Expanded/Flexible/Wrap）优先 → LayoutBuilder 断点（Compact<600 /
-Medium<840/Expanded≥840 三档语义化）→ 字号/间距走 ThemeExtension 离散档位。
-禁连续缩放系数（与系统字体缩放冲突、多端破版）。桌面端可按需扩 large/extra-large 档。
-
-**A2 设计稿缩放（按稿像素还原·单端项目）**
-flutter_screenutil（.w/.h 按稿缩放）。注：5.9.3 后 ~28 个月无稳定版（维护缓慢）；
-.sp 与系统字体缩放需显式协调；平板/桌面不适用。仅限存量沿用与像素还原型单端新项目。
-
-**A3 自定义**（在此描述）
+> A1/A2/A3 全文已下沉 **flutter-rules** skill `references/layout.md` 适配节。
 
 ### 字体策略（公共·任一适配档皆必选）
 
-- **关键字体打包进 app**，不依赖系统回退：Android 机型 OEM ROM 可能裁剪 Roboto/
-  中文字重（字重只剩两档）；Windows 可能缺可用中文字体——按目标平台打包（如 Roboto
-  全字重 + 桌面中文字体），pubspec 显式声明 family 与字重映射
-- **统一注入点**：平台条件 fontFamily 走统一 TextStyle 工厂/getter；**禁内联
-  TextStyle**（内联即绕过注入，桌面端/OEM 机型即现字体缺陷）
-- fontFamilyFallback 显式声明兜底链
-- 打印等设备无法渲染的字形（维语/阿拉伯语等）：文字渲染为图的兜底链路
+> 全文已下沉 `references/layout.md` 字体策略节。
 
 ---
 
@@ -270,10 +236,7 @@ flutter_screenutil（.w/.h 按稿缩放）。注：5.9.3 后 ~28 个月无稳定
 
 ### 8.1 全栈通用（任何预设生效）
 
-- **多 package 工程 assets 加载**：子工程被主工程引用时，加载子工程自己的 assets 用项目统一的加载入口（内部默认带 `package` 参数），**不要**用裸 `load()`——跨 package 资源不加 package 名必空（新增 assets 须完全重启，见 §四）
-- **文件头注释（默认跟随项目现状，可覆写）**：注释放在 import 语句**之后**（不是文件开头）。默认——新建文件的作者头沿用项目主流惯例：存量普遍带 @Author 头 → 循既有格式（不含 @Email——作者与时间以 git 记录为准，头注不双写）；存量普遍无头 → 不加。惯例不一致时问一次需求方，答复记入 `.claude/memory/PROJECT.md` §十二附录（覆写为「强制开/强制关」）
-- **Import 排序**：Dart SDK → Flutter SDK → 外部包（字母序）→ 内部包（绝对路径 `package:<项目>/...`）→ 相对路径
-- 代码风格细则不双份维护：通用风格（const 构造 / 命名 / 行宽）模型已知 + lint 基线硬拦；项目特有风格（头注释 / 适配 / import 分组）见本节各条；主题与布局细节按需查 **flutter-rules** skill `references/theming.md` / `layout.md`
+> 四条全文已下沉 `references/general.md`（assets / 文件头 / import·按需 Read）。
 
 ### 8.2 预设 A（Riverpod）特有——**选 A 时生效**
 
@@ -285,31 +248,13 @@ flutter_screenutil（.w/.h 按稿缩放）。注：5.9.3 后 ~28 个月无稳定
 
 ## 九、superpowers + dart-flutter 协作
 
-| 层 | 插件 | 职责 |
-|---|---|---|
-| 流程层 | **superpowers** | brainstorming→writing-plans→worktree→TDD→subagent→verification→review→finishing 工程闭环 |
-| 技术层 | **dart-flutter** | 每个 Flutter 任务怎么写对（架构/路由/i18n/测试/序列化/响应式） |
-| 工具层 | **dart-flutter** Dart MCP + Stop hooks | 暴露 Dart 工具；会话停止自动 `dart-format` + `dart-analyze` |
-
-> 未装 superpowers / dart-flutter 时**本节可忽略**——本节定义的是叠加协作，非前置依赖。
-
-**核心心智模型**：superpowers 说「做什么」（先写失败测试→看它失败→写最小实现），dart-flutter 说「Flutter 里怎么做」。两者分层，**不冲突**。
-
-### TDD 适用范围
-
-按层分档表与同构批量红绿细则已下沉至 **flutter-rules** skill `references/testing.md`——涉测试选型 / 补测时按需加载，不常驻。
+> 全文已下沉 **flutter-rules** skill「superpowers＋dart-flutter 协作」节（SKILL.md）；未装两 skill 可忽略本节。
 
 ---
 
 ## 十、分层架构纪律
 
-严格关注点分离，**禁止** UI 与业务/数据逻辑混层：
-
-- **UI 层（Presentation）**：MVVM。View 只渲染 + UI 逻辑，数据全从 ViewModel 取；ViewModel（Riverpod `Notifier` 或所选方案）管状态、处理交互、注入 Repository，对外暴露**不可变**状态快照
-- **Data 层**：Repository 模式。Service 包外部 API（HTTP/DB/平台插件）；Repository 消费 Service、转 Domain Model、管缓存/重试
-- **Logic 层（Domain，可选）**：仅当业务逻辑复杂到污染 ViewModel、或需跨 ViewModel 复用时抽 Use Case
-- **跨层纪律**：View 只调自己的 ViewModel/聚合层，**不跨页面调别人的状态、不跨层直接 watch 多个底层源**
-- **响应式/暗黑**：走统一扩展（`ThemeExtension` + §七 所选适配方案），颜色/字号/间距归口常量类，**不硬编码**
+> 全文已下沉 `references/architecture.md`。
 
 ---
 

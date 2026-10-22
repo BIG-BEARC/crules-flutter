@@ -185,28 +185,15 @@
 
 ## 七、插件类型
 
-> 两种典型形态。**选定结果落 `.claude/memory/PROJECT.md` §七——本件保持原样（两种形态全文留作参照）。** 类型决定下方哪些纪律适用。
+> 两种典型形态，**全文已下沉 flutter-rules skill `references/state-management.md` 预设族节**。**选定结果落 `.claude/memory/PROJECT.md` §七——本件保持原样。** 类型决定哪些纪律适用（类型特有纪律见本件 §十指针）。
 
 ### 类型 A：通用 Flutter plugin（平台能力/原生桥接）
 
-适用于：封装平台能力、原生模块、设备 API、联邦接口（federated）plugin。
-
-特征：
-- `pubspec.yaml` 声明 `flutter.plugin.platforms`（android/ios/linux/macos/windows/web）
-- 走**联邦接口**：`<name>.dart`（面向端接口）→ `<name>_platform_interface.dart`（抽象）→ `<name>_method_channel.dart`（MethodChannel 实现）→ 原生 `Plugin.kt`/`Plugin.swift`
-- 有 `example/` app 仅用于演示和验证插件表面
-- 可能含 iOS Podspec / Android Gradle 原生依赖
+> 全文已下沉 `references/state-management.md`。
 
 ### 类型 B：工具库风格（纯 Dart 工具模块）
 
-适用于：纯 Dart 工具集合（如 `cutils`：money/format/encrypt/utils…），无或极少平台通道。
-
-特征：
-- `lib/<domain>/<module>.dart` 自包含模块，被下游**按全路径直接 import**（如 `package:xxx/num/money_utils.dart`）
-- `lib/<name>.dart` 主入口**不一定** re-export 各模块（按需）
-- 无平台通道时 `pubspec.yaml` 不声明 `flutter.plugin.platforms`
-- `example/` 仅做调用演示
-- TDD 极契合（纯函数多）
+> 全文已下沉（同上）。
 
 ### 自定义模板（混合形态或特殊 plugin 时填这里）
 
@@ -226,35 +213,13 @@
 
 ## 八、Plugin 专项规范
 
-> 【按需手填占位】——当前无 plugin 形态消费工程的上移源（本包实战输入来自 App 工程）；项目特有规范沉淀于此。
-> 屏幕适配与字体策略（App 形态课题）不入本模板——plugin 无 UI 适配语境；若 plugin 含 example App，按 app 模板 §七对号。
-
-**平台通道选型**：简单参数传递用 `MethodChannel`；**结构化数据 / 多端对等接口优先 Pigeon**（类型化生成 Dart + Kotlin + Swift 三侧，消灭手写序列化与两侧签名漂移——原生侧对等纪律的机械化方案）；事件流用 `EventChannel`。
-
-**pub 发布检查**（发版前逐项过，全表见 skill flutter-rules `references/build-release.md`「pub 包发布」节）：
-
-- [ ] `flutter pub publish --dry-run` 零警告（CHANGELOG / 版本号 / description 一致）
-- [ ] 破坏性 API 变更升 major；CHANGELOG 顶部版本与 pubspec 一致
-- [ ] Kotlin ↔ Swift 平台能力清单逐条对等；federated 插件 endorsed 平台包版本同步
-- [ ] example 工程可跑；发布后净工程 `flutter pub deps` 实测拉取
+> 全文（占位说明 / 平台通道选型 / pub 发布检查）已下沉 `references/general.md`。
 
 ---
 
 ## 九、superpowers + dart-flutter 协作
 
-| 层 | 插件 | 职责 |
-|---|---|---|
-| 流程层 | **superpowers** | brainstorming→writing-plans→worktree→TDD→subagent→verification→review→finishing 工程闭环 |
-| 技术层 | **dart-flutter** | Dart/Flutter 任务怎么写对（测试/分析/模式匹配/序列化/FFI） |
-| 工具层 | **dart-flutter** Dart MCP + Stop hooks | 暴露 Dart 工具；会话停止自动 `dart-format` + `dart-analyze` |
-
-> 未装 superpowers / dart-flutter 时**本节可忽略**——本节定义的是叠加协作，非前置依赖。
-
-**核心心智模型**：superpowers 说「做什么」，dart-flutter 说「Dart 里怎么做」。两者分层，**不冲突**。**触发规则**：每个任务开始前先检查是否有 skill 适用（superpowers 的 1% 规则）。
-
-### TDD 适用范围
-
-plugin 极契合 TDD——大量纯函数和明确的公开 API，**public API 默认全覆盖**；分档表与批量红绿细则已下沉至 **flutter-rules** skill `references/testing.md`——涉测试选型 / 补测时按需加载，不常驻。
+> 全文已下沉 **flutter-rules** skill「superpowers＋dart-flutter 协作」节（SKILL.md）；未装两 skill 可忽略本节。
 
 ---
 
@@ -270,25 +235,9 @@ plugin 极契合 TDD——大量纯函数和明确的公开 API，**public API �
 - **文档化公开表面**：公开模块写 Dartdoc，作者头部按既有模块惯例
 - **不 re-export 污染**：主入口按既有策略决定是否 re-export 子模块，不擅自改导出面
 
-### 架构纪律（通用）
+### 架构纪律（通用＋类型 A/B 额外）
 
-- **模块自包含**：`lib/<domain>/<module>.dart` 各自独立，按全路径 import，互不隐式耦合
-- **import 分组注释**：`// Dart imports:` → `// Flutter imports:` → `// Package imports:` → `// Project imports:`，新增文件沿用
-- **作者文档头（默认跟随项目现状，可覆写）**：默认——新模块作者头沿用项目主流惯例：存量普遍带 `/// * @Author:` 块 → 循既有格式（不含 @Email——作者与时间以 git 记录为准，头注不双写）；存量普遍无头 → 不加。惯例不一致时问一次需求方，答复记入 `.claude/memory/PROJECT.md` §十二附录（覆写为「强制开/强制关」）
-- **注释语言**：领域逻辑用中文，文件内保持一致，不混用
-- **example/ 纪律**：只演示插件表面、用于验证，**不当 app 开发**；example 的改动不进插件本体
-
-### 类型 A（平台 plugin）额外纪律
-
-- **走联邦接口**：面向端 → platform_interface（抽象）→ method_channel（实现）→ 原生
-- **平台差异收敛**：平台特定代码放原生侧或接口实现层，Dart 端保持平台无关
-- **改原生侧要同步两端**：Android 与 iOS 能力保持对等，改一边要确认另一边
-
-### 类型 B（工具库）额外纪律
-
-- **零平台依赖优先**：能用纯 Dart 解决就不引平台通道，降低下游集成成本
-- **重依赖要标注**：引入重依赖时在模块头注释标明，提醒下游
-- **未验证功能显式标注**：实验性模块标 `// 待验证`，不当作稳定 surface
+> 全文已下沉 `references/architecture.md`。
 
 ---
 

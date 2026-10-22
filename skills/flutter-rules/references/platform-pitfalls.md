@@ -24,6 +24,7 @@
 | 字重只剩两档、中文渲染异常、字形缺失、OEM 字体裁剪 | Android/Windows/macOS | 系统字体回退不可信——跨端字重/字形异常 |
 | 下划线过短、下划线左缘缩进、title 未对齐、indicatorPadding | 全平台 | TabBar indicatorSize.label × 非零 indicatorPadding 双重内缩——下划线过短且左缘缩进 |
 | divider 撑满差异、同代码两版渲染不同、测试对真机错 | 全平台 | 滚动 TabBar dividerColor: transparent 跨 SDK 撑满 / 收缩差异——同代码两版渲染不同 |
+| 面板不渲染、只显示蒙层、Cannot hit test a render box with no size、BoxConstraints forces an infinite width、stretch 崩溃、IntrinsicWidth、TabBar 直绘 | 全平台 | Row 非弹性子件主轴无界宽 × stretch 列——整帧布局中止、面板全隐只余蒙层 |
 | textAlignVertical 无效、hint 不居中、输入框钉顶、几何断言红 | 全平台 | InputDecorator 垂直定位基线制——textAlignVertical 无杠杆、hint 盒居中几何断言不可达 |
 | 广播注册崩溃、SecurityException、RECEIVER_EXPORTED、targetSdk 34、USB 拔出无检测、副屏崩溃、window type | Android 14 | targetSdk 34 外设在屏双门——registerReceiver 必须三参 RECEIVER_*，副屏 Presentation 窗口类型不可覆盖 |
 | 蓝牙扫不出、蓝牙权限被拒绝、neverForLocation、位置权限、清单双声明、receiver 泄漏、扫描永挂 | Android 12+ | 蓝牙权限链三陷阱——12+ 请求列表残留 location 致误拒、清单双声明合并削弱 neverForLocation、扫描 catch 不注销 receiver |
@@ -37,9 +38,9 @@
 
 - 关键词：Win7 升 SDK、3.22+ 无法运行、构建产物跑不起来、SDK 死线
 - 归属：OS 平台（Windows 7/8）× Flutter SDK 桌面支持策略
-- 触发场景：目标机含 Win7/8 却把 Flutter SDK 升过 3.19 ｜ 症状：3.22+ 构建产物在 Win7 上无法运行（引擎依赖提升至 Win10 API 线）｜ 根因：官方将 Win7/8 移入 unsupported tier、最低要求提至 Windows 10 ｜ 规避：目标含 Win7 → SDK 钉 **3.19.x 末位 patch（3.19.6）**；或接受自维护成本走社区 fork（RustDesk 自改 engine 续命先例，有持续维护负担）；新项目直接放弃 Win7 目标
+- 触发场景：目标机含 Win7/8 却把 Flutter SDK 升过 3.19 ｜ 症状：3.22+ 构建产物在 Win7 上无法运行（引擎依赖提升至 Win10 API 线）｜ 根因：官方将 Win7/8 移入 unsupported tier、最低要求提至 Windows 10 ｜ 规避：目标含 Win7 → SDK 钉 **3.19.x 末位 patch（3.19.6）**；或接受自维护成本走社区 fork（RustDesk 自改 engine 续命先例，有持续维护负担）；新项目直接放弃 Win7 目标。**钉法产线化（单仓双 SDK 打包线四件套，生产实证 2026-10-22）**：dev 线用新 SDK、打包线钉 3.19.6 分线共存，四件套防呆——①build 脚本 SDK 校验（防 CI 用错版本）②依赖 exact-pin 降级 override（对齐 3.19.6 生态）③守卫脚本三查（override 仅 hosted 源 / 本地插件 flutter 下限 ≤3.19.6 / 主 pubspec Dart 下限兼容）④distributor 出包含自定义 DLL
 - 区间：**3.19（2024-02，Dart 3.3）= 最后一个支持 Win7/8 的 stable**；3.22 起最低 Windows 10（3.19→3.22 间无其他 stable，3.19.6 即事实上限）；3.20/3.21 beta 线未查证
-- 状态：官方既定政策（不可逆） ｜ 最后核验：2026-09-10
+- 状态：官方既定政策（不可逆） ｜ 最后核验：2026-10-22
 - 出处：[flutter#140830](https://github.com/flutter/flutter/issues/140830)（官方 tracking issue：Move Windows 7 and 8 to unsupported tier）+ [Flutter 3.19 release blog](https://flutter.dev/blog/whats-new-in-flutter-3-19)（ending support for Windows 7/8）+ [RustDesk fork 实录](https://rustdesk.com/blog/how-to-make-flutter-3-24-run-on-windows-7)；关联坑卡：permission_handler Win7 闪退（同根因——引擎层 Win10+ 依赖）
 
 ### [Android 4.x] Flutter SDK 版本上限——3.22 起最低 API 21（KitKat 4.4 及更早同线阵亡）
@@ -142,6 +143,15 @@
 - 区间：Flutter 3.19.6 × 3.27.4（双源码核验）
 - 状态：框架行为差异（规避即终态） ｜ 最后核验：2026-09-20
 - 出处：生产实证（私有仓 delivery_order_panel.dart:178 修复）+ 本地双版本 SDK 源码
+
+### [全平台] Row 非弹性子件主轴无界宽 × stretch 列——整帧布局中止、面板全隐只余蒙层
+
+- 关键词：面板不渲染、只显示蒙层、Cannot hit test a render box with no size、BoxConstraints forces an infinite width、stretch 崩溃、IntrinsicWidth、TabBar 直绘
+- 归属：Flutter SDK（RenderFlex 布局规则）
+- 触发场景：Row/Flex 非弹性子件链内用 `crossAxisAlignment: stretch` 做横向铺满（直绘 tab 条「文字+等宽指示条」类） ｜ 症状：面板整帧不渲染只余蒙层，点按崩「Cannot hit test a render box with no size」；debug 日志「BoxConstraints forces an infinite width」during performLayout，动画期间逐帧重抛 ｜ 根因：Row 非弹性子件主轴宽按设计无界（0..∞），stretch 列传 minWidth=maxWidth=∞ 给子件→debug 断言抛→异常穿出 flushLayout 中止整帧 ｜ 规避：「子件宽=内容宽」的 stretch 先包 **IntrinsicWidth** 钉紧约束；或确保有界宽约束（Expanded/定宽）再 stretch
+- 区间：3.27.4 实测（debug 断言抛出）；框架既有逻辑理论全版本（3.19.6 未逐一核验）
+- 状态：框架行为（规避即终态） ｜ 最后核验：2026-10-22
+- 出处：生产实证（消费工程复现测试+复盘 2026-10-22 首踩；私有仓细节按信任声明口径不外链）+ [官方 constraints 文档](https://docs.flutter.dev/ui/layout/constraints)（示例 16 同款报错）
 
 ### [全平台] InputDecorator 垂直定位基线制——textAlignVertical 无杠杆、hint 盒居中几何断言不可达
 

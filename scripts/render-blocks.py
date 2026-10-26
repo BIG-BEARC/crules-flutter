@@ -48,6 +48,9 @@ EXPECTED = {
     # 「逐字双写无闸」正是防漂移批点名的病形复发）
     "redline-evidence": ["app/CLAUDE.md", "plugin/CLAUDE.md"],
     "redline-review-check": ["app/CLAUDE.md", "plugin/CLAUDE.md"],
+    # 2026-10-26 对话层批（方案-2026-10-22 终批）：对话断言先验后报（redline-evidence 交付面
+    # 红线的适用面前移）＋推荐前候选扫描轻量层——redline- 族第三件，生成进双面 §一红线区
+    "redline-conversation": ["app/CLAUDE.md", "plugin/CLAUDE.md"],
     # 2026-10-19 评审批：agents 7 卡逐字同文双段（记忆库联动＋进阶定位）收源——同文 ×7 无闸，
     # 改一忘六必漂移；段 1 角色指针行各卡手写不入源（同 aggregate-exception「围栏外手写」先例）
     "agent-memory-nav": ["agents/backend.md", "agents/error.md", "agents/frontend.md",

@@ -9,7 +9,7 @@
 set -uo pipefail
 SRC=$(cd "$(dirname "$0")/.." && pwd)
 # 环境守卫（1.0.13）：本脚本两条断言（draft / tag）依赖 git 历史，其余不依赖（1.0.38 50 → 1.0.39 51、1.0.41 +3 至 54、
-# 1.0.42 +2 至 56——撞名/缺口/债龄三闸 + parity 两闸，其中缺口闸调 git tag 但不可读时自 SKIP；计数以实跑为准。
+# 1.0.42 +2 至 56、1.3.1 B 案三换一（缺口/债龄/段序钟 → 版本一致闸）+ parity 两闸；一致闸调 git tag 不可读时自 SKIP；计数以实跑为准。
 # 1.1.7 +1 至 59（合一断言；1.1.5/1.1.6 两批增量未逐批记账——外审 R8 勘误，防归因失真）
 # 1.0.39/40 曾误记「52/0」、1.0.39 起点曾误记 48——09-24 三 tag 隔离实跑勘误：51/51/54，且本机无 pwsh 时 ps1 夹具
 # SKIP 不计（有 pwsh 环境 +1），跨环境对数先对齐 SKIP 面）。在无 .git 的拷贝里
@@ -253,6 +253,7 @@ for a in "app/CLAUDE.md|gear-preset|轻量〔light〕" "plugin/CLAUDE.md|gear-pr
          "agents/backend.md|aggregate-exception|判定线 = 是否引入第二个" "agents/frontend.md|aggregate-exception|判定线 = 是否引入第二个" \
          "app/CLAUDE.md|redline-evidence|必须引用皆有实测依据" "plugin/CLAUDE.md|redline-evidence|必须引用皆有实测依据" \
          "app/CLAUDE.md|redline-review-check|方案评审必核两件事" "plugin/CLAUDE.md|redline-review-check|方案评审必核两件事" \
+         "app/CLAUDE.md|redline-conversation|先验证后陈述" "plugin/CLAUDE.md|redline-conversation|先验证后陈述" \
          "agents/backend.md|agent-memory-nav|记忆库联动：开工先 Read" "agents/reviewer.md|agent-memory-nav|记忆库联动：开工先 Read" \
          "checklist.md|review-core|资损红线" "进阶/审查与复核纪律.md|review-core|资损红线"; do
   af="${a%%|*}"; rest="${a#*|}"; bid="${rest%%|*}"; as="${rest#*|}"
@@ -352,8 +353,8 @@ done
 
 # 1.0.32 信息架构批断言（外部信息架构评审三弱项 + 核实发现同族漂移）：链接解析 / 坑库速查对账 /
 # memory 清单回潮 / checklist 指针限定与编号对账——共 5 条（31→36）
-# ① 链接解析闸：全仓 md 链接须指向真实存在的文件（CHANGELOG 豁免——历史流水账链到后来
-#    删除的文档属正常）。占位指引（指向按需创建的生成物）一律写纯文字、不写链接格式。
+# ① 链接解析闸：全仓 md 链接须指向真实存在的文件（1.3.1 B 案撤 CHANGELOG 豁免——单页化后
+#    无历史流水账死链面）。占位指引（指向按需创建的生成物）一律写纯文字、不写链接格式。
 link_bad=$(python3 - "$SRC" <<'PYEOF'
 import os, re, sys
 try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -369,7 +370,7 @@ for dirpath, dirnames, filenames in os.walk(root):
         if not fn.endswith('.md'): continue
         p = os.path.join(dirpath, fn)
         rel = os.path.relpath(p, root).replace(os.sep, '/')
-        if rel == 'CHANGELOG.md': continue
+        # CHANGELOG 豁免撤（1.3.1 单页化——单页无死链面）
         for i, line in enumerate(open(p, encoding='utf-8').read().splitlines(), 1):
             for m in pat.finditer(line):
                 t = m.group(1).strip()
@@ -679,7 +680,7 @@ n_jar=$(printf '%s' "$jargon_bad" | head -1)
 if [ "${n_jar:-1}" = "0" ]; then
   PASS=$((PASS+1)); echo "PASS  消费面黑话禁令闸（分发 md 零内部代号，HTML 注释/维护者面豁免）"
 else
-  FAIL=$((FAIL+1)); echo "FAIL  消费面黑话命中 ×${n_jar:-?}（宪法 §一——内部代号移 CHANGELOG 或改大白话）："; printf '%s\n' "$jargon_bad" | tail -n +2
+  FAIL=$((FAIL+1)); echo "FAIL  消费面黑话命中 ×${n_jar:-?}（宪法 §一——内部代号移对照表（docs/清单-黑话白话对照-2026-10-22.md）或改大白话）："; printf '%s\n' "$jargon_bad" | tail -n +2
 fi
 
 ptr_bad=$(python3 - "$SRC" <<'PYEOF'
@@ -736,19 +737,13 @@ fi
 # ① 撞名闸（E1/G1）——「轻量」在消费面（进阶/ + commands/ + README.md）只许落项目档位轴：
 #   行级匹配白名单形「轻量〔light〕」「轻量档」（canonical/ 与 skills/ 不在扫面；1.0.38 曾占用
 #   的裸「轻量 tier」「轻量起见」族措辞即红——后占用者已改「极简档」「简化起见」）。
-# ② 版本缺口闸（E4/G3）——CHANGELOG 版本头 − git tag 差集须 ⊆ docs/清单-版本缺口与欠账.md 登记表
-#   （先核后写：11 缺口已逐版分诊，需求方 09-23 裁「不回补」，登记表即终态）。非 git 树 SKIP 不计 FAIL。
-# ③ 欠账龄闸（E2/G3）——⑤欠账表「起于」为版本形的行，债龄（当前 minor − 起于 minor）≤ N=10。
-#   2026-09-23 需求方裁「上闸即咬」：/context 债起 1.0.10 债龄 30，本闸真树即红系设计意图，
-#   封版（release tag 前跑全套 test-self）至行动甲 B 销账——展期须附需求方裁决引用。
-# 1.1.0 版本滚动适配（2026-10-09 需求方裁：patch 位 0–19 封顶、满则进 minor）——②头/登记表正则去
-#   1.0.x 硬编码；③计龄改线性 minor×20+patch（原 patch 直减在 minor 进位后归零成假绿，行过滤 minor≠0 同步撤）。
-# 1.1.2 段序计龄（d 案，2026-10-10 轮次化批呈裁发现盲区）：线性 minor×20+patch 对 1.0.2x–1.0.51
-#   遗留版起债为负龄恒绿（1.0.47→47 vs 现行 1.1.1→21）——非单调、纪元死数字基点（52）换纪元再适配。
-#   改段序位次差：age = 起于版本自顶段序位次（最新段=0；CHANGELOG 段头文件序 = 发版序，缺口闸同哲学）。
-#   两道 fail-closed：起于查无段头红（1.0.36 幽灵类跳号不许作起于）/ ≥1.0.0 段头严格降序破坏红
-#   （前史 0.x 尾有 0.0.1/0.1.1 文件序异常〔已实测〕，降序断言豁免 0.x 段——债面永不触及）。
-#   plugin.json 读取删除：顶段即当轮在飞版，release draft 段顶多致全表 +1，fail-safe 方向。
+# ② 版本一致闸（1.3.1 B 案裁：CHANGELOG 单页化——缺口闸/欠账龄闸/段序钟三闸随历史段退役，三换一）。
+#   四值全等：CHANGELOG 首部 ## X.Y.Z ＝ plugin.json ＝ marketplace.json ＝ README 横幅；tag 腿＝
+#   最新 tag 或其紧后一版（patch 0–19 滚动算 next，2026-10-09 裁）——批中（tag 未打，收尾两笔授权内）
+#   绿属正常，tag 后两态合一；跳版或漏 tag 即红。非 git 树 SKIP 不计 FAIL。历史缺口分诊态冻结于
+#   docs/清单-版本缺口与欠账.md（09-23 裁「不回补」，登记表即终态，不再对账）。
+#   check-imports 侧掉队距离同步脱钩 CHANGELOG（线性投影 minor×20+patch，1.3.1）。
+
 nm_bad=$(python3 - "$SRC" <<'PYEOF'
 import os, re, sys
 try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -776,95 +771,59 @@ else
   FAIL=$((FAIL+1)); echo "FAIL  轻量裸用/轴混 ×${n_nm:-?}（改「极简档/简化起见」或补档位限定）："; printf '%s\n' "$nm_bad" | grep '^  ↳' || true
 fi
 
-gap_out=$(python3 - "$SRC" <<'PYEOF'
+vc_out=$(python3 - "$SRC" <<'PYEOF'
 import os, re, subprocess, sys
 try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 except Exception: pass
 root = sys.argv[1]
-try:
-    r = subprocess.run(['git', 'tag'], cwd=root, capture_output=True, text=True, timeout=10)
-    if r.returncode != 0:
-        print('SKIP'); sys.exit(0)
-except Exception:
-    print('SKIP'); sys.exit(0)
-tags = {t.lstrip('v') for t in r.stdout.split() if re.match(r'^v?\d+\.\d+\.\d+$', t)}
-heads = set(re.findall(r'^## (\d+\.\d+\.\d+)', open(os.path.join(root, 'CHANGELOG.md'), encoding='utf-8').read(), re.M))
-# 1.1.0 滚动适配实跑勘误：全量正则被 0.6.x fork 前史段头咬红——0.x 无 tag 非缺口、不属 tag 纪律面，major≥1 过滤
-heads = {v for v in heads if int(v.split('.')[0]) >= 1}
-# 评审 P0-3：git 仓而 tag 集为空 = 检出环境缺 tag（浅克隆/未取 tag），闸瞎了——按红拒绝盲跑；
-#   SKIP 仅限非 git 树（上方 rc≠0 分支）。实证：CI checkout 默认 fetch-depth=1 不取 tag，
-#   零 tag 仓模拟 unreg=49 应红而本地 51 tag 全绿——同断言两环境结论相反即此盲区。
-if not tags and heads:
+def ver_of(rel, pat):
+    try: txt = open(os.path.join(root, rel), encoding='utf-8').read()
+    except OSError: return None
+    m = re.search(pat, txt, re.M)
+    return m.group(1) if m else None
+name = {
+  'CHANGELOG 首部': ver_of('CHANGELOG.md', r'^## (\d+\.\d+\.\d+)'),
+  'plugin.json': ver_of('.claude-plugin/plugin.json', r'"version":\s*"(\d+\.\d+\.\d+)"'),
+  'marketplace.json': ver_of('.claude-plugin/marketplace.json', r'"version":\s*"(\d+\.\d+\.\d+)"'),
+  'README 横幅': ver_of('README.md', r'当前状态：(\d+\.\d+\.\d+)'),
+}
+if None in name.values():
     print('BAD')
-    print('  ↳ 环境 tag 集为空而 CHANGELOG 有 1.x 段头——浅克隆/未取 tag（CI 需 fetch-depth: 0），闸拒绝盲跑')
+    for k, v in name.items():
+        if v is None: print('  ↳ ' + k + ' 版本读不到')
     sys.exit(0)
-# 当前版本豁免：release 链路 = bump（CHANGELOG 头先落）→ commit → tag 后打——
-# tag 未打的当轮被扫即红是时序假缺口非登记缺口（1.0.41 首咬自证）；tag 必达闸兜其后
-mver = re.search(r'"version":\s*"(\d+\.\d+\.\d+)"', open(os.path.join(root, '.claude-plugin', 'plugin.json'), encoding='utf-8').read())
-if mver: heads.discard(mver.group(1))
-reg_txt = open(os.path.join(root, 'docs', '清单-版本缺口与欠账.md'), encoding='utf-8').read()
-sec1 = reg_txt.split('## 一、')[1].split('## 二、')[0] if '## 一、' in reg_txt else ''
-reg = set(re.findall(r'^\| (\d+\.\d+\.\d+) \|', sec1, re.M))
-missing = sorted(heads - tags, key=lambda s: [int(x) for x in s.split('.')])
-unreg = [v for v in missing if v not in reg]
-ghost = sorted(reg - set(missing), key=lambda s: [int(x) for x in s.split('.')])
-if unreg or ghost:
+if len(set(name.values())) != 1:
     print('BAD')
-    for v in unreg: print('  ↳ 版本缺口未登记: ' + v)
-    for v in ghost: print('  ↳ 登记表幽灵行（已非缺口，删行）: ' + v)
+    for k, v in name.items(): print('  ↳ ' + k + '=' + str(v))
+    print('  ↳ 四值须全等（tag 腿另判）')
+    sys.exit(0)
+top = next(iter(name.values()))
+try:
+    r = subprocess.run(['git', '-C', root, 'describe', '--tags', '--abbrev=0'], capture_output=True, text=True, timeout=10)
+except Exception:
+    r = None
+if r is None or r.returncode != 0 or not r.stdout.strip():
+    print('SKIP'); sys.exit(0)
+tag = r.stdout.strip().lstrip('v')
+if tag != top:
+    a, b, c = map(int, tag.split('.'))
+    nxt = '%d.%d.%d' % ((a, b + 1, 0) if c == 19 else (a, b, c + 1))
+    if nxt != top:
+        print('BAD')
+        print('  ↳ tag=v%s 与首部 %s 既不相等也非紧后一版（patch 0-19 滚动）——跳版或漏 tag' % (tag, top))
+        sys.exit(0)
+    print('OK %s（批中态：tag=v%s，待 v%s 收尾 tag）' % (top, tag, top))
 else:
-    print('OK ' + str(len(missing)))
+    print('OK %s（tag 已同步）' % top)
 PYEOF
 )
-if printf '%s' "$gap_out" | grep -q '^SKIP'; then
-  echo "SKIP  版本缺口闸（git tag 不可读——非 git 树/超时，不计 FAIL，同 pwsh 先例）"
-elif printf '%s' "$gap_out" | grep -q '^OK'; then
-  PASS=$((PASS+1)); echo "PASS  版本缺口闸（差集 ⊆ 登记表双向对账，缺口 $(printf '%s' "$gap_out" | head -1 | cut -d' ' -f2) 个全在册）"
+if printf '%s' "$vc_out" | grep -q '^SKIP'; then
+  echo "SKIP  版本一致闸（git tag 不可读——非 git 树，不计 FAIL，原缺口闸先例）"
+elif printf '%s' "$vc_out" | grep -q '^OK'; then
+  PASS=$((PASS+1)); echo "PASS  版本一致闸（四值全等＋tag 腿：$(printf '%s' "$vc_out" | head -1 | cut -d' ' -f2-)）"
 else
-  FAIL=$((FAIL+1)); echo "FAIL  版本缺口登记漂移（新增缺口或登记表幽灵行）："; printf '%s\n' "$gap_out" | tail -n +2
+  FAIL=$((FAIL+1)); echo "FAIL  版本一致漂移（四值/tag 腿，见上）"; printf '%s\n' "$vc_out" | tail -n +2
 fi
-
-debt_out=$(python3 - "$SRC" <<'PYEOF'
-import os, re, sys
-try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
-except Exception: pass
-root = sys.argv[1]
-N = 10
-txt = open(os.path.join(root, 'docs', '清单-版本缺口与欠账.md'), encoding='utf-8').read()
-full = open(os.path.join(root, 'CHANGELOG.md'), encoding='utf-8').read()
-heads = re.findall(r'^## (\d+)\.(\d+)\.(\d+)', full, re.M)
-vers = ['%s.%s.%s' % h for h in heads]              # 文件序 = 新→旧（缺口闸同哲学）
-pos = {v: i for i, v in enumerate(vers)}
-# fail-closed ②：≥1.0.0 段头严格降序破坏 = 时序钟坏，整闸红（0.x 前史豁免——尾部有 0.0.1/0.1.1 实测异常，债面永不触及）
-seq = [tuple(map(int, h)) for h in heads if int(h[0]) >= 1]
-if not all(a > b for a, b in zip(seq, seq[1:])):
-    print('BAD'); print('  ↳ CHANGELOG ≥1.0.0 段头文件序非严格降序——段序钟坏，先修段序再论债龄'); sys.exit(0)
-sec2 = txt.split('## 二、')[1] if '## 二、' in txt else ''
-sec2 = sec2.split('\n## ')[0]   # 只扫在册节——「三、已销账」读数留档行不得再数龄
-errs = []
-rows = 0
-for line in sec2.splitlines():
-    m = re.match(r'^\| [^|]+\| (\d+)\.(\d+)\.(\d+)[^|]*\|', line)
-    if not m: continue   # 日期形/说明形「起于」行不数龄，人跟
-    rows += 1
-    key = '%s.%s.%s' % m.groups()
-    if key not in pos:   # fail-closed ①：起于查无段头（1.0.36 幽灵类跳号不许作起于）
-        errs.append('债行起于无段头: ' + line.split('|')[1].strip() + '（起于 ' + key + '）——段头缺失或幽灵版本，先核账')
-        continue
-    age = pos[key]
-    if age > N: errs.append('债龄超限: ' + line.split('|')[1].strip() + '（起于 ' + key + '，段序龄 ' + str(age) + ' > N=' + str(N) + '）——还债或附需求方裁决引用展期')
-if errs:
-    print('BAD'); [print('  ↳ ' + e) for e in errs]
-else:
-    print('OK ' + str(rows))
-PYEOF
-)
-if printf '%s' "$debt_out" | grep -q '^OK'; then
-  PASS=$((PASS+1)); echo "PASS  欠账龄闸（版本形债行 ×$(printf '%s' "$debt_out" | head -1 | cut -d' ' -f2) 均 ≤N=10，段序计龄）"
-else
-  FAIL=$((FAIL+1)); echo "FAIL  欠账龄闸红（段序计龄：超限 / 起于无段头 / 段序钟坏；真树红系 09-23 裁决「咬」，展期=附裁决引用）："; printf '%s\n' "$debt_out" | tail -n +2
-fi
-
 # 1.0.34 批断言（1.1.5 大裁：install 退役后 ①未知参数 ③--yes ④降级 ⑤双跑 ⑥伴生哨兵随机制删除，
 #   存续=⑧ 双 json / ⑨ 方向三态；版本读不到即停与戳链迁移至 check-imports 侧）——共 2 条
 # ① 源版本读不到必须当场停（1.0.21 P0-A 同族——原 install 兜 vunknown 戳假绿；1.1.5 起读源方=check-imports）
@@ -874,10 +833,10 @@ o=$(bash "$GVB/scripts/check-imports.sh" "$D/fresh" 2>&1); vrc=$?
 [ "$vrc" = "1" ] && echo "$o" | grep -q "读不到源版本" && ! echo "$o" | grep -q '未检出' \
   && { PASS=$((PASS+1)); echo "PASS  源版本读不到显式中止（check-imports 不兜假绿）"; } \
   || { FAIL=$((FAIL+1)); echo "FAIL  源版本读不到应中止（rc=$vrc）"; }
-# ② check-imports 戳链：指针戳优先——双戳并存（指针 v0.0.1 + 根存量 v9.9.9）时报指针侧，
+# ② check-imports 戳链：指针戳优先——双戳并存（指针 v1.2.4 + 根存量 v9.9.9）时报指针侧，
 #   不把根存量误报成「丁-tracked 待迁移」（双戳并存=刚 init 刷过的正常态，非迁移债）
 T9=$(mktemp -d /tmp/cf-ci.XXXXXX); mkdir -p "$T9/.claude"
-printf '<!-- crules-flutter: v0.0.1 -->\n@crules/constitution.md\n' > "$T9/.claude/CLAUDE.md"
+printf '<!-- crules-flutter: v1.2.4 -->\n@crules/constitution.md\n' > "$T9/.claude/CLAUDE.md"
 printf '<!-- crules-flutter: v9.9.9 @ 2026-01-01 -->\n' > "$T9/CLAUDE.md"
 o9=$(bash "$SRC/scripts/check-imports.sh" "$T9" 2>&1); r9=$?
 [ "$r9" = "0" ] && echo "$o9" | grep -q '指针（丁-Copy）' && ! echo "$o9" | grep -q '丁-tracked' \
@@ -897,11 +856,11 @@ done
 # ⑨ check-imports 方向三态：原只打「版本差」不分方向；SRC_VER 读不到原兜「?」伪装成「未检出戳」假绿
 GCI="$D/cifake"; rm -rf "$GCI"; mkdir -p "$GCI/scripts" "$GCI/.claude-plugin" "$D/citgt"
 cp "$SRC/scripts/check-imports.sh" "$GCI/scripts/"
-printf '{\n  "version": "0.0.1"\n}\n' > "$GCI/.claude-plugin/plugin.json"
+printf '{\n  "version": "9.9.5"\n}\n' > "$GCI/.claude-plugin/plugin.json"
 printf '<!-- crules-flutter: v9.9.9 @ 2026-01-01 -->\n' > "$D/citgt/CLAUDE.md"
-# lag 改段序投影后需 CHANGELOG 可读且两版均在序（评审 M3 适配——守卫不削）：戳 9.9.9 段序 1、
-# 源 0.0.1 段序 2 → ia−ib=−1 → 落「源更旧」分支，既有断言原样通过
-printf '## 9.9.9 · a\n## 0.0.1 · b\n' > "$GCI/CHANGELOG.md"
+# lag 线性投影（1.3.1）：戳 9.9.9（lin=189）/ 源 9.9.5（lin=185）→ 差 −4 → 落「源更旧」分支，
+# 既有断言原样通过；CHANGELOG 夹具随段序投影退役（零文件依赖）
+# CHANGELOG 夹具已删（1.3.1 线性投影零文件依赖）
 oci=$(bash "$GCI/scripts/check-imports.sh" "$D/citgt" 2>&1); circ=$?
 [ "$circ" = "0" ] && echo "$oci" | grep -q "源更旧" \
   && { PASS=$((PASS+1)); echo "PASS  check-imports 报降级方向（三态收口）"; } \

@@ -49,7 +49,7 @@
 #     按 deny-by-default 哲学接受，误拦走白名单调整
 #   - **黑名单无法穷尽**——本 hook 是安全网而非沙箱，终极防线是 Claude Code 原生权限确认与需求方审阅；
 #     find -delete / 变量拼接 / 嵌套 eval / 写脚本再执行等不拦，chmod -R 为 warn 弹窗非硬拦
-#     （覆盖矩阵与决策史见 CHANGELOG）
+#     （覆盖矩阵与决策史见 git tag＋docs/changelog-annex/——1.3.1 起 CHANGELOG 单页化）
 #   - warn 层边界：bypassPermissions 模式下 ask 行为官方文档未覆盖；两步法（下载落盘再执行）
 #     无管道形态、warn 不覆盖；echo 内嵌形态词会误弹（ask 误弹方向无害）；curl 多级管道
 #     （| tee | bash）只看首段——形态匹配非语义分析。解释器族（1.0.11 扩）：须紧贴管道符

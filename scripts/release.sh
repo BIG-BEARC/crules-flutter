@@ -3,7 +3,7 @@
 # 用法：
 #   scripts/release.sh <new-version>        同步双 json 版本号 + 双 json 读回断言 + 全套 test-self（任一失败即退出非零）
 #   scripts/release.sh verify-cache <特征串>  在 cache 最大版本目录 grep 特征串（update 后的生效验证）
-#   scripts/release.sh draft                CHANGELOG 建议段草稿（自顶部段日期后的 commits，stdout 人工过滤）
+#   scripts/release.sh draft                未记 commits 草稿（自顶部 tag 对应发版 commit 起，stdout 人工过滤）
 #   scripts/release.sh tag <ver>            校验 HEAD 双 json 版本一致 + 工作树干净 + 全套 test-self 后打 tag 并推 origin（幂等；防 tag 指向 bump 前旧树 / bump 后偷改树）
 # bump 前双查（2026-09-22 一夜两撞蒸馏 · 2026-10-19 收）：`git log --oneline -3` + `grep '"version"'
 #   .claude-plugin/plugin.json`——多会话工作树里版本占号冲突本身无害，有害的是带着旧号继续写。
@@ -13,7 +13,7 @@
 #       纯名 "crules-flutter" 会报 not found）；完整链路 = 全部改动收尾 → release.sh <ver> → **commit →
 #       release.sh tag <ver>**（tag 打在含 bump 的提交上并推远端——不推则消费者 clone 侧 fetch 不可见，
 #       check-imports 的 memory 演进比对依赖 tag）→ plugin update → release.sh verify-cache '<本轮改动特征串>'
-# draft 口径（W2③②）：跨年边界——以当前年拼顶部段日期，12-31 跨年跑会空输出（低危已知）；只列 commit subject 供人工编辑——CHANGELOG 记能力不记笔误、零分发文件轮不记
+# draft 口径（1.3.1 B 案）：边界改锚 git tag——跨年空输出旧疾随日期锚退役；只列 commit subject 供人工编辑——CHANGELOG 记能力不记笔误、零分发文件轮不记
 #       （v58/v59 先例），机械初稿不替人做过滤决定
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -23,8 +23,8 @@ usage() { sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'; exit 1; }
 
 case "$1" in
   draft)
-    # fork 版：CHANGELOG 在仓库根、段头为版本式（## X.Y.Z · …）——按「顶部版本号对应的发版 commit」取边界
-    top_ver=$(grep -m1 -oE '^## [0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+    # 1.3.1（B 案）：CHANGELOG 单页化后无历史段可锚——草稿边界改挂 git tag（顶部 tag 即上一版收口）
+    top_ver=$(git describe --tags --abbrev=0 | sed 's/^v//')
     echo "# CHANGELOG 建议段草稿（人工过滤：记能力不记笔误）"
     echo "# 基准：顶部版本 v$top_ver 发版 commit 之后的未记 commits"
     anchor=$(git log --oneline --grep="$top_ver" -1 --format=%H || true)

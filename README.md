@@ -1,9 +1,10 @@
 # crules-flutter
 
 面向 **Flutter 工程**的 AI 协作规则 plugin：把「AI 怎么跟你安全地干活」固化成机制——危险命令硬拦、改动先过方案确认、交付必过审查、经验自动沉淀。
-独立自持（源自 crules fork，2026-09 起 1.0.0 独立演进，史见 [CHANGELOG](CHANGELOG.md)）；许可 **MIT**（[LICENSE](LICENSE)）。
+独立自持（源自 crules fork，2026-09 起 1.0.0 独立演进）；许可 **MIT**（[LICENSE](LICENSE)）。
 
-> 当前状态：1.3.0（版本编年史见 [CHANGELOG](CHANGELOG.md)）
+> 当前状态：1.3.1（当前形态见 [CHANGELOG](CHANGELOG.md)）
+> 术语速查：[docs/清单-黑话白话对照-2026-10-22.md](docs/清单-黑话白话对照-2026-10-22.md)（黑话→白话→出处）
 
 ---
 
@@ -13,7 +14,7 @@
 |---|---|---|
 | 守护 | hooks 自动生效：破坏性 git/rm 命令硬拦（强推/硬重置等，拦了就请你人工执行）、高危形态（下载执行 / sudo / chmod -R / filter-branch）弹窗由你裁夺、memory 漂移自动记队列、会话收尾提醒补索引、会话结束落一行遵守度事实账（只记计数与布尔、不含对话内容） | 无（全自动；高危形态弹窗确认） |
 | 分工 | 7 个角色 agent 按职责自动挂载（写 UI → frontend、排障 → error、审查 → reviewer 只报不改…） | 无（自动触发） |
-| 规范 | 宪法（`.claude/CLAUDE.md` 四行指针 + `.claude/crules/constitution.md` 副本——双 Gate / 证据分级 / 提交纪律；领域细则已分层：§七~§十分层下沉 flutter-rules skill `references/`（plugin §十公开 API 红线留驻），宪法留指针行按需 Read——1.3.0）+ 审查清单与进阶篇（插件 cache 即读）+ AO 建议稿（人择） | init 引导逐项（见下） |
+| 规范 | 宪法（`.claude/CLAUDE.md` 四行指针 + `.claude/crules/constitution.md` 副本——双 Gate / 证据分级 / 提交纪律；领域细则已分层：§七~§十分层下沉 flutter-rules skill `references/`（plugin §十公开 API 红线留驻），宪法留指针行按需 Read——1.3.0）+ 审查清单与进阶篇（插件 cache 即读）+ AO 建议稿（人择——AI 只出建议稿，采纳并入由需求方手工执行） | init 引导逐项（见下） |
 | 沉淀 | 记忆库 9 模板（项目事实锚点 / 业务事实 / 技术不变量 / 平台坑库…）+ `/distill` 知识定稿闸 | 日常顺手更新，收尾过闸 |
 
 ## 快速开始

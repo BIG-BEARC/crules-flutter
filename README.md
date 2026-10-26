@@ -52,7 +52,7 @@ claude plugin install crules-flutter@crules-flutter-market --scope user
 | 复刻 / 重写 / 迁移既有模块 | **parity-rewrite** skill（对照清单钉住原行为 → 逐项重建 → 测试矩阵验证一致） |
 | 会话出问题要归因（为什么慢 / 为什么没按宪法走） | `/crules-flutter:diagnose`（单会话因果诊断，只诊断不下判罚） |
 
-**出问题看哪**（排查序）：行为不符预期 → `/crules-flutter:help` 查场景归属 → 仍不明 → `memory/MAINTENANCE.md` → `CHANGELOG.md` 查能力引入版本。
+**出问题看哪**（排查序）：行为不符预期 → `/crules-flutter:help` 查场景归属 → 仍不明 → `memory/MAINTENANCE.md` → git tag＋`docs/changelog-annex/` 查能力引入版本。
 
 ### 命令面板（×6）
 
@@ -112,7 +112,7 @@ agents 不复制——plugin 已自动挂载 7 角色（`crules-flutter:frontend
 /crules-flutter:init    # 刷新路径：副本对拍 + 指针重写即刷戳；memory 永不覆盖、引导仅补未填项
 ```
 
-巡检（cache 内跑）：`bash scripts/check-imports.sh <项目根> [更多根…]`——多工程视图一次跑齐；戳读链 `.claude/CLAUDE.md` 指针戳优先 → 根 `CLAUDE.md`（丁-tracked 存量）回退；掉队距离＝CHANGELOG 段序投影（随跑随算，零台账文件），另查 memory 模板演进。
+巡检（cache 内跑）：`bash scripts/check-imports.sh <项目根> [更多根…]`——多工程视图一次跑齐；戳读链 `.claude/CLAUDE.md` 指针戳优先 → 根 `CLAUDE.md`（丁-tracked 存量）回退；掉队距离＝版本线性投影（随跑随算，零台账文件），另查 memory 模板演进。
 
 1.1.3–1.1.4 的 install.sh 三向合并升级语义（`--upgrade` / `--force` / base 快照）已随分发职责退役（1.1.5）；存量丁-tracked 工程迁移 = 阶段 4 一次性授权批。
 
@@ -120,7 +120,7 @@ agents 不复制——plugin 已自动挂载 7 角色（`crules-flutter:frontend
 
 ## 环境要求与更新信任
 
-- **环境要求**：macOS / Linux，hooks 依赖 `python3`（无则自动回退 `python`）。**Windows 可用**（1.0.17 起实机验证完成）：hooks 是**开发机**上的工具（Claude Code 宿主环境），与「App 的部署目标平台」是两回事——POS 收银机是 App 跑的地方，不影响 hooks。Windows 上 deny-list 双实现：Bash 工具会话走 Python 版、PowerShell 工具会话走 PowerShell 版，破坏性命令两域都拦；漂移队列与收尾提醒仍需 python。**已知边界**：EncodedCommand / 变量拼接等混淆形态不拦；解释器缺失、闸自身崩溃等极端情形回退 Claude Code 原生权限确认兜底。逐版本加固编年（码页缺陷族 / 启动失败重试 / 闸失效兜底）见 [CHANGELOG](CHANGELOG.md) 1.0.17–1.0.25
+- **环境要求**：macOS / Linux，hooks 依赖 `python3`（无则自动回退 `python`）。**Windows 可用**（1.0.17 起实机验证完成）：hooks 是**开发机**上的工具（Claude Code 宿主环境），与「App 的部署目标平台」是两回事——POS 收银机是 App 跑的地方，不影响 hooks。Windows 上 deny-list 双实现：Bash 工具会话走 Python 版、PowerShell 工具会话走 PowerShell 版，破坏性命令两域都拦；漂移队列与收尾提醒仍需 python。**已知边界**：EncodedCommand / 变量拼接等混淆形态不拦；解释器缺失、闸自身崩溃等极端情形回退 Claude Code 原生权限确认兜底。逐版本加固编年（码页缺陷族 / 启动失败重试 / 闸失效兜底）见 git tag v1.0.17–v1.0.25＋`docs/changelog-annex/`
 - **更新信任（供应链）**：本 plugin 的 hooks 在每次 Bash 调用前执行——`plugin update` 后新 hook 代码静默生效，被污染的更新 = 任意代码执行。建议 update 前先看 hooks 变更（`git -C <本仓> diff <旧tag>..<新tag> -- hooks/`）或锁定 commit。
 
 ## 停用 / 恢复 / 共存
@@ -142,18 +142,19 @@ agents 不复制——plugin 已自动挂载 7 角色（`crules-flutter:frontend
 
 ### 发布操作
 
-- 本仓独立演进：bump 双 json → `plugin update` → cache 特征串验证（步骤细节见 `scripts/release.sh` 头注与 CHANGELOG）
-- **合入定义（R7 写死）**：版本合入 = **tag 推送 origin**——收口批五件套（CHANGELOG 段 / bump 双 json / README 横幅 / test-self 断言 / tag 推送）齐且 tag 落远端才算合入；只 commit 未推 tag = 未合入（1.0.47 撞名复审裁决「下批写死」，1.1.6 触发批落实）
-- **CHANGELOG 前向体例（1.2.0 起增量）**：长内容（依据链/裁决记录/观测长段）落 `docs/changelog-annex/<YYYY-MM>.md`、CHANGELOG 留摘要＋锚链；连续三 minor 未用附件则裁体例回原形——止损自带
+- 本仓独立演进：bump 双 json → `plugin update` → cache 特征串验证（步骤细节见 `scripts/release.sh` 头注）
+- **合入定义（R7 写死）**：版本合入 = **tag 推送 origin**——收口批五件套（CHANGELOG 一页更新 / bump 双 json / README 横幅 / test-self 断言 / tag 推送）齐且 tag 落远端才算合入；只 commit 未推 tag = 未合入（1.0.47 撞名复审裁决「下批写死」，1.1.6 触发批落实）
+- **CHANGELOG 前向体例（1.2.0 起；1.3.1 单页化后为常态）**：长内容（依据链/裁决记录/观测长段）落 `docs/changelog-annex/<YYYY-MM>.md`；连续三 minor 未用附件则裁体例回原形——止损自带
 - **deny-list 双源同步义务（1.0.17 起）**：判据改 `hooks/deny-list.py` 与 `hooks/deny-list.ps1` **两源同改**（函数对照表在 ps1 文末），夹具单源 `hooks/fixtures/deny-list-cases.json`（lang 标 both/bash/ps），改后两驱动全绿（本机无 pwsh 则 SKIP，CI pwsh 步硬拦）；新增绕过形态 fixture-first
 
 ### 每次 minor 例行（发布单，从上到下过一遍）
+- **分发面新词过表**：本批新造/新引入机制词先过 `docs/清单-黑话白话对照-2026-10-22.md`——未收录即补录或直用白话（防「治理黑话又生黑话」；2026-10-26 实证：对话层十词漏登，收口补录）
 
-- **基线复测**：`/context` 快照，**新装 / 消费工程各落一档**——实测数**不落本节**、随 minor CHANGELOG 条落（见下条观测带数①；本节留快照句必过期——1.0.7 的数挂到 1.0.32 才被发现即实证）。口径：15K 线度量**本包模板常驻负担**，单位 **token**（即 `/context` 显示值）；`/context` 的 Memory files 混入项目自身内容——破线先分离归因（模板 vs 项目 CLAUDE.md 膨胀），项目侧膨胀应裁项目侧 / 走记忆库下沉，而非触发模板瘦身（历史测量记录见 CHANGELOG）
-- **观测带数**（防度量体系「建了没人看」）：CHANGELOG 的 minor 条目固定带两数——① 常驻基线快照（新装 / 消费工程各一档）② distill 四数（总发现数 / 采纳率 / 误报率 / 按验证状态分桶的误报率——与 distill §7 同源；`<30` 样本记数不计率，**0<N<30 悬空态显式进度行「样本 N/30」、禁渲染「无」**）；数据源 = 消费工程 `.review-ledger`，本仓不汇聚（本机私域口径不变）。**四数止损线**（1.0.9 外审 🟡3 处置；1.0.11 批C 改**时间触发**——版本里程碑可能长期不达，时间线更硬；1.0.31 条件修正）：**2026-12-31 前累计仍未跨 30**（自 1.0.3 建制起）→ 按「治理从简」砍四数、只留 ledger 原始账——不维护一套永不产出的指标；**到期未达标先诊断再砍**：「distill 调用数低」（真无人用，砍）与「调用在而 ledger 回填断链」（reviewer 尾提醒未落，修链）两因分开裁，防活机制错杀（2026-09-24 批A）；配套：distill §7 空态输出显式异常行（不静默「无数」）、reviewer 复核结论尾固定提醒主控回填。**首个 distill 周期**列观测项第一——它跑通与否决定沉淀闸整套机制是资产还是死重
+- **基线复测**：`/context` 快照，**新装 / 消费工程各落一档**——实测数**不落本节**、随 minor 落 `docs/changelog-annex/` 版本卷（见下条观测带数①；本节留快照句必过期——1.0.7 的数挂到 1.0.32 才被发现即实证）。口径：15K 线度量**本包模板常驻负担**，单位 **token**（即 `/context` 显示值）；`/context` 的 Memory files 混入项目自身内容——破线先分离归因（模板 vs 项目 CLAUDE.md 膨胀），项目侧膨胀应裁项目侧 / 走记忆库下沉，而非触发模板瘦身（历史测量记录见 git tag＋annex）
+- **观测带数**（防度量体系「建了没人看」）：每次 minor 随版本卷（`docs/changelog-annex/<YYYY-MM>.md`）固定带两数——① 常驻基线快照（新装 / 消费工程各一档）② distill 四数（总发现数 / 采纳率 / 误报率 / 按验证状态分桶的误报率——与 distill §7 同源；`<30` 样本记数不计率，**0<N<30 悬空态显式进度行「样本 N/30」、禁渲染「无」**）；数据源 = 消费工程 `.review-ledger`，本仓不汇聚（本机私域口径不变）。**四数止损线**（1.0.9 外审 🟡3 处置；1.0.11 批C 改**时间触发**——版本里程碑可能长期不达，时间线更硬；1.0.31 条件修正）：**2026-12-31 前累计仍未跨 30**（自 1.0.3 建制起）→ 按「治理从简」砍四数、只留 ledger 原始账——不维护一套永不产出的指标；**到期未达标先诊断再砍**：「distill 调用数低」（真无人用，砍）与「调用在而 ledger 回填断链」（reviewer 尾提醒未落，修链）两因分开裁，防活机制错杀（2026-09-24 批A）；配套：distill §7 空态输出显式异常行（不静默「无数」）、reviewer 复核结论尾固定提醒主控回填。**首个 distill 周期**列观测项第一——它跑通与否决定沉淀闸整套机制是资产还是死重
 - **skill 平台坑节扫描**：Flutter / 平台大版本出现 → 扫 skill 坑节标【待重验】→ 核验刷新；superpowers 上游大版本（吸收事实锚 7.0.0）→ 重验叠加条款与改条文纪律口径（superpowers7 吸收批 §8 遗留义务，2026-10-19 随批归位）
 - **预设栈审视**：app 预设族（`references/state-management.md`——原宪法模板 §七，1.3.0 下沉）的包维护态与争议项按「最后核验」日期例行刷新
-- **docs 轮次化**：清点 `docs/`——状态戳已「已落地 / 已废弃」且所属批全部落地的方案 / 评审 / 复盘，正文归档或删（结论已被代码与 CHANGELOG 吸收，git 可寻回；**被分发面引用的 docs 先去引用再删**，防悬空指针）；裁决中途的保留至批落地。**可删判定外置核实**：以 git tag / 落地 commit / 实物在树为准，状态戳与依据链转述只作线索（1.1.2 实证：10 篇可删中 5 篇戳过期）；删前逐篇本体挂起项扫描（待裁 / 待批 / 另批族词）零命中方可删。**落地批同批回写所闭 docs 状态戳为终态**（戳失真在本源生成，清点端只兜底）。**清点挂钩 minor 位跳变的收口批同轮**——`grep -n "^> 状态" docs/*.md` 跑一遍（再积压一次则评估上闸）。**裁决索引即状态戳**：每篇头部 `> 状态：…` 必含下一步动作（如「待需求方逐条裁 §6」），全部等待态一查即得（读的是本体，无第二份索引可漂移）；`docs/changelog-annex/` 纳入同轮清点（月份卷系龄闸锚链目标——对应版本全 tag 落定且超一年的卷移 archive/ 归档，不删防悬空）
+- **docs 轮次化**：清点 `docs/`——状态戳已「已落地 / 已废弃」且所属批全部落地的方案 / 评审 / 复盘，正文归档或删（结论已被代码与 git 史吸收，git 可寻回；**被分发面引用的 docs 先去引用再删**，防悬空指针）；裁决中途的保留至批落地。**可删判定外置核实**：以 git tag / 落地 commit / 实物在树为准，状态戳与依据链转述只作线索（1.1.2 实证：10 篇可删中 5 篇戳过期）；删前逐篇本体挂起项扫描（待裁 / 待批 / 另批族词）零命中方可删。**落地批同批回写所闭 docs 状态戳为终态**（戳失真在本源生成，清点端只兜底）。**清点挂钩 minor 位跳变的收口批同轮**——`grep -n "^> 状态" docs/*.md` 跑一遍（再积压一次则评估上闸）。**裁决索引即状态戳**：每篇头部 `> 状态：…` 必含下一步动作（如「待需求方逐条裁 §6」），全部等待态一查即得（读的是本体，无第二份索引可漂移）；`docs/changelog-annex/` 纳入同轮清点（月份卷系龄闸锚链目标——对应版本全 tag 落定且超一年的卷移 archive/ 归档，不删防悬空）
 - **同文块改动（1.0.12 起）**：各**逐字同文**内容块（档位预设节 / 收尾时序行 / Gate 例外段 / help↔README 档位说明段 / agents 双卡聚合例外判定线句 / §一 两条「引用实测依据」「评审两核」红线；块数以 scripts/render-blocks.py 登记表为准）已生成化——改 `canonical/<id>.md` 后跑 `python3 scripts/render-blocks.py` 重新生成，**勿直接改目标文件的围栏区**（`<!-- gen:… -->` 之间由生成器接管；CI 生成闸 + 锚串守卫会红）。**尾随空行语义**：canonical 文件尾的空行被剥离（需块内尾随空行须写进正文）
 
 ### 改条文纪律（改宪法红线级条文前过一遍；吸收自 superpowers 7.0.0 writing-skills，2026-10-16 迁移微测成立后落地）
@@ -172,6 +173,7 @@ agents 不复制——plugin 已自动挂载 7 角色（`crules-flutter:frontend
 - **止损线**：连续 3 次微测结论均为「两形态无差异」→ 义务降级为可选（记 Gate 例外通道），防仪式化空转。
 
 ### 原则与观测项（不随版本触发）
+- **新词漏登观察项**：晚批次新词未过对照表——首例 1.3.1 对话层十词（10-26 收口补录）；复发再评估造闸（沿换装孤儿面模式，不预造）
 
 - **治理从简**：README + CHANGELOG + 最简检查（五维雷达/评审轮次体系**不引入**——治理成本延后到真有痛感再付）；**新闸带止损线**——机械闸新建须同时登记触发条件与到期动作（何时砍/何时裁），防「建了没人敢砍」的机制堆积（同族先例：四数止损线、批3「跑三轮无发现即砍」；2026-09-24 批A）
 - **单项开关治理**：模板内单项开关以 6 为参考线，超线与否列轮次化清点例行自查项（自查超 6 考虑「收敛成新档位」——非硬闸，2026-10-19 止损批降格，全史零触发）；既有协作偏好 4 字段（固定语言 / 提交触发词覆写 / 提速档 / 沉淀闸档位）与档位预设并列、不计入——治理口径属维护者面，1.0.8 自双模板 §十二 外迁至此（消费面只留行为结果，不留治理规则）
@@ -195,4 +197,4 @@ agents 不复制——plugin 已自动挂载 7 角色（`crules-flutter:frontend
 | 提速档 | standing instruction 走 Gate 例外，须圈死范围/规模/验证档三要素 | `PROJECT.md` §十二（定义：双模板 §十二） |
 | 两类台账 | `.review-ledger`（裁决，供四数聚合）/ `.gate-exceptions`（豁免，供事后审计）——均不进 git | distill §7 / §三 Gate 例外 |
 | 遵守度事实账 | `.compliance-log`——SessionEnd hook 每会话落一行**事实**（计数/布尔，无正文），量化「宪法被遵守几成」；**聚合永不接线（2026-10-19 止损批裁）**——账降格为原始事实账（与 `.review-ledger` 同型，记而备查，判归人工与 diagnose 旁证对拍） | hooks/compliance-audit.py（普查篇已轮次化删档 2026-10-19，git 史可查） |
-| 观测带数 | 每次 minor 的 CHANGELOG 必带：常驻基线快照 + distill 四数 | README「每次 minor 例行」 |
+| 观测带数 | 每次 minor 随 annex 版本卷必带：常驻基线快照 + distill 四数 | README「每次 minor 例行」 |

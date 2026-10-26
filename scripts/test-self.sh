@@ -984,11 +984,11 @@ grep -qF '停维护；PROJECT.md 档位锚点留' "$SRC/canonical/gear-note.md" 
 grep -qF '极简收尾占比高' "$SRC/canonical/gear-note.md" && { zg_d=1; echo "  ↳ 剪除串残留：极简收尾占比高（预设块「极简占比高」已覆盖）"; }
 [ "${zg_d}" = "0" ] && { PASS=$((PASS+1)); echo "PASS  档位条文瘦身闸（12 锚串存活＋剪除串清零——语义唯一源归预设块，止损单 #6）"; } || { FAIL=$((FAIL+1)); echo "FAIL  档位条文瘦身闸（见上漂移清单）"; }
 
-# ⑤ 止损单裁决闭合闸（六行）：裁决列无空白＋行 4 降格合并裁决在册
+# ⑤ 止损单删档闸（2026-10-26 删档归位批改口径）：六行裁决录 annex 1.2.0＋v1.2.2 commit，到期协议载体迁劣势台账 #4
 zg_e=0
-grep -qE '\|[[:space:]]*\|[[:space:]]*$' "$SRC/docs/清单-存量机制止损候选.md" && zg_e=1
-grep -q '降为选项文本' "$SRC/docs/清单-存量机制止损候选.md" || zg_e=1
-[ "${zg_e}" = "0" ] && { PASS=$((PASS+1)); echo "PASS  止损单裁决闭合闸（六行裁决列全落＋行 4 降格合并裁决在册）"; } || { FAIL=$((FAIL+1)); echo "FAIL  止损单裁决闭合闸（裁决列存空白或行 4 裁决缺失）"; }
+[ -f "${SRC}/docs/清单-存量机制止损候选.md" ] && { zg_e=1; echo "  ↳ 止损单应删档未删（六行裁决已录 annex＋commit，到期协议载体已迁劣势台账 #4）"; }
+grep -q '到期诊断协议具体化' "${SRC}/docs/清单-劣势台账-2026-10-21.md" || { zg_e=1; echo "  ↳ 劣势台账 #4 缺到期协议载体行"; }
+[ "${zg_e}" = "0" ] && { PASS=$((PASS+1)); echo "PASS  止损单删档闸（六行裁决在 annex＋commit、到期协议载体落劣势台账 #4）"; } || { FAIL=$((FAIL+1)); echo "FAIL  止损单删档闸（应删未删或协议载体缺位）"; }
 
 # ⑥ major 前外审降格闸（止损单 #4）：硬触发节撤除＋选项合并语与防超卖要件在位
 zg_f=0
@@ -1053,18 +1053,18 @@ done
   && { PASS=$((PASS+1)); echo "PASS  1.1.7 吸收批三落位（D6 双模板 7.0.0 口径 / D5 description 触发-only / D1 改条文纪律四件）"; } \
   || { FAIL=$((FAIL+1)); echo "FAIL  1.1.7 落位（D6 ${sp_ok} / D5 ${d5_ok} / D1 ${d1_ok}，见上漂移清单）"; }
 
-# 1.1.8 吸收批三落位：_common.py 事件契约三课 / release.sh bump 前双查 / 回放处置戳与复盘删档
+# 1.1.8 吸收批三落位：_common.py 事件契约三课 / release.sh bump 前双查 / 回放删档与候选池迁录（2026-10-26 改口径）
 e3_ok=1
 for s in '事件契约三课' 'Stop 每个 assistant 回合都触发' '字段级不存在' 'per-hook timeout 可上调'; do
   grep -qF -- "${s}" "${SRC}/hooks/_common.py" || { e3_ok=0; echo "  ↳ _common.py 缺「${s}」"; };
 done
 grep -qF -- 'bump 前双查' "${SRC}/scripts/release.sh" || { e3_ok=0; echo "  ↳ release.sh 缺「bump 前双查」"; }
 grep -qF -- 'git log --oneline -3' "${SRC}/scripts/release.sh" || { e3_ok=0; echo "  ↳ release.sh 缺双查命令原文"; }
-grep -qF -- '处置已裁（2026-10-19）' "${SRC}/docs/验证-2026-09-24-规则集事故回放.md" || { e3_ok=0; echo "  ↳ 回放文档缺处置戳"; }
-grep -qF -- '前提塌陷自然消解' "${SRC}/docs/验证-2026-09-24-规则集事故回放.md" || { e3_ok=0; echo "  ↳ 回放文档缺缺口消解案"; }
+[ -f "${SRC}/docs/验证-2026-09-24-规则集事故回放.md" ] && { e3_ok=0; echo "  ↳ 回放文档应删档未删（处置已毕、专卡 3/3 已落，候选池迁欠账清单）"; }
+grep -qF -- '回放坑库候选池' "${SRC}/docs/清单-版本缺口与欠账.md" || { e3_ok=0; echo "  ↳ 欠账清单缺回放候选池迁录行"; }
 [ -f "${SRC}/docs/复盘-2026-09-22-遵守度测量批2.md" ] && { e3_ok=0; echo "  ↳ 复盘-批2 应删档未删（三课已收 _common.py、双查已收 release.sh）"; }
 [ "${e3_ok}" = "1" ] \
-  && { PASS=$((PASS+1)); echo "PASS  1.1.8 吸收批三落位（事件契约三课 / bump 前双查 / 回放处置戳+复盘删档）"; } \
+  && { PASS=$((PASS+1)); echo "PASS  1.1.8 吸收批三落位（事件契约三课 / bump 前双查 / 回放删档+候选池迁录）"; } \
   || { FAIL=$((FAIL+1)); echo "FAIL  1.1.8 落位（见上漂移清单）"; }
 
 # 1.1.9 吸收批三落位：/diagnose 命令（superpowers7 阶段 3 收官）+ help/README 同源双登 + 方案/评审双删档

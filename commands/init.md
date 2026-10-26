@@ -5,7 +5,7 @@ disable-model-invocation: true
 
 # /crules-flutter:init
 
-把 crules-flutter 装进当前 Flutter 工程——**丁-Copy 形态**（1.1.5 起）：未跟踪指针 `.claude/CLAUDE.md`（四行）＋宪法副本 `.claude/crules/constitution.md`＋memory 种子。**不碰任何受控文件**（R0 红线）：根 CLAUDE.md / checklist / `analysis_options.yaml` / `进阶/` 一律不落位——权威源在插件 cache（去分发化，依据见插件仓库 docs/方案-2026-10-15-宪法载体丁-Copy.md）。
+把 crules-flutter 装进当前 Flutter 工程——**丁-Copy 形态**（1.1.5 起）：未跟踪指针 `.claude/CLAUDE.md`（四行）＋宪法副本 `.claude/crules/constitution.md`＋memory 种子。**不碰任何受控文件**（R0 红线）：根 CLAUDE.md / checklist / `analysis_options.yaml` / `进阶/` 一律不落位——权威源在插件 cache（去分发化，丁-Copy 裁 1.1.5；方案稿 2026-10-26 删档，插件仓 git 史可查）。
 
 ## 执行步骤
 
@@ -132,7 +132,7 @@ rm -f "/tmp/crules-init-baseline.$$" "/tmp/crules-init-after.$$"
 
 ## 依据
 
-- 丁-Copy 载体（方案 docs/方案-2026-10-15-宪法载体丁-Copy.md，v4.0·Q6 裁，2026-10-15）：全内部相对导入零审批面、`-p` 直载实证、副本本机自持抗丢
+- 丁-Copy 载体（v4.0·Q6 裁，2026-10-15；方案稿 2026-10-26 删档，插件仓 git 史可查）：全内部相对导入零审批面、`-p` 直载实证、副本本机自持抗丢
 - R0：常态机制永不写受控文件——本命令全部写未跟踪本机态，机械自检可证
 - 禁静默覆盖：副本对拍不一致 / 无戳 `.claude/CLAUDE.md` / 丁-tracked 存量，三者一律呈人裁决
 

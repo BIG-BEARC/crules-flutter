@@ -56,7 +56,7 @@
 - **丁-Copy 形态（1.1.5 起）**：crules 落物全在 `.claude/`（未跟踪本机态）——工程已 ignore `.claude/` 整目录即全覆盖、无需逐行（例外：要走末行「settings.json 随仓」的工程不能整目录一刀切，需 negate 放行该单件）；未整目录 ignore 的工程按下述自查补行（AI 不代写受控 `.gitignore`——受控文件零接触）
 - **制度资产（工程自裁是否纳管）**：本文件 / `patterns.md` / `business-rules.md` / `INVARIANTS.md` / `decisions/`——规则与决策是制度资产，要跨机不丢可自行纳管（默认本机态）
 - **本机生成物（不进 git）**：`indexes/`（代码索引）与 `.pending-updates*`（漂移队列——1.0.30 起按会话分文件 `.pending-updates.<会话id>`，旧单文件为旧宿主/升级存量）、`.review-ledger`（review 裁决台账——本机私域，防误报率被拿作考核）与 `.gate-exceptions`（Gate 例外台账——豁免留痕，备事后审计）与 `.compliance-log`（遵守度事实账——SessionEnd hook 每会话一行计数事实，本机观测面；聚合永不接线 2026-10-19 止损批裁，记而备查，判归人工与 diagnose 旁证对拍）
-- **分发面已退役（1.1.5）**：根 `CLAUDE.md` / `checklist.md` / `进阶/` 不再落项目根（去分发化——权威源 = 插件 cache，安装器分发职责随之退役）；历史落位存量清理 = 阶段 4 一次性授权批（方案 docs/方案-2026-10-15-宪法载体丁-Copy.md）
+- **分发面已退役（1.1.5）**：根 `CLAUDE.md` / `checklist.md` / `进阶/` 不再落项目根（去分发化——权威源 = 插件 cache，安装器分发职责随之退役）；历史落位存量清理 = 阶段 4 一次性授权批（丁-Copy 方案稿 2026-10-26 删档，git 史可查）
 - 同理：`.claude/settings.json`（随仓的权限 / hooks 配置）**进 git**；`settings.local.json` **永不进**（本机私有）
 
 ## 规模演进触发

@@ -137,7 +137,7 @@ go=$(bash "$GN/scripts/test-self.sh" 2>&1); grc=$?
   || { FAIL=$((FAIL+1)); echo "FAIL  非 git 树守卫（rc=$grc——未拒绝 / 未在断言前中止）"; }
 # 1.1.5：install.sh 分发职责退役——D3 升级确认 / F2 AO 三态 / 1.0.43 三向合并四态断言面随之删除
 #   （机制史见 CHANGELOG 1.0.6–1.0.43；现行升级=重跑 init 刷指针与副本，AO=memory 建议稿人择，
-#    巡检=check-imports.sh；方案 docs/方案-2026-10-15-宪法载体丁-Copy.md C5/C6）
+#    巡检=check-imports.sh；C5/C6 见丁-Copy 方案稿（2026-10-26 删档，git 史可查））
 
 # 0.4.0 批1断言（1.1.5 改口径）：memory 种子 9 模板（含 PROJECT.md 锚点）——init 步骤③配方直拷
 #   （install 退役，夹具按 commands/init.md 配方执行——缺则补、永不覆盖，不再经 install.sh）
@@ -898,7 +898,7 @@ r1=$(printf '%s' "$j1" | python3 "$SRC/hooks/deny-list.py" | grep -c '"deny"' ||
 r2=$(printf '%s' "$j1" | python3 "$SRC/hooks/deny-list.py" | grep -c '"deny"' || true)
 if [ "$r1" = "$r2" ] && [ "$r1" -ge 1 ]; then PASS=$((PASS+1)); echo "PASS  deny-list 重复调用幂等（两次均 deny）"; else FAIL=$((FAIL+1)); echo "FAIL  幂等断言（r1=${r1} r2=${r2}）"; fi
 
-# ── 1.1.5 丁-Copy 批（方案 docs/方案-2026-10-15-宪法载体丁-Copy.md 阶段 2 核心件）──────
+# ── 1.1.5 丁-Copy 批（丁-Copy 方案稿阶段 2 核心件；稿 2026-10-26 删档 git 史可查）──────
 #   载体=未跟踪指针 .claude/CLAUDE.md 四行 + .claude/crules/ 宪法副本（Q6 已裁 2026-10-15）。
 #   断言面：双模板零 @ 内链（副本内相对导入会解析进 .claude/crules/ 空导入）/ 指针配方单源 /
 #   宪法体积官方 4MiB cap / PROJECT.md 锚点种子 / agents×7 联动行 / T7 陈旧文案零 --upgrade /

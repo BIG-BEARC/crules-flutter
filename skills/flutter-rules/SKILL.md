@@ -21,7 +21,7 @@ description: Flutter/Dart 技术最佳实践参考——写/审 Flutter 代码�
 | 技术栈预设族（app 预设 A/B/C＋plugin 类型 A/B）/ 状态管理 | [references/state-management.md](references/state-management.md) | 预设族全文与选型注记（1.3.0 自双模板 §七 下沉）/ Notifier 模式 / Provider 就近组织 / ConsumerWidget vs ConsumerStatefulWidget 强制 / autoDispose 生命周期（选 A 时生效） |
 | 分层 / 架构纪律 | [references/architecture.md](references/architecture.md) | app 分层架构（MVVM/Repository）/ plugin 架构纪律与类型 A/B 额外纪律（1.3.0 自双模板 §十 下沉） |
 | 通用工程规范 / plugin 专项 | [references/general.md](references/general.md) | app 全栈通用（assets / 文件头 / import 排序）/ plugin 专项（平台通道选型 / pub 发布检查）（1.3.0 自双模板 §八 下沉） |
-| 测试选型 / 补测（TDD 适用范围） | [references/testing.md](references/testing.md) | App 按层分档表 + plugin 公开 API 全覆盖表 / 同构批量红绿细则 |
+| 测试选型 / 补测（TDD 适用范围） | [references/testing.md](references/testing.md) | App 按层分档表 + plugin 公开 API 全覆盖表 / 同构批量红绿细则 / 自产用例五维自查 |
 | 接入 / 调试打印机（蓝牙 / USB / 网口 / 内置 / 标签）、打印排障 | [references/printer.md](references/printer.md) | 打印域（蓝牙·USB·网口链路卡 / 打印专项跨链路 / 一体机内置 / 标签 TSPL） |
 | 接入 / 调试电子秤、数字客显、串口设备排障 | [references/scale.md](references/scale.md) | 秤·客显串口设备域（串口 RS232 公共底座 / 电子秤含 USB 秤 / 数字客显——平行双实现并为一文件） |
 | 扫码枪 / 扫码盒接入、盲扫与 HID 排障 | [references/scanner.md](references/scanner.md) | 扫码域（USB HID 键盘流 / 盲扫与业务面） |

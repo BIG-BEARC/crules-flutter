@@ -11,6 +11,7 @@ SRC=$(cd "$(dirname "$0")/.." && pwd)
 # 环境守卫（1.0.13）：本脚本两条断言（draft / tag）依赖 git 历史，其余不依赖（1.0.38 50 → 1.0.39 51、1.0.41 +3 至 54、
 # 1.0.42 +2 至 56、1.3.1 B 案三换一（缺口/债龄/段序钟 → 版本一致闸）+ parity 两闸；一致闸调 git tag 不可读时自 SKIP；计数以实跑为准。
 # 1.1.7 +1 至 59（合一断言；1.1.5/1.1.6 两批增量未逐批记账——外审 R8 勘误，防归因失真）
+# compact-gate 批（2026-11-09）+1 至 70（新夹具 hooks/test_compact_gate.py，21 检查）；计数以实跑为准
 # 1.0.39/40 曾误记「52/0」、1.0.39 起点曾误记 48——09-24 三 tag 隔离实跑勘误：51/51/54，且本机无 pwsh 时 ps1 夹具
 # SKIP 不计（有 pwsh 环境 +1），跨环境对数先对齐 SKIP 面）。在无 .git 的拷贝里
 # （典型：插件 cache = 全仓文件快照、非 clone）draft 吃 git 报错码 128 → **假红**；tag 则落到「读 HEAD 失败」
@@ -49,6 +50,7 @@ t 0 "python3 $SRC/hooks/test_stop_reminder.py"            "stop-reminder fixture
 t 0 "python3 $SRC/hooks/test_pending_updates.py"          "pending-updates 写侧 fixture 应全绿（1.0.30 队列分文件）"
 t 0 "python3 $SRC/hooks/test_queue_contract.py"           "跨 hook 队列契约测试应全绿（1.0.39 D-4 写读互调）"
 t 0 "python3 $SRC/hooks/test_compliance.py"               "compliance-audit fixture 应全绿（1.0.37 批2 遵守度事实账）"
+t 0 "python3 $SRC/hooks/test_compact_gate.py"             "compact-gate fixture 应全绿（会话压缩计数闸：阶梯/marker/clear/startup/哨兵回传/hooks.json 登记）"
 # 1.0.42 断言①：parity-rewrite 零项目值+引用悬空双扫描——
 # 扫 skills/parity-rewrite/ 全树：①禁列 token（05 计划 Global Constraints 全表 + 裸 ARB）
 # 命中即红；②引用悬空式（spec 节号 `5.<数字>` / 裸 §<中文序号> / 「草案」）命中即红。
@@ -511,7 +513,7 @@ PYEOF
 )
 n_av=$(printf '%s' "$av_bad" | head -1)
 if [ "${n_av:-1}" = "0" ]; then
-  PASS=$((PASS+1)); echo "PASS  注册 hook AV 弹框压制守卫在位（win32 判定 + SetErrorMode，清单自 hooks.json 派生 ×4）"
+  PASS=$((PASS+1)); echo "PASS  注册 hook AV 弹框压制守卫在位（win32 判定 + SetErrorMode，清单自 hooks.json 派生——件数随登记面浮动不写死）"
 else
   FAIL=$((FAIL+1)); echo "FAIL  AV 弹框压制守卫漂移 ×${n_av:-?}（见上）"
 fi

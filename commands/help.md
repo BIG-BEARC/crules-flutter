@@ -54,7 +54,7 @@ sequenceDiagram
 - **命令 ×6**：init / update-memory / help / distill / diagram / diagnose
 - **agents ×7**：frontend / backend / i18n / platform / error / reviewer / plan-reviewer（出场时机见插件 cache `进阶/Agent编排.md`）
 - **skill ×2**：flutter-rules（技术规范参考 + 方案骨架 + 平台坑节 + 状态管理 / 测试选型 / dart-flutter 映射速查）/ parity-rewrite（复刻 / 重写 / 迁移既有模块——对照清单钉行为、逐项重建、测试矩阵验证一致）
-- **hooks ×4**：deny-list（PreToolUse 安全闸：破坏命令硬拦 deny + 高危形态弹窗确认 ask）/ pending-updates（PostToolUse 漂移队列，1.0.30 起按会话分文件）/ stop-reminder（Stop 收尾提醒，只读本会话队列）/ compliance-audit（SessionEnd 遵守度事实账：每会话终结落一行计数到 `.compliance-log`，只记不判、不含对话内容，1.0.37）（供应链说明见 README）
+- **hooks ×6**：deny-list（PreToolUse 安全闸：破坏命令硬拦 deny + 高危形态弹窗确认 ask）/ pending-updates（PostToolUse 漂移队列，1.0.30 起按会话分文件）/ stop-reminder（Stop 收尾提醒，只读本会话队列）/ compliance-audit（SessionEnd 遵守度事实账：每会话终结落一行计数到 `.compliance-log`，只记不判、不含对话内容，1.0.37）/ compact-gate（SessionStart 压缩计数闸：第 1 次观测注入催快照、≥2 次人裁弹窗，clear/startup 清零；状态落 `.claude/memory/compact-gate/`）/ compact-gate-decision（PostToolUse(AskUserQuestion) 哨兵回传：`[compact-gate]` 前缀核自家，裁决回填账行、「不再提醒」落 marker）（供应链说明见 README）
 - **载体（丁-Copy，1.1.5）**：`.claude/CLAUDE.md` 指针四行 + 宪法副本 `.claude/crules/constitution.md`（App / Plugin 二选一）+ 进阶 6 篇 + memory 9 模板（含 `PROJECT.md` 项目事实锚点）——进阶与 checklist 转插件 cache 即读（去分发化），memory 种子落 `.claude/memory/`（缺则补、永不覆盖）
 
 ## 冲突时听谁的（优先级链）

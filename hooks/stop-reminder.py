@@ -26,8 +26,9 @@ import os
 import subprocess
 import sys
 import time
-from _common import (constitution_stamp, find_project_root, plugin_version,
-                     sanitize_sid, version_key,
+from _common import (constitution_stamp, emit_additional_context,
+                     find_project_root, plugin_version, sanitize_sid,
+                     version_key,
                      _hook_utf8_streams)  # 1.0.39 共享实现收编 / 1.0.40 陈旧检测三件入共享（hooks/_common.py）
 
 # 进程期 AV 弹框压制（1.0.33，三 hook 同款同改；2026-09-22 A/B 实测）：Windows 注入型管控 agent
@@ -137,10 +138,6 @@ try:
 except Exception:
     pass
 
-def emit(context):
-    print(json.dumps({"hookSpecificOutput": {"hookEventName": "Stop",
-                                             "additionalContext": context[:10000]}}, ensure_ascii=False))
-
 # 取值类型守卫（1.0.30 收口 R3，与写侧同）：合法 JSON 但 session_id 非字符串时 re.sub 会抛未捕获异常，
 #   与头注 fail-open 契约不符——str 守卫使异型退化为「无此字段」语义
 sid = sanitize_sid(data.get("session_id"))  # 与写侧 D6 同规则净化（实现见 _common，1.0.39 收编单源）
@@ -153,7 +150,7 @@ if not lines and sid:
         src_name = ".pending-updates"
 if not lines:
     if stale:
-        emit(stale)   # 队列空也要响（1.0.40 落点 bug 回归钉）
+        emit_additional_context("Stop", stale)   # 队列空也要响（1.0.40 落点 bug 回归钉）
     sys.exit(0)
 first = lines[0][:120]
 msg = (stale + f"记忆库漂移队列非空：{len(lines)} 条待补索引（如 {first}）。")
@@ -185,5 +182,5 @@ clear_hint = (f"清空本会话队列文件 {own_name}" if src_name == own_name
               else "清空旧单文件 .pending-updates（升级存量，写侧 1.0.30 起已不再写它）")
 msg += (f"本轮改动若已收尾，按 .claude/memory/MAINTENANCE.md 触发表补对应索引后{clear_hint}；"
         "仍在继续任务则可忽略本条，收尾时会再提示。")
-emit(msg)
+emit_additional_context("Stop", msg)
 sys.exit(0)

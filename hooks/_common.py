@@ -6,8 +6,9 @@
 #   「不引共享模块」的核实与推翻过程见裁决单 §0 末行）。
 # 分发说明：hook 由 hooks.json 以 python3 <插件目录>/hooks/x.py 整目录随 plugin 安装启动，
 #   Python 将脚本所在目录置于 sys.path[0]，`import _common` 直接可用，无需路径样板。
-# 改动纪律：本文件被全部 python hook import——语法/行为错误爆炸半径为四 hook 齐坏；
-#   防线=CI/test-self 的 compileall（1.0.39 起自动覆盖本文件）+ 各 hook fixture 子进程实跑。
+# 改动纪律：本文件被全部 python hook import——语法/行为错误爆炸半径为全部 python hook 齐坏
+#   （2026-11-09 compact-gate 批起六件）；防线=CI/test-self 的 compileall（1.0.39 起自动覆盖本文件）
+#   + 各 hook fixture 子进程实跑。
 # 事件契约三课（2026-09-22 遵守度批2 复盘蒸馏 · 2026-10-19 裁收入；写新 hook / 改事件挂点前先读）：
 #   ① Stop 每个 assistant 回合都触发，SessionEnd 才是会话终结——「收尾对账 / 会话级记账」类
 #     职责只属 SessionEnd，挂 Stop = 每轮全量重扫（1.0.37 设计期实踩，stop-reminder 头注即证据）。
@@ -79,6 +80,15 @@ def version_key(ver):
         return tuple(int(p) for p in ver.split("."))
     except ValueError:
         return None
+
+
+def emit_additional_context(event_name, context, cap=10000):
+    """additionalContext 注入统一出口（SessionStart/Stop 等同形载荷，2026-11-09 compact-gate 批收编）：
+    此前 stop-reminder/compact-gate 各持一枚同构 emit（仅 hookEventName 不同）——跨 hook 重名绊线
+    （test-self 复制病双锁②）咬合后按 1.0.39 先例上提单源。10k 字符上限为 hook 输出契约（官方）。"""
+    print(json.dumps({"hookSpecificOutput": {"hookEventName": event_name,
+                                             "additionalContext": context[:cap]}},
+                     ensure_ascii=False))
 
 
 def _hook_utf8_streams():

@@ -28,7 +28,8 @@
 | textAlignVertical 无效、hint 不居中、输入框钉顶、几何断言红 | 全平台 | InputDecorator 垂直定位基线制——textAlignVertical 无杠杆、hint 盒居中几何断言不可达 |
 | 广播注册崩溃、SecurityException、RECEIVER_EXPORTED、targetSdk 34、USB 拔出无检测、副屏崩溃、window type | Android 14 | targetSdk 34 外设在屏双门——registerReceiver 必须三参 RECEIVER_*，副屏 Presentation 窗口类型不可覆盖 |
 | 蓝牙扫不出、蓝牙权限被拒绝、neverForLocation、位置权限、清单双声明、receiver 泄漏、扫描永挂 | Android 12+ | 蓝牙权限链三陷阱——12+ 请求列表残留 location 致误拒、清单双声明合并削弱 neverForLocation、扫描 catch 不注销 receiver |
-| 分区存储、photo picker、预测性返回、16KB page size、edge-to-edge、Play 上架被拦 | Android | 版本兼容基线（一卡多区间合并） |
+| 分区存储、photo picker、预测性返回、16KB page size、edge-to-edge、Play 上架被拦、dataSync 6 小时强停、大屏横竖屏锁定失效、局域网权限 | Android | 版本兼容基线（一卡多区间合并） |
+| 插件 targetSdk 34、AAR target 声明失效、合并即弃、双与门、主工程升 36 影响、≤14 设备零差异、dataSync 6 小时、provider 自启 | Android | 主工程升 targetSdk × 依赖/AAR 低 target——双与门统一裁决（库声明合并即弃，行为差异只在 ≥N 设备） |
 | 类找不到、UnmodifiableUint8ListView、dill 陈旧、测试载入即崩 | Windows | 页面级 widget test 载入即崩——「类找不到」先疑工具链损坏（dill 陈旧），勿急降依赖 |
 | 直调错误版本 SDK、报错文案取版本、fvm shim 缺失、验证结论作废 | Windows | 机械验证直调错误版本 SDK——逃生门二进制的版本取自报错文案而非钉定版本 |
 
@@ -189,17 +190,33 @@
 
 ### [Android] 版本兼容基线（一卡多区间合并）
 
-- 关键词：分区存储、photo picker、预测性返回、16KB page size、edge-to-edge、Play 上架被拦
+- 关键词：分区存储、photo picker、预测性返回、16KB page size、edge-to-edge、Play 上架被拦、dataSync 6 小时强停、大屏横竖屏锁定失效、局域网权限
 - 归属：OS 平台（Android 平台 / 系统策略层）
 - 覆盖：
   1. **Scoped storage**：targetSdkVersion 29+（Android 10）起分区存储生效；API 29 可用 `requestLegacyExternalStorage` 临时豁免，Android 11 起强制
   2. **Photo picker**：系统级照片选择器原生随 Android 11（API 30）+ 提供，backport 到 Android 4.4（兼容库，经 Google Play services / ActivityResult）
-  3. **Predictive back（返回手势）**：Android 13（API 33）引入预测性返回手势；targetSdk 34+ 对部分组件行为有强制要求（强制细节未逐字核验）
+  3. **Predictive back（返回手势）**：Android 13（API 33）引入预测性返回手势；**targetSdk 36+ 且运行在 Android 16+ 设备**时预测返回默认启用——`onBackPressed` 不再被调用、`KeyEvent.KEYCODE_BACK` 不再分发（官方逐字核验 2026-11-02）；未迁移可临时 `android:enableOnBackInvokedCallback="false"` 退出
   4. **16KB page size**：Google Play 要求 targetSdk 35+ 的 64 位应用支持 16KB 内存页，原期限 2025-11-01 已延至 **2027-02-01**（届时不分 targetSdk 全量适用；延期申请通道至 2026-05-31）；含原生 `.so` 的 plugin 须对齐编译——Flutter 引擎默认 `ndkVersion` 自 3.38 起为 **NDK r28**（官方口径：native code 16KB 对齐的最低要求）
-  5. **Edge-to-edge 强制**：targetSdk 35（Android 15）起系统强制全面屏绘制（`setStatusBarColor` 等失效）；Android 15 可 `windowOptOutEdgeToEdgeEnforcement` 临时退出，**Android 16（targetSdk 36）豁免移除**；Flutter 侧配套破坏性变更——默认 `SystemUiMode` 改 edge-to-edge，沿用旧 opt-out 机制的 Flutter 应用在 Android 16+ 可能崩溃
-- 症状：越过基线后旧存储 API 失效 / 权限模型变化 / 返回手势行为差异 / Play 上架被 16KB 拦截 / 状态栏遮挡或崩溃 ｜ 规避：按官方文档采用 MediaStore / photo picker / OnBackPressedDispatcher + predictive back 声明；16KB 升级 Flutter ≥3.38（自有 `.so` 用 NDK r28 重编对齐）；edge-to-edge 改 `enableEdgeToEdge` + insets 适配并跟随 Flutter SystemUiMode 新默认
-- 状态：官方文档口径（API 29 / 33 / 35 / 36 关键锚点；16KB 期限 2027-02-01）；photo picker 与 predictive back 细节部分未逐字核验 ｜ 最后核验：2026-09-05
+  5. **Edge-to-edge 强制**：targetSdk 35（Android 15）起系统强制全面屏绘制（`setStatusBarColor` 等失效）；Android 15 可 `windowOptOutEdgeToEdgeEnforcement` 临时退出，**Android 16（targetSdk 36）豁免移除**——官方双轴算例（逐字核验 2026-11-02）：target 36 × Android 15 设备 opt-out 仍有效、× Android 16 设备失效；Flutter 侧配套破坏性变更——默认 `SystemUiMode` 改 edge-to-edge，沿用旧 opt-out 机制的 Flutter 应用在 Android 16+ 可能崩溃
+  6. **dataSync 前台服务 6h 超时**：targetSdk 35+ 且 Android 15+ 设备，dataSync 型 FGS 共享「24 小时窗口内共 6 小时」配额；超时先回调 `Service.onTimeout(int, int)`，须立即 `stopSelf()`，否则 `RemoteServiceException: A foreground service of type dataSync did not stop within its timeout` 强停；配额耗尽再启动抛 `ForegroundServiceStartNotAllowedException`；用户拉回前台计时重置；测试可 `am compat enable FGS_INTRODUCE_TIME_LIMITS <pkg>` 强开（低 target 也可验，但仅限 Android 15+ 设备——设备内无此 change ID 则无处可开）
+  7. **大屏方向/可缩放限制忽略**：targetSdk 36+ 且 smallest width ≥600dp 显示器上，`screenOrientation`（portrait/landscape 各值）/ `setRequestedOrientation()` / aspect-ratio / resizability 限制**被系统忽略**——固定横竖屏应用在 ≥600dp 屏（平板、双折展开、POS 大屏）遭遇意外旋转重建；例外：游戏类目 / 用户显式设置 / <600dp 屏；`PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY` 临时退出（Android 37 起失效）
+  8. **Local Network Permission（预警）**：Android 16 起访问局域网地址（LAN 打印机 / 秤 / KDS 的 TCP/UDP 全口径，native 与托管代码同管）需新运行时权限；当前 opt-in 阶段（`am compat enable RESTRICT_LOCAL_NETWORK` 可验），官方分两批部署（25Q2-26Q2）、后续强制——**POS 局域网外设链路最重预警**
+- 症状：越过基线后旧存储 API 失效 / 权限模型变化 / 返回手势行为差异 / Play 上架被 16KB 拦截 / 状态栏遮挡或崩溃 / dataSync 服务 6h 强停（RemoteServiceException）/ 大屏意外旋转重建 / 局域网外设断连（预警） ｜ 规避：按官方文档采用 MediaStore / photo picker / OnBackPressedDispatcher + predictive back 声明；16KB 升级 Flutter ≥3.38（自有 `.so` 用 NDK r28 重编对齐）；edge-to-edge 改 `enableEdgeToEdge` + insets 适配并跟随 Flutter SystemUiMode 新默认；dataSync 实现 onTimeout→stopSelf 或迁 WorkManager；大屏 Activity 状态保存加固（旋转重建防线）；LNP 提前按 NEARBY_WIFI_DEVICES 兼容路径演练
+- 状态：官方文档口径（API 29 / 33 / 35 / 36 关键锚点；16KB 期限 2027-02-01）；35/36 档条目（3/5/6/7/8）2026-11-02 对照 behavior-changes-15/16 逐字核验，photo picker 细节仍 2026-09-05 口径 ｜ 最后核验：2026-11-02
 - 出处：[Android 11 存储隐私](https://developer.android.com/about/versions/11/privacy/storage)、[存储总览](https://developer.android.com/training/data-storage)、[photo picker](https://developer.android.com/training/data-storage/shared/photopicker)、[预测性返回手势](https://developer.android.com/guide/navigation/predictive-back-gesture)、[16KB page size 要求与期限](https://developer.android.com/guide/practices/page-sizes)、[Android 15 行为变更](https://developer.android.com/about/versions/15/behavior-changes-15)、[Android 16 行为变更（豁免移除）](https://developer.android.com/about/versions/16/behavior-changes-16)、[Flutter 3.38（NDK r28 默认）](https://flutter.dev/blog/whats-new-in-flutter-3-38)、[Flutter SystemUiMode 破坏性变更](https://docs.flutter.dev/release/breaking-changes/default-systemuimode-edge-to-edge)
+
+### [Android] 主工程升 targetSdk × 依赖/AAR 低 target——双与门统一裁决（库声明合并即弃，行为差异只在 ≥N 设备）
+
+- 关键词：插件 targetSdk 34、AAR target 声明失效、合并即弃、双与门、主工程升 36 影响、≤14 设备零差异、dataSync 6 小时、provider 自启
+- 归属：OS 平台（Android 兼容框架 targetSdkVersion 门控机制）× 构建层（manifest merger）× 依赖/AAR 层
+- 模型（三机制全部官方文档逐字核验 2026-11-02）：
+  1. **库 target 声明合并即弃**：manifest merger 规则——`<uses-sdk>` 各属性**一律取高优先级清单（app）的值**；库 targetSdkVersion 更低时不报错、直接采用 app 值，唯一副作用通道是「隐式系统权限」注入（且仅命中库 target ≤3/≤15 的 legacy 表——target 34 的库不触发）；build.gradle 的最终值再覆盖 manifest。→ **运行时唯一 target = 最终 APK 合并产物值**；「插件 target 34」实际只剩厂商验证线与 merger warning 两义，不会在 app 内造出「34 行为孤岛」。
+  2. **双与门（设备分带裁决）**：门控行为变更生效 = (最终 app target ≥ N) **且** (运行设备系统 ≥ N)。官方原文两证：A15 e2e「Apps are edge-to-edge by default **on devices running Android 15** if the app is **targeting Android 15 (API level 35)**」；A16 预测返回「For apps targeting Android 16 or higher **and running on an Android 16 or higher device**…」。A16 另给出双轴算例：target 36 × Android 15 设备 → e2e opt-out 仍有效；× Android 16 设备 → 失效。推论：**设备 ≤14 时 target 34 与 36 行为不可区分**（35/36 档变更物理上只存在于 15/16 系统内——A15 文档明示 dataSync 超时可对低 target app 强开「as long as the app is running on an Android 15 device」，14 及以下设备内无此 change ID 可开）。边界注：OEM/模块更新携带额外 compat 变更、`am compat` debug 强开均属机制允许的例外，官方文档模型不含，不推翻上述推论。
+  3. **「不调用 ≠ 不运行」例外**：合入 manifest 的 `<provider>`（实例：支付宝 IoT AAR `ErrorContentProvider`，`android:process=":provider"`）由框架在进程启动、任何应用代码之前自动实例化——App Startup 库即以此机制做免调用初始化（官方：「using content providers to initialize each dependency」）；合并的 uses-permission 安装即生效；service/receiver 组件对外部 intent 处于「上膛」状态。只有纯 class 引用（不进 manifest、不被加载/反射）才真正静止——「不 init 插件就没事」对带组件面的 AAR 不成立。
+- 排查五步（升 target 前对每个重量级依赖过一遍）：①定靶只看合并产物（`app/build/outputs/logs/manifest-merger-report.txt` 或 Studio Merged Manifest 视图），不看库自己的声明 ②数组件面：`<provider>`（自启）/ 带 foregroundServiceType 的 `<service>` / exported `<receiver>` ③so 16KB 判据（PT_LOAD p_align ≥ 0x4000 且 vaddr%align == offset%align）④按能力面对版本变更清单逐条（UI→e2e/预测返回/大屏方向；FGS→dataSync 6h 配额；native→16KB）⑤回归矩阵 = 设备分带（≤14 / 15 / 16）× 触发链路 × 长跑（6h 配额只有长跑能暴露）
+- 区间：门控机制适用于全部 Android 版本（compat framework 各版本在用）；实证载体 target 34→36（2026-11）
+- 状态：官方文档口径（manage-manifests / behavior-changes-15/16 / app-startup 逐字核验）+ 生产实证（支付宝 IoT AAR 组件面与 16KB 全套排查） ｜ 最后核验：2026-11-02
+- 出处：[manifest merger 合并规则](https://developer.android.com/build/manage-manifests)、[A15 行为变更（e2e 双与门句 / dataSync 6h）](https://developer.android.com/about/versions/15/behavior-changes-15)、[A16 行为变更（双轴算例 / 预测返回 / 大屏方向忽略）](https://developer.android.com/about/versions/16/behavior-changes-16)、[兼容框架测试工具（am compat 按包门控）](https://developer.android.com/guide/app-compatibility/test-debug)、[App Startup（provider 免调用自启机制）](https://developer.android.com/topic/libraries/app-startup)；实证：saas-cashier target 34→36 升级评估 × 支付宝 IoT AAR（abcp-api 6.1.46 manifest 组件面 + arm64 so 16KB 对齐实测，2026-11）；关联坑卡：[Android 14] targetSdk 34 双门卡（34 档先例）、[Android] 版本兼容基线卡（各版本变更清单）
 
 ## 工具链
 

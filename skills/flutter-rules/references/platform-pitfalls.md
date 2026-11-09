@@ -26,6 +26,8 @@
 | divider 撑满差异、同代码两版渲染不同、测试对真机错 | 全平台 | 滚动 TabBar dividerColor: transparent 跨 SDK 撑满 / 收缩差异——同代码两版渲染不同 |
 | 面板不渲染、只显示蒙层、Cannot hit test a render box with no size、BoxConstraints forces an infinite width、stretch 崩溃、IntrinsicWidth、TabBar 直绘 | 全平台 | Row 非弹性子件主轴无界宽 × stretch 列——整帧布局中止、面板全隐只余蒙层 |
 | textAlignVertical 无效、hint 不居中、输入框钉顶、几何断言红 | 全平台 | InputDecorator 垂直定位基线制——textAlignVertical 无杠杆、hint 盒居中几何断言不可达 |
+| 测试挂死、Future.delayed、超时、flutter_tester 空转、pump 推进 | 全平台 | testWidgets 裸 Future.delayed 永挂死——fake 时钟只随 pump 推进；超时现版会报 |
+| find.text 不命中、Text.rich、必填星号、findRichText、textContaining | 全平台 | Text.rich 文案 find.text 全等不命中——拼接串须 textContaining(findRichText: true) |
 | 广播注册崩溃、SecurityException、RECEIVER_EXPORTED、targetSdk 34、USB 拔出无检测、副屏崩溃、window type | Android 14 | targetSdk 34 外设在屏双门——registerReceiver 必须三参 RECEIVER_*，副屏 Presentation 窗口类型不可覆盖 |
 | 蓝牙扫不出、蓝牙权限被拒绝、neverForLocation、位置权限、清单双声明、receiver 泄漏、扫描永挂 | Android 12+ | 蓝牙权限链三陷阱——12+ 请求列表残留 location 致误拒、清单双声明合并削弱 neverForLocation、扫描 catch 不注销 receiver |
 | 分区存储、photo picker、预测性返回、16KB page size、edge-to-edge、Play 上架被拦、dataSync 6 小时强停、大屏横竖屏锁定失效、局域网权限 | Android | 版本兼容基线（一卡多区间合并） |
@@ -162,6 +164,24 @@
 - 区间：已核验 3.19.6（input_decorator.dart 行号）；跨版本稳定性未逐一核验
 - 状态：框架行为（规避即终态） ｜ 最后核验：2026-09-20
 - 出处：生产实证（私有仓探针四变体实测 + 修复批 member_manager_toolbar_test.dart；1.0.29「表征断言先实测再落锁」条同源实证）
+
+### [全平台] testWidgets 裸 Future.delayed 永挂死——fake 时钟只随 pump 推进；超时现版会报
+
+- 关键词：测试挂死、Future.delayed、超时、flutter_tester 空转、pump 推进
+- 归属：Flutter SDK（flutter_test × package:fake_async FakeAsync zone）
+- 触发场景：testWidgets 体内裸 await Future.delayed（含 Duration.zero） ｜ 症状：测试体永不完成、flutter_tester 空转（纯 test() 同款正常）；曾实证挂死零输出且超时不报（2026-11-07），同栈受控复现未再现该形态 ｜ 根因：FakeAsync zone 拦截全部 Timer，只随 tester.pump/pumpAndSettle 推进（fake_async 源码：timers run during calls to elapse）；超时计时器系 Zone.root 真时器、不随 fake 时钟（test_api 0.7.3 invoker 源码）——timeout 参数形报 TimeoutException、--timeout 旗标形报 did not complete，均按设定时长终止套件（3.27.4 双形实测 5s） ｜ 规避：冲微任务一律 await tester.pump()/pumpAndSettle；种子数据同步写；遇「挂死」先搜裸 delay
+- 区间：FakeAsync 机制现行（fake_async 1.3.1 源码核验）；超时双形实测于 test_api 0.7.3 × Flutter 3.27.4（2026-11-09）
+- 状态：现行机制（设计如此） ｜ 最后核验：2026-11-09
+- 出处：实证（saas-suite 1095297 退款弹窗测试 2026-11-07 挂死观察）＋受控复现（3.27.4 × test_api 0.7.3 双形，2026-11-09）+ [fake_async](https://pub.dev/packages/fake_async) + [testWidgets API](https://api.flutter.dev/flutter/flutter_test/testWidgets.html)
+
+### [全平台] Text.rich 文案 find.text 全等不命中——拼接串须 textContaining(findRichText: true)
+
+- 关键词：find.text 不命中、Text.rich、必填星号、findRichText、textContaining
+- 归属：Flutter SDK（flutter_test CommonFinders × InlineSpan plainText 拼接）
+- 触发场景：必填行 Text.rich(TextSpan[*, 标题]) 断言 find.text('标题') ｜ 症状：全等不命中（plainText 是「*标题」拼接串） ｜ 根因：find.text 默认不入 rich 树；findRichText:true 配全等仍不等 ｜ 规避：find.textContaining('标题', findRichText: true)
+- 区间：现行 find.text / textContaining 语义
+- 状态：现行 API 行为 ｜ 最后核验：2026-11-09
+- 出处：实证（同日同文件 2026-11-07）+ [CommonFinders.text API](https://api.flutter.dev/flutter/flutter_test/CommonFinders/text.html)
 
 ## OS 平台
 

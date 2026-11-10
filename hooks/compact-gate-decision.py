@@ -12,12 +12,19 @@
 #   少弹窗＋账行在，误弹的代价是疲劳——非对称取轻）。
 # answers 形状边界（诚实）：宿主 answers 键/值形未经本机探针实证（阶段 1 探针行回填）；本件兼容
 #   值为字符串或 {answer: str} 两形，解析不出即 unparsed——账行可见、可修，不静默丢裁决。
+# snap_ok 机械核（1.3.5 续期批，判据 2 量法机械化；试点首夜谎报快照一例后裁，方案 §6.3）：
+#   问题文本正则取快照路径（注入文案已要求完整路径），mtime 对账 ledger 该 sid 末次压缩行 ts——
+#   ≥ 为 true、早于为 false（点名文件不存在亦 false＝谎报显形）；无路径/无前序行/解析失败 → null 不猜。
+#   账行零正文不变（只落布尔，不落路径）。
 # 隐私对齐：账行只落裁决枚举/sid/计数，零问题正文零答案原文。
 # Windows 纪律：hooks.json 兜底链＋进程期 SetErrorMode 压框（六 hook 同款同改）。
 import json
 import os
+import re
 import sys
 import time
+from datetime import datetime
+
 from _common import (find_project_root, plugin_version, sanitize_sid,
                      _hook_utf8_streams)
 
@@ -29,6 +36,8 @@ if sys.platform == "win32":
         pass
 
 SENTINEL = "[compact-gate]"
+# 快照路径（注入文案要求完整路径）；字符类排除空白与全角标点，防把句尾「）。」吃进路径
+SNAP_RE = re.compile(r"/[^\s「」『』（）()，。；,;:：·]+?\.(?:md|json|txt|log)(?![\w.])")
 
 _hook_utf8_streams()
 
@@ -84,6 +93,38 @@ try:
         except OSError:
             gdir_path = None
         if gdir_path:
+            # snap_ok：问题文本取路径 → mtime 对账末次压缩行 ts（1.3.5 续期批，判据 2 机械化）
+            snap_ok = None
+            m = SNAP_RE.search(qtexts[0]) if qtexts else None
+            if m:
+                mt = None
+                cwd = data.get("cwd") if isinstance(data.get("cwd"), str) else "."
+                for cand in (m.group(0), os.path.join(cwd, m.group(0))):
+                    try:
+                        mt = os.path.getmtime(cand)
+                        break
+                    except OSError:
+                        continue
+                base_ts = None
+                try:
+                    with open(os.path.join(gdir_path, "ledger.jsonl"), encoding="utf-8") as fh:
+                        for ln in fh:
+                            try:
+                                r = json.loads(ln)
+                            except Exception:
+                                continue
+                            if isinstance(r, dict) and r.get("sid") == sid \
+                                    and str(r.get("event", "")).startswith("compact"):
+                                base_ts = r.get("ts")
+                except OSError:
+                    pass
+                if mt is None:
+                    snap_ok = False   # 点名路径但文件不在＝谎报显形
+                elif base_ts:
+                    try:
+                        snap_ok = mt >= datetime.fromisoformat(base_ts).timestamp()
+                    except Exception:
+                        snap_ok = None   # 解析不出不猜
             rec = {"schema": 1,
                    "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
                    "sid": sid,
@@ -91,7 +132,8 @@ try:
                    "hook": "compact-gate-decision",
                    "event": "decision",
                    "count": None,
-                   "verdict": verdict}
+                   "verdict": verdict,
+                   "snap_ok": snap_ok}
             with open(os.path.join(gdir_path, "ledger.jsonl"), "a", encoding="utf-8") as fh:
                 fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
             if verdict == "mute" and sid:

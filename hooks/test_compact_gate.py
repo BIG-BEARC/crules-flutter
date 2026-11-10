@@ -105,11 +105,12 @@ check("compact 第 1 次 → 观测注入（≤300 字符）＋计数=1＋ledger
 rc, out = run(GATE, compact_payload(d), d)
 ok = rc == 0 and "已达同任务上限" in ac_of(out) and "[compact-gate]" in ac_of(out) \
     and "放行一次并记账" in ac_of(out) and "落快照后重开" in ac_of(out) and "不再提醒" in ac_of(out) \
+    and "先落断点快照" in ac_of(out) and "完整路径" in ac_of(out) \
     and len(ac_of(out)) <= 300
 st, led = state_of(d), ledger_of(d)
 ok = ok and st and st.get("count") == 2 and led and len(led) == 2 \
     and led[1].get("event") == "compact-nth" and led[1].get("count") == 2
-check("compact 第 2 次 → 人裁注入（三选项＋哨兵前缀）＋计数=2", ok)
+check("compact 第 2 次 → 人裁注入（三选项＋哨兵前缀＋先落快照指令）＋计数=2", ok)
 
 rc, out = run(GATE, compact_payload(d), d)
 ok = rc == 0 and "已达同任务上限" in ac_of(out)
@@ -230,6 +231,30 @@ d8 = proj()
 rc, out = run(DECISION, {**decision_payload(d8, {}), "tool_input": {"questions": "坏形"}}, d8)
 ok = rc == 0 and ledger_of(d8) is None and not os.path.exists(gdir(d8))
 check("decision tool_input 坏形 → 哨兵不中快退零写面", ok)
+
+# —— decision snap_ok 机械核（1.3.5 续期批：判据 2 量法机械化——问题文本取路径，mtime 对账末次压缩行） ——
+d11 = proj()
+run(GATE, compact_payload(d11, sid="sP"), d11)
+run(GATE, compact_payload(d11, sid="sP"), d11)
+snap = os.path.join(d11, "snapshot.md")
+QP = "[compact-gate] 第 2 次压缩。断点快照已落 " + snap + " 。如何处置？"
+open(snap, "w", encoding="utf-8").close()   # mtime=现在 ≥ 末次压缩行 → true
+rc, out = run(DECISION, decision_payload(d11, {QP: "放行一次并记账"}, qtext=QP, sid="sP"), d11)
+led = ledger_of(d11)
+ok = rc == 0 and led and led[-1].get("verdict") == "continue" and led[-1].get("snap_ok") is True
+check("decision 快照新鲜（mtime ≥ 末次压缩行）→ snap_ok=true", ok)
+
+os.utime(snap, (now - 3 * 3600, now - 3 * 3600))   # 陈旧 3h（早于末次压缩行）→ false 谎报显形
+rc, out = run(DECISION, decision_payload(d11, {QP: "放行一次并记账"}, qtext=QP, sid="sP"), d11)
+led = ledger_of(d11)
+ok = rc == 0 and led and led[-1].get("snap_ok") is False
+check("decision 快照陈旧（mtime < 末次压缩行）→ snap_ok=false（谎报显形）", ok)
+
+QN = "[compact-gate] 第 2 次压缩。如何处置？"   # 无路径 → null 不猜
+rc, out = run(DECISION, decision_payload(d11, {QN: "放行一次并记账"}, qtext=QN, sid="sP"), d11)
+led = ledger_of(d11)
+ok = rc == 0 and led and led[-1].get("snap_ok") is None
+check("decision 问题无快照路径 → snap_ok=null（不猜）", ok)
 
 # —— 变异抽查锁（2026-11-09 评审点名两缺口） ——
 # ① classify 子串优先级：答案同命中「不再提醒」＋「放行」→ mute 优先（mute>reopen>continue 换序即红）

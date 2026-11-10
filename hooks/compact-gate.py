@@ -6,7 +6,9 @@
 #   marker 人裁注入（第 3 次起仍问＝「放行一次」语义的自然结果）；手动 /compact 与 idle compaction
 #   同计数（SessionStart 输入无 trigger 字段，source=compact 不分 manual/auto）。
 # 人裁回传（D3/Q3/Q4/Q9①）：本 hook 只注入；裁决由模型转手 AskUserQuestion（问题文本以
-#   「[compact-gate]」开头），compact-gate-decision.py 挂 PostToolUse 回填 ledger 裁决列／落 marker。
+#   「[compact-gate]」开头并附快照文件完整路径），compact-gate-decision.py 挂 PostToolUse 回填
+#   ledger 裁决列／snap_ok 快照 mtime 核／落 marker（1.3.5 续期批：去自报化——先落快照再弹窗，
+#   试点首夜谎报快照一例实锤后裁，方案 §6.3）。
 #   marker＝「本任务不再提醒」（clear 清零，与计数同文件存防跨计数残留；decision 件在 state 缺失
 #   回落时可产 count=0+marker 态——无害：第 1 次档恒观测注入，静默只在 ≥2 档生效）。
 # 无人值守缺省（D5/Q5）：不阻塞不静默——账行恒落（机械面），注入是建议非强制（遵守面）；
@@ -41,10 +43,10 @@ _hook_utf8_streams()
 
 COPY_1ST = (f"压缩计数：本会话第 1 次压缩（同任务上限 {LIMIT} 次）。断点快照尚未落盘。"
             "工程纪律要求压缩后立即落快照（台账/task 回写/结论归位）；摄入面节读、不回读整文件。")
-COPY_NTH = (f"压缩计数：第 {{n}} 次压缩，已达同任务上限（{LIMIT} 次）。工程纪律要求：①立即落断点快照；"
-            "②以 AskUserQuestion 征询需求方裁决，问题文本以「[compact-gate]」开头，"
+COPY_NTH = (f"压缩计数：第 {{n}} 次压缩，已达同任务上限（{LIMIT} 次）。工程纪律要求：①先落断点快照（台账/task 回写），"
+            "再以 AskUserQuestion 征询需求方裁决，问题文本以「[compact-gate]」开头并附快照文件完整路径，"
             "选项＝放行一次并记账／落快照后重开／本任务不再提醒；"
-            "AskUserQuestion 不可用时落快照＋继续，账记未裁决。")
+            "AskUserQuestion 不可用时落快照＋继续（compact-nth 账行 verdict=null 即未裁决记录）。")
 
 
 def ledger_line(gdir_path, event, sid, count, verdict=None):

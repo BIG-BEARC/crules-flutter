@@ -18,6 +18,9 @@ SRC=$(cd "$(dirname "$0")/.." && pwd)
 # 兜底链幸存/无根静默/孤儿清扫/hooks.json 登记）；计数以实跑为准
 # 轮次化清点批（2026-11-11）+1 至 75（no-op 方案＋评审删档维持断言——终态裁定与删前核实录当批 commit）；计数以实跑为准
 # 压缩闸 R2 收口批（2026-11-11）+1 至 76（方案档删档维持＋annex 2026-11 卷载体断言）；计数以实跑为准
+# 卫生微批（2026-11-11）+1 至 77（render-blocks --check 真树直跑断言——影子复制面 commands/ 仅拷
+#   help.md ≠ scan_targets 扫描面，未登记围栏落 init 等件时影子闸两不红（变异实证：注入
+#   (init.md, gear-note) 影子 76/0 照绿、真树 --check rc=1）；README「CI 生成闸」声称由此字面成立）
 # 1.0.39/40 曾误记「52/0」、1.0.39 起点曾误记 48——09-24 三 tag 隔离实跑勘误：51/51/54，且本机无 pwsh 时 ps1 夹具
 # SKIP 不计（有 pwsh 环境 +1），跨环境对数先对齐 SKIP 面）。在无 .git 的拷贝里
 # （典型：插件 cache = 全仓文件快照、非 clone）draft 吃 git 报错码 128 → **假红**；tag 则落到「读 HEAD 失败」
@@ -274,6 +277,12 @@ else
   FAIL=$((FAIL+1)); echo "FAIL  同文块异常（render rc=$rrc / 同步 $same / 锚串 $anchor_bad）：$(printf '%s' "$rout" | head -3 | tr '\n' ' ')"
 fi
 rm -rf "$T6"
+
+# 卫生微批（2026-11-11）：真树直跑 --check——影子复制面（commands/ 仅拷 help.md）≠ scan_targets
+# 扫描面（commands/ 全部 .md），未登记围栏落 init/distill 等件时上方影子闸两不红；本断言以真
+# 扫描面单源覆盖收口，README「CI 生成闸」声称由此字面成立（经 test-self 随 CI 跑）。
+t 0 "python3 $SRC/scripts/render-blocks.py --check" \
+  "render-blocks --check：真树生成面零漂移（真扫描面直跑——影子闸复制面缺口的收口）"
 
 # 0.5.1 断言（D1）：双模板孪生结构守护——节序号集一致 + 孪生节 ^- 条数一致
 # （§二豁免：plugin 独有「发版特殊性」条目与破坏性操作行文差异系合法不对称；

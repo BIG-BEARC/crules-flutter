@@ -14,6 +14,8 @@ SRC=$(cd "$(dirname "$0")/.." && pwd)
 # compact-gate 批（2026-11-09）+1 至 70（新夹具 hooks/test_compact_gate.py，25 检查——1.3.5 续期批 +4）；计数以实跑为准
 # 引用完整性批（2026-11-10）+3 至 73（1.0.32 链接闸①退役并入 check-references——语义承继
 # .superpowers 豁免/annex 入扫/占位纯文字；增强 fence 跳过＋inline span 剥离＋entries 断面；夹具对照红双向）
+# no-op 风暴闸批（2026-11-10）+1 至 74（新夹具 hooks/test_noop_gate.py，18 检查——窗口率截断/ask 升级/
+# 兜底链幸存/无根静默/孤儿清扫/hooks.json 登记）；计数以实跑为准
 # 1.0.39/40 曾误记「52/0」、1.0.39 起点曾误记 48——09-24 三 tag 隔离实跑勘误：51/51/54，且本机无 pwsh 时 ps1 夹具
 # SKIP 不计（有 pwsh 环境 +1），跨环境对数先对齐 SKIP 面）。在无 .git 的拷贝里
 # （典型：插件 cache = 全仓文件快照、非 clone）draft 吃 git 报错码 128 → **假红**；tag 则落到「读 HEAD 失败」
@@ -53,6 +55,7 @@ t 0 "python3 $SRC/hooks/test_pending_updates.py"          "pending-updates 写�
 t 0 "python3 $SRC/hooks/test_queue_contract.py"           "跨 hook 队列契约测试应全绿（1.0.39 D-4 写读互调）"
 t 0 "python3 $SRC/hooks/test_compliance.py"               "compliance-audit fixture 应全绿（1.0.37 批2 遵守度事实账）"
 t 0 "python3 $SRC/hooks/test_compact_gate.py"             "compact-gate fixture 应全绿（会话压缩计数闸：阶梯/marker/clear/startup/哨兵回传/hooks.json 登记）"
+t 0 "python3 $SRC/hooks/test_noop_gate.py"                "no-op-gate fixture 应全绿（no-op 风暴闸：窗口率截断/ask 升级/兜底链幸存/无根静默/hooks.json 登记）"
 # 1.0.42 断言①：parity-rewrite 零项目值+引用悬空双扫描——
 # 扫 skills/parity-rewrite/ 全树：①禁列 token（05 计划 Global Constraints 全表 + 裸 ARB）
 # 命中即红；②引用悬空式（spec 节号 `5.<数字>` / 裸 §<中文序号> / 「草案」）命中即红。
@@ -551,6 +554,8 @@ fi
 # matcher 集漂移 / 引用脚本改名 / async 位翻转（deny 判定转 async = 判定赶不上执行，闸失效；
 # pending-updates 转同步 = 每次编辑多一个前台等待）/ 路径缺 CLAUDE_PLUGIN_ROOT 前缀或 hooks/ 目录段
 # （消费工程 cwd 下必解析失败）/ 兜底链 || 被删——五类翻转任一即红。
+# 1.3.7 起 PreToolUse(Bash) 双条目：deny-list 前置＋no-op-gate 第二条（no-op 风暴闸批，
+# 方案 docs/方案-no-op风暴闸-2026-11-10.md D1）。
 hjs=$(python3 - "$SRC" <<'PYEOF'
 import json, os, sys
 try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -563,11 +568,10 @@ def handlers(event, matcher):
         return [x for b in h.get(event, []) if 'matcher' not in b for x in b['hooks']]
     return [x for b in h.get(event, []) if b.get('matcher') == matcher for x in b['hooks']]
 mt = {e: sorted(str(b.get('matcher')) for b in h.get(e, [])) for e in h}
-if mt.get('PreToolUse') != ['Bash', 'PowerShell']: errs.append('PreToolUse matcher 集漂移: ' + str(mt.get('PreToolUse')))
+if mt.get('PreToolUse') != ['Bash', 'Bash', 'PowerShell']: errs.append('PreToolUse matcher 集漂移: ' + str(mt.get('PreToolUse')))
 if 'Edit|Write|NotebookEdit' not in mt.get('PostToolUse', []): errs.append('PostToolUse 缺 Edit|Write|NotebookEdit')
 if 'None' not in mt.get('Stop', []): errs.append('Stop 缺无 matcher 全触发块')
-for ev, m, script, want_async in (('PreToolUse', 'Bash', 'deny-list.py', False),
-                                  ('PreToolUse', 'PowerShell', 'deny-list.ps1', False),
+for ev, m, script, want_async in (('PreToolUse', 'PowerShell', 'deny-list.ps1', False),
                                   ('PostToolUse', 'Edit|Write|NotebookEdit', 'pending-updates.py', True),
                                   ('Stop', None, 'stop-reminder.py', False),
                                   ('SessionEnd', None, 'compliance-audit.py', False)):
@@ -579,6 +583,20 @@ for ev, m, script, want_async in (('PreToolUse', 'Bash', 'deny-list.py', False),
     if '||' not in c: errs.append(f'{ev}/{m} 兜底链 || 缺失')
     if bool(hs[0].get('async', False)) != want_async:
         errs.append(f'{ev}/{m} async 位翻转（应为 {str(want_async).lower()}）')
+# 1.3.7：PreToolUse(Bash) 双条目专项——deny-list 与 no-op-gate 各恰 1 条、均须同步（async=false）
+# 且兜底链在；顺序 deny-list 在前（安全闸先于止损闸，fixture 17 同锁）。
+bash_hs = handlers('PreToolUse', 'Bash')
+if len(bash_hs) != 2:
+    errs.append(f'PreToolUse/Bash handler 数 {len(bash_hs)} != 2（deny-list＋no-op-gate 双条目）')
+else:
+    for script in ('deny-list.py', 'no-op-gate.py'):
+        hits = [x for x in bash_hs if ('${CLAUDE_PLUGIN_ROOT}/hooks/' + script) in x.get('command', '')]
+        if len(hits) != 1: errs.append(f'PreToolUse/Bash {script} handler 数 {len(hits)} != 1'); continue
+        c = hits[0].get('command', '')
+        if '||' not in c: errs.append(f'PreToolUse/Bash {script} 兜底链 || 缺失')
+        if bool(hits[0].get('async', False)): errs.append(f'PreToolUse/Bash {script} async 位翻转（应为 false）')
+    if 'deny-list.py' not in bash_hs[0].get('command', '') or 'no-op-gate.py' not in bash_hs[1].get('command', ''):
+        errs.append('PreToolUse/Bash 顺序漂移（deny-list 安全闸须在前、no-op-gate 在后）')
 # 1.0.37：SessionEnd 预算契约——官方口径该事件默认共享 1.5s，per-hook timeout 须显式上调
 # （内部 BUDGET_S=10 的截断闸假设 timeout≥15；低于它 = 大转录在写完账前就被宿主 kill）
 for b in h.get('SessionEnd', []):

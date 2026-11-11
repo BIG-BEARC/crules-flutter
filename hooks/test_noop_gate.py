@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# no-op-gate.py fixture（2026-11-10 no-op 风暴闸，方案 docs/方案-no-op风暴闸-2026-11-10.md §6.2
-#   自测用例表逐条映射——18 检查）：
+# no-op-gate.py fixture（2026-11-10 no-op 风暴闸，方案 §6.2 自测用例表逐条映射——18 检查；
+#   方案档 2026-11-11 轮次化删档，git tag v1.3.7 史可查）：
 #   - 匹配面：裸 true/: 计数；复合/绕行形态（true && x、x || true、sleep、/usr/bin/true、true;、TRUE）零计数
 #   - 风暴截断：同 sid 300s 计数达 15 后第 16 发 deny（JSON permissionDecision，exit 0——D9 契约）
 #   - ask 升级：同窗 deny 5 次后第 21 发转 ask（D8）

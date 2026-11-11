@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# crules-flutter no-op 风暴闸（PreToolUse(Bash) hook · 2026-11-10，docs/方案-no-op风暴闸-2026-11-10.md
-#   v2 已确认态——评审 docs/评审-plan-no-op风暴闸-2026-11-10.md 12 发现全数处置、需求方六裁 Q1–Q6）
+# crules-flutter no-op 风暴闸（PreToolUse(Bash) hook · 2026-11-10；方案档 v1.3.7 随批入库、
+#   2026-11-11 轮次化删档——git tag v1.3.7 史可查。v2 已确认态＝评审 12 发现全数处置、需求方六裁 Q1–Q6）
 # 立论（事故档案 super_printer 7afd4984/T2 子代理 a3202cc0，2026-11-10 诊断）：等待后台事件的会话
 #   连发裸 no-op（true/:），每次＝一次全上下文 API 往返——44 分钟 446 次 ≈52.8M cache_read；
 #   且模型已知正确姿势仍不改变行为（转录 L149 自证）→ 文案说教不可承重，须机械闸。

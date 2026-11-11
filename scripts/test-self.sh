@@ -16,6 +16,7 @@ SRC=$(cd "$(dirname "$0")/.." && pwd)
 # .superpowers 豁免/annex 入扫/占位纯文字；增强 fence 跳过＋inline span 剥离＋entries 断面；夹具对照红双向）
 # no-op 风暴闸批（2026-11-10）+1 至 74（新夹具 hooks/test_noop_gate.py，18 检查——窗口率截断/ask 升级/
 # 兜底链幸存/无根静默/孤儿清扫/hooks.json 登记）；计数以实跑为准
+# 轮次化清点批（2026-11-11）+1 至 75（no-op 方案＋评审删档维持断言——终态裁定与删前核实录当批 commit）；计数以实跑为准
 # 1.0.39/40 曾误记「52/0」、1.0.39 起点曾误记 48——09-24 三 tag 隔离实跑勘误：51/51/54，且本机无 pwsh 时 ps1 夹具
 # SKIP 不计（有 pwsh 环境 +1），跨环境对数先对齐 SKIP 面）。在无 .git 的拷贝里
 # （典型：插件 cache = 全仓文件快照、非 clone）draft 吃 git 报错码 128 → **假红**；tag 则落到「读 HEAD 失败」
@@ -554,8 +555,8 @@ fi
 # matcher 集漂移 / 引用脚本改名 / async 位翻转（deny 判定转 async = 判定赶不上执行，闸失效；
 # pending-updates 转同步 = 每次编辑多一个前台等待）/ 路径缺 CLAUDE_PLUGIN_ROOT 前缀或 hooks/ 目录段
 # （消费工程 cwd 下必解析失败）/ 兜底链 || 被删——五类翻转任一即红。
-# 1.3.7 起 PreToolUse(Bash) 双条目：deny-list 前置＋no-op-gate 第二条（no-op 风暴闸批，
-# 方案 docs/方案-no-op风暴闸-2026-11-10.md D1）。
+# 1.3.7 起 PreToolUse(Bash) 双条目：deny-list 前置＋no-op-gate 第二条（no-op 风暴闸批 D1；
+# 方案＋评审档 2026-11-11 轮次化删档，git tag v1.3.7 史可查）。
 hjs=$(python3 - "$SRC" <<'PYEOF'
 import json, os, sys
 try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -1085,6 +1086,16 @@ grep -qF -- '/crules-flutter:diagnose' "${SRC}/README.md" || { d9_ok=0; echo "  
 [ "${d9_ok}" = "1" ] \
   && { PASS=$((PASS+1)); echo "PASS  1.1.9 吸收批三落位（/diagnose 命令 / help+README 同源双登 / 方案+评审删档）"; } \
   || { FAIL=$((FAIL+1)); echo "FAIL  1.1.9 落位（见上漂移清单）"; }
+
+# 轮次化清点批（2026-11-11）：1.3.7 no-op 方案＋评审档终态删档——结论已被 no-op-gate.py 实物＋
+# README 概念地图行＋git tag v1.3.7 吸收（评审 12 发现全处置、挂起项扫描零命中）；stay-deleted
+# 断言防无批复活（superpowers7 :1083 先例形）。
+d10_ok=1
+[ -f "${SRC}/docs/方案-no-op风暴闸-2026-11-10.md" ] && { d10_ok=0; echo "  ↳ no-op 方案应删档未删（终态裁定 2026-11-11）"; }
+[ -f "${SRC}/docs/评审-plan-no-op风暴闸-2026-11-10.md" ] && { d10_ok=0; echo "  ↳ no-op 评审应删档未删（12 发现全处置，终态裁定 2026-11-11）"; }
+[ "${d10_ok}" = "1" ] \
+  && { PASS=$((PASS+1)); echo "PASS  轮次化清点批：no-op 方案＋评审删档维持（git tag v1.3.7 史可查）"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  no-op 删档维持（见上）"; }
 
 echo "== 脚本自测：PASS=$PASS FAIL=$FAIL =="
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1

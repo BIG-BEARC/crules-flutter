@@ -3,7 +3,7 @@
 面向 **Flutter 工程**的 AI 协作规则 plugin：把「AI 怎么跟你安全地干活」固化成机制——危险命令硬拦、改动先过方案确认、交付必过审查、经验自动沉淀。
 独立自持（源自 crules fork，2026-09 起 1.0.0 独立演进）；许可 **MIT**（[LICENSE](LICENSE)）。
 
-> 当前状态：1.3.5（当前形态见 [CHANGELOG](CHANGELOG.md)）
+> 当前状态：1.3.6（当前形态见 [CHANGELOG](CHANGELOG.md)）
 > 术语速查：[docs/清单-黑话白话对照-2026-10-22.md](docs/清单-黑话白话对照-2026-10-22.md)（黑话→白话→出处）
 
 ---
@@ -115,6 +115,8 @@ agents 不复制——plugin 已自动挂载 7 角色（`crules-flutter:frontend
 ```
 
 巡检（cache 内跑）：`bash scripts/check-imports.sh <项目根> [更多根…]`——多工程视图一次跑齐；戳读链 `.claude/CLAUDE.md` 指针戳优先 → 根 `CLAUDE.md`（丁-tracked 存量）回退；掉队距离＝版本线性投影（随跑随算，零台账文件），另查 memory 模板演进。
+
+引用完整性闸（仓内跑）：`python3 scripts/check-references.py <仓根> links|entries`——md 死链（annex 入扫、.superpowers 豁免、占位指引写纯文字）＋入口悬空（`/crules-flutter:X` 须有件、「X skill」须在册；示例命令写 `/crules-flutter:<占位>` 形）双断面，缺省面＝全分发面；收口批必跑（test-self 内置红绿双向看守）。
 
 1.1.3–1.1.4 的 install.sh 三向合并升级语义（`--upgrade` / `--force` / base 快照）已随分发职责退役（1.1.5）；存量丁-tracked 工程迁移 = 阶段 4 一次性授权批。
 

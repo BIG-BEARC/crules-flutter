@@ -12,6 +12,8 @@ SRC=$(cd "$(dirname "$0")/.." && pwd)
 # 1.0.42 +2 至 56、1.3.1 B 案三换一（缺口/债龄/段序钟 → 版本一致闸）+ parity 两闸；一致闸调 git tag 不可读时自 SKIP；计数以实跑为准。
 # 1.1.7 +1 至 59（合一断言；1.1.5/1.1.6 两批增量未逐批记账——外审 R8 勘误，防归因失真）
 # compact-gate 批（2026-11-09）+1 至 70（新夹具 hooks/test_compact_gate.py，25 检查——1.3.5 续期批 +4）；计数以实跑为准
+# 引用完整性批（2026-11-10）+3 至 73（1.0.32 链接闸①退役并入 check-references——语义承继
+# .superpowers 豁免/annex 入扫/占位纯文字；增强 fence 跳过＋inline span 剥离＋entries 断面；夹具对照红双向）
 # 1.0.39/40 曾误记「52/0」、1.0.39 起点曾误记 48——09-24 三 tag 隔离实跑勘误：51/51/54，且本机无 pwsh 时 ps1 夹具
 # SKIP 不计（有 pwsh 环境 +1），跨环境对数先对齐 SKIP 面）。在无 .git 的拷贝里
 # （典型：插件 cache = 全仓文件快照、非 clone）draft 吃 git 报错码 128 → **假红**；tag 则落到「读 HEAD 失败」
@@ -355,42 +357,25 @@ done
 
 # 1.0.32 信息架构批断言（外部信息架构评审三弱项 + 核实发现同族漂移）：链接解析 / 坑库速查对账 /
 # memory 清单回潮 / checklist 指针限定与编号对账——共 5 条（31→36）
-# ① 链接解析闸：全仓 md 链接须指向真实存在的文件（1.3.1 B 案撤 CHANGELOG 豁免——单页化后
-#    无历史流水账死链面）。占位指引（指向按需创建的生成物）一律写纯文字、不写链接格式。
-link_bad=$(python3 - "$SRC" <<'PYEOF'
-import os, re, sys
-try: sys.stdout.reconfigure(encoding='utf-8', errors='replace')
-except Exception: pass
-root = sys.argv[1]
-pat = re.compile(r'\[[^\]]*\]\(([^)]+)\)')
-bad = []
-for dirpath, dirnames, filenames in os.walk(root):
-    # .superpowers/ = 本机过程面（git 忽略、非分发面，1.0.42 主控裁决豁免——撞的是
-    # 协调文档里的相对链接示例与正则字面，非仓内容器死链）
-    dirnames[:] = [d for d in dirnames if d not in ('.git', '__pycache__', '.claude', 'node_modules', '.superpowers')]
-    for fn in filenames:
-        if not fn.endswith('.md'): continue
-        p = os.path.join(dirpath, fn)
-        rel = os.path.relpath(p, root).replace(os.sep, '/')
-        # CHANGELOG 豁免撤（1.3.1 单页化——单页无死链面）
-        for i, line in enumerate(open(p, encoding='utf-8').read().splitlines(), 1):
-            for m in pat.finditer(line):
-                t = m.group(1).strip()
-                if t.startswith(('http://', 'https://', '#', 'mailto:')): continue
-                path = t.split('#')[0]
-                if not path: continue
-                if not os.path.exists(os.path.normpath(os.path.join(os.path.dirname(p), path))):
-                    bad.append(rel + ':' + str(i) + ' -> ' + t)
-print(len(bad))
-for b in bad: print('  ' + b)
-PYEOF
-)
-n_dead=$(printf '%s' "$link_bad" | head -1)
-if [ "${n_dead:-1}" = "0" ]; then
-  PASS=$((PASS+1)); echo "PASS  链接解析闸（全仓 md 链接零死链，CHANGELOG 豁免）"
-else
-  FAIL=$((FAIL+1)); echo "FAIL  死链 ×${n_dead:-?}（占位改纯文字或补目标文件）："; printf '%s\n' "$link_bad" | tail -n +2
-fi
+# ① 链接解析闸已退役（引用完整性批 1.3.6 并入 scripts/check-references.py）：语义承继——
+#    .superpowers 豁免（1.0.42）／annex 入扫（1.3.1 撤豁免）／占位纯文字纪律；增强——fence
+#    跳过、inline span 剥离、title/尖括号链接正确解析；新增 entries 入口悬空断面。
+# 引用完整性批断言：check-references 接替 1.0.32 内联链接闸——绿向双断面＋红向对照
+# （防假绿：零发现须有对照红；夹具根 mktemp cf- 前缀，1.0.15 并发纪律；用毕即清）
+t 0 "python3 ${SRC}/scripts/check-references.py ${SRC} links" \
+  "check-references links：全仓死链 0（annex 入扫、.superpowers 豁免）"
+t 0 "python3 ${SRC}/scripts/check-references.py ${SRC} entries" \
+  "check-references entries：全分发面悬空 0"
+RGD=$(mktemp -d /tmp/cf-refgate.XXXXXX)
+printf '[好](real.md) [坏](dead.md)\n' > "${RGD}/a.md"; : > "${RGD}/real.md"
+printf '示例：`[假](dead2.md)` 不作真链\n' > "${RGD}/b.md"
+mkdir -p "${RGD}/.superpowers"; printf '[过程](dead3.md)\n' > "${RGD}/.superpowers/c.md"
+printf '/crules-flutter:ghost\n' > "${RGD}/commands_probe.md"
+t 1 "python3 ${SRC}/scripts/check-references.py ${RGD} links" \
+  "check-references 死链对照红（恰 1 条：span 示例与 .superpowers 须免）"
+t 1 "python3 ${SRC}/scripts/check-references.py ${RGD} entries commands_probe.md" \
+  "check-references 悬空入口对照红（夹具须命中）"
+rm -rf "$RGD"
 
 # ② 坑库症状速查对账：每卡须带「关键词」行；「症状速查」表体须与全部卡（关键词/平台/卡题）
 #    的机械重排一字不差——改卡不同步表、加卡漏补、手改表即红

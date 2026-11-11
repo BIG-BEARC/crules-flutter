@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # crules-flutter 会话压缩计数闸·裁决回传件（PostToolUse(AskUserQuestion) hook · 2026-11-09，
-#   Q9① 哨兵件——方案 docs/方案-会话压缩计数闸-2026-11-09.md；与 compact-gate.py 成对）
+#   Q9① 哨兵件；与 compact-gate.py 成对——试点 R2 收口裁「留」2026-11-11，方案档随批终态删档、git 史可查）
 # 通道基线（方案 §3.5）：AskUserQuestion 是普通工具名，PostToolUse 可匹配其调用与结果，
 #   tool_response 携带 answers——本件读回传、机械回填，不依赖模型自写 marker（Q9③ 最弱路弃）。
 # 哨兵先核（防误染他人弹窗）：tool_input.questions 里任一问题文本以「[compact-gate]」开头才算自家
@@ -12,7 +12,7 @@
 #   少弹窗＋账行在，误弹的代价是疲劳——非对称取轻）。
 # answers 形状边界（诚实）：宿主 answers 键/值形未经本机探针实证（阶段 1 探针行回填）；本件兼容
 #   值为字符串或 {answer: str} 两形，解析不出即 unparsed——账行可见、可修，不静默丢裁决。
-# snap_ok 机械核（1.3.5 续期批，判据 2 量法机械化；试点首夜谎报快照一例后裁，方案 §6.3）：
+# snap_ok 机械核（1.3.5 续期批，判据 2 量法机械化；试点首夜谎报快照一例后裁——R2 读数＝annex 2026-11 卷）：
 #   问题文本正则取快照路径（注入文案已要求完整路径），mtime 对账 ledger 该 sid 末次压缩行 ts——
 #   ≥ 为 true、早于为 false（点名文件不存在亦 false＝谎报显形）；无路径/无前序行/解析失败 → null 不猜。
 #   账行零正文不变（只落布尔，不落路径）。

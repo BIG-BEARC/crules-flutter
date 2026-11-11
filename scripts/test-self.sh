@@ -17,6 +17,7 @@ SRC=$(cd "$(dirname "$0")/.." && pwd)
 # no-op 风暴闸批（2026-11-10）+1 至 74（新夹具 hooks/test_noop_gate.py，18 检查——窗口率截断/ask 升级/
 # 兜底链幸存/无根静默/孤儿清扫/hooks.json 登记）；计数以实跑为准
 # 轮次化清点批（2026-11-11）+1 至 75（no-op 方案＋评审删档维持断言——终态裁定与删前核实录当批 commit）；计数以实跑为准
+# 压缩闸 R2 收口批（2026-11-11）+1 至 76（方案档删档维持＋annex 2026-11 卷载体断言）；计数以实跑为准
 # 1.0.39/40 曾误记「52/0」、1.0.39 起点曾误记 48——09-24 三 tag 隔离实跑勘误：51/51/54，且本机无 pwsh 时 ps1 夹具
 # SKIP 不计（有 pwsh 环境 +1），跨环境对数先对齐 SKIP 面）。在无 .git 的拷贝里
 # （典型：插件 cache = 全仓文件快照、非 clone）draft 吃 git 报错码 128 → **假红**；tag 则落到「读 HEAD 失败」
@@ -1096,6 +1097,17 @@ d10_ok=1
 [ "${d10_ok}" = "1" ] \
   && { PASS=$((PASS+1)); echo "PASS  轮次化清点批：no-op 方案＋评审删档维持（git tag v1.3.7 史可查）"; } \
   || { FAIL=$((FAIL+1)); echo "FAIL  no-op 删档维持（见上）"; }
+
+# 压缩闸 R2 收口批（2026-11-11）：试点判据读数回填＋需求方三选裁「留」，方案档终态删档——
+# 结论由 README 概念地图行＋hooks 头注释＋annex 2026-11 卷承接；stay-deleted 防无批复活。
+d11_ok=1
+[ -f "${SRC}/docs/方案-会话压缩计数闸-2026-11-09.md" ] && { d11_ok=0; echo "  ↳ 压缩闸方案应删档未删（R2 裁「留」终态删档 2026-11-11）"; }
+[ -f "${SRC}/docs/changelog-annex/2026-11.md" ] || { d11_ok=0; echo "  ↳ annex 2026-11 卷缺（R2 收口记录载体）"; }
+grep -qF -- '压缩闸试点 R2 收口' "${SRC}/docs/changelog-annex/2026-11.md" || { d11_ok=0; echo "  ↳ annex 2026-11 卷缺 R2 收口条目"; }
+grep -qF -- '试点已收口：R2 裁「留」' "${SRC}/README.md" || { d11_ok=0; echo "  ↳ README 概念地图行缺 R2 收口句"; }
+[ "${d11_ok}" = "1" ] \
+  && { PASS=$((PASS+1)); echo "PASS  压缩闸 R2 收口：方案档删档维持＋annex 2026-11 卷载体在位"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  压缩闸 R2 收口面（见上）"; }
 
 echo "== 脚本自测：PASS=$PASS FAIL=$FAIL =="
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1

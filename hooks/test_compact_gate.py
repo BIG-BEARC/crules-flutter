@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# compact-gate.py / compact-gate-decision.py fixture（2026-11-09 会话压缩计数闸，方案
-#   docs/方案-会话压缩计数闸-2026-11-09.md §6.2 自测用例表逐条映射——逻辑用例十行＋hooks.json
+# compact-gate.py / compact-gate-decision.py fixture（2026-11-09 会话压缩计数闸，方案 §6.2 自测用例表
+#   逐条映射——方案档已随 R2 收口终态删档（2026-11-11 裁「留」）、git 史可查；逻辑用例十行＋hooks.json
 #   登记断言＋哨兵/回传通道（Q9①）＋跨件集成（mute→静默）＋变异抽查锁两枚（classify 优先级／坏 state 重计））：
 #   - 计数阶梯：第 1 次观测注入／≥2 次无 marker 人裁注入／第 3 次起无 marker 仍问（放行一次语义）
 #   - marker 生效 → 静默但 ledger 行照落（判据 3 记账不断流）

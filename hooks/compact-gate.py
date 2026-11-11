@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# crules-flutter 会话压缩计数闸（SessionStart hook · 2026-11-09，docs/方案-会话压缩计数闸-2026-11-09.md
-#   Q1–Q9 需求方全裁通过后落码；裁决记录 hooks 台账 2026-11-09 条）
+# crules-flutter 会话压缩计数闸（SessionStart hook · 2026-11-09；Q1–Q9 需求方全裁通过后落码、
+#   试点 R2 收口裁「留」2026-11-11——方案档随批终态删档，读数与裁决＝annex 2026-11 卷，git 史可查）
 # 闸形（D1）：压缩后注入，不做压缩前拦截——PreCompact block 有恢复路径失败＋死锁面双证（方案 §3.5）。
 # 阶梯（D2/Q2）：同任务上限 2 次＝**人裁触发点非硬上限**——第 1 次观测注入（催落快照）；≥2 次且无
 #   marker 人裁注入（第 3 次起仍问＝「放行一次」语义的自然结果）；手动 /compact 与 idle compaction
@@ -8,7 +8,7 @@
 # 人裁回传（D3/Q3/Q4/Q9①）：本 hook 只注入；裁决由模型转手 AskUserQuestion（问题文本以
 #   「[compact-gate]」开头并附快照文件完整路径），compact-gate-decision.py 挂 PostToolUse 回填
 #   ledger 裁决列／snap_ok 快照 mtime 核／落 marker（1.3.5 续期批：去自报化——先落快照再弹窗，
-#   试点首夜谎报快照一例实锤后裁，方案 §6.3）。
+#   试点首夜谎报快照一例实锤后裁——R2 读数见 annex 2026-11 卷）。
 #   marker＝「本任务不再提醒」（clear 清零，与计数同文件存防跨计数残留；decision 件在 state 缺失
 #   回落时可产 count=0+marker 态——无害：第 1 次档恒观测注入，静默只在 ≥2 档生效）。
 # 无人值守缺省（D5/Q5）：不阻塞不静默——账行恒落（机械面），注入是建议非强制（遵守面）；

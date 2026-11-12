@@ -21,6 +21,9 @@ SRC=$(cd "$(dirname "$0")/.." && pwd)
 # 卫生微批（2026-11-11）+1 至 77（render-blocks --check 真树直跑断言——影子复制面 commands/ 仅拷
 #   help.md ≠ scan_targets 扫描面，未登记围栏落 init 等件时影子闸两不红（变异实证：注入
 #   (init.md, gear-note) 影子 76/0 照绿、真树 --check rc=1）；README「CI 生成闸」声称由此字面成立）
+# 压缩恢复 v2 批（2026-11-12）+1 至 78（新夹具 scripts/test_compact_report.py 8 检查——翻账件
+#   聚合/双 schema 兼容/只读/零正文；hooks 计数闸口径扩 `_` 前缀排除——_compact_core.py 系
+#   import 库非 hook，沿 _common 先例）；计数以实跑为准
 # 1.0.39/40 曾误记「52/0」、1.0.39 起点曾误记 48——09-24 三 tag 隔离实跑勘误：51/51/54，且本机无 pwsh 时 ps1 夹具
 # SKIP 不计（有 pwsh 环境 +1），跨环境对数先对齐 SKIP 面）。在无 .git 的拷贝里
 # （典型：插件 cache = 全仓文件快照、非 clone）draft 吃 git 报错码 128 → **假红**；tag 则落到「读 HEAD 失败」
@@ -59,7 +62,8 @@ t 0 "python3 $SRC/hooks/test_stop_reminder.py"            "stop-reminder fixture
 t 0 "python3 $SRC/hooks/test_pending_updates.py"          "pending-updates 写侧 fixture 应全绿（1.0.30 队列分文件）"
 t 0 "python3 $SRC/hooks/test_queue_contract.py"           "跨 hook 队列契约测试应全绿（1.0.39 D-4 写读互调）"
 t 0 "python3 $SRC/hooks/test_compliance.py"               "compliance-audit fixture 应全绿（1.0.37 批2 遵守度事实账）"
-t 0 "python3 $SRC/hooks/test_compact_gate.py"             "compact-gate fixture 应全绿（会话压缩计数闸：阶梯/marker/clear/startup/哨兵回传/hooks.json 登记）"
+t 0 "python3 $SRC/hooks/test_compact_gate.py"             "compact-gate fixture 应全绿（压缩恢复 v2 指针注入件：指针三级降级/速率窗再武装/去重谓词/回读通道/hooks.json 登记）"
+t 0 "python3 $SRC/scripts/test_compact_report.py"         "compact-report fixture 应全绿（v2 翻账件：按 sid 聚合＋trigger/主子比＋双 schema 兼容＋只读零正文）"
 t 0 "python3 $SRC/hooks/test_noop_gate.py"                "no-op-gate fixture 应全绿（no-op 风暴闸：窗口率截断/ask 升级/兜底链幸存/无根静默/hooks.json 登记）"
 # 1.0.42 断言①：parity-rewrite 零项目值+引用悬空双扫描——
 # 扫 skills/parity-rewrite/ 全树：①禁列 token（05 计划 Global Constraints 全表 + 裸 ARB）
@@ -303,8 +307,9 @@ sem_ok=1
 pj_ver=$(grep -o '"version": "[^"]*"' "${SRC}/.claude-plugin/plugin.json" | head -1 | cut -d'"' -f4)
 br_ver=$(grep -m1 '当前状态：' "${SRC}/README.md" | grep -oE '当前状态：[0-9]+\.[0-9]+\.[0-9]+' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
 if [ -n "${pj_ver}" ] && [ "${br_ver}" = "${pj_ver}" ]; then :; else sem_ok=0; echo "  ↳ README 横幅版本(${br_ver:-无}) ≠ plugin.json(${pj_ver})"; fi
-# ② help.md hooks ×N == hooks/*.py 实际数（_common.py 系 import 库非 hook，排除——1.0.39 收编批）
-hook_n=$(ls "${SRC}"/hooks/*.py 2>/dev/null | grep -vE 'test_|_common' | grep -c . || true)
+# ② help.md hooks ×N == hooks/*.py 实际数（`_` 前缀系 import 库非 hook，排除 _common/_compact_core
+#    ——1.0.39 收编批口径、v2 批扩 _compact_core.py 共享库）
+hook_n=$(ls "${SRC}"/hooks/*.py 2>/dev/null | grep -vE 'test_|/_' | grep -c . || true)
 help_n=$(grep -oE 'hooks ×[0-9]+' "${SRC}/commands/help.md" | head -1 | grep -oE '[0-9]+')
 if [ -n "${help_n}" ] && [ "${help_n}" = "${hook_n}" ]; then :; else sem_ok=0; echo "  ↳ help.md hooks ×${help_n:-无} ≠ 实际 ${hook_n}"; fi
 # ③ 停更栈禁推：agents 无 screenutil 正面示例；app 模板无未注记的裸 hive
@@ -1107,16 +1112,18 @@ d10_ok=1
   && { PASS=$((PASS+1)); echo "PASS  轮次化清点批：no-op 方案＋评审删档维持（git tag v1.3.7 史可查）"; } \
   || { FAIL=$((FAIL+1)); echo "FAIL  no-op 删档维持（见上）"; }
 
-# 压缩闸 R2 收口批（2026-11-11）：试点判据读数回填＋需求方三选裁「留」，方案档终态删档——
-# 结论由 README 概念地图行＋hooks 头注释＋annex 2026-11 卷承接；stay-deleted 防无批复活。
+# 压缩闸 R2 收口批（2026-11-11）＋压缩恢复 v2 批（2026-11-12）改口径：v1 方案档终态删档维持
+# （R2 读数与裁决＝annex 2026-11 卷，append-only 不迁移）；README 概念地图行随 v2 重写（弹窗链
+# 拆除、指针＋速率形——R2「留」翻转记档同卷）；stay-deleted 断言防无批复活。
 d11_ok=1
-[ -f "${SRC}/docs/方案-会话压缩计数闸-2026-11-09.md" ] && { d11_ok=0; echo "  ↳ 压缩闸方案应删档未删（R2 裁「留」终态删档 2026-11-11）"; }
-[ -f "${SRC}/docs/changelog-annex/2026-11.md" ] || { d11_ok=0; echo "  ↳ annex 2026-11 卷缺（R2 收口记录载体）"; }
+[ -f "${SRC}/docs/方案-会话压缩计数闸-2026-11-09.md" ] && { d11_ok=0; echo "  ↳ v1 压缩闸方案应删档未删（R2 裁「留」终态删档 2026-11-11）"; }
+[ -f "${SRC}/docs/changelog-annex/2026-11.md" ] || { d11_ok=0; echo "  ↳ annex 2026-11 卷缺（R2 收口＋v2 落地记录载体）"; }
 grep -qF -- '压缩闸试点 R2 收口' "${SRC}/docs/changelog-annex/2026-11.md" || { d11_ok=0; echo "  ↳ annex 2026-11 卷缺 R2 收口条目"; }
-grep -qF -- '试点已收口：R2 裁「留」' "${SRC}/README.md" || { d11_ok=0; echo "  ↳ README 概念地图行缺 R2 收口句"; }
+grep -qF -- '压缩恢复 v2 落地' "${SRC}/docs/changelog-annex/2026-11.md" || { d11_ok=0; echo "  ↳ annex 2026-11 卷缺 v2 落地条目（R2「留」翻转记档）"; }
+grep -qF -- '压缩恢复 v2' "${SRC}/README.md" || { d11_ok=0; echo "  ↳ README 概念地图行缺 v2 行（弹窗链拆除、指针＋速率形）"; }
 [ "${d11_ok}" = "1" ] \
-  && { PASS=$((PASS+1)); echo "PASS  压缩闸 R2 收口：方案档删档维持＋annex 2026-11 卷载体在位"; } \
-  || { FAIL=$((FAIL+1)); echo "FAIL  压缩闸 R2 收口面（见上）"; }
+  && { PASS=$((PASS+1)); echo "PASS  压缩面收口态：v1 方案删档维持＋annex 卷双条目（R2 收口＋v2 落地）＋README v2 行"; } \
+  || { FAIL=$((FAIL+1)); echo "FAIL  压缩面收口面（见上）"; }
 
 echo "== 脚本自测：PASS=$PASS FAIL=$FAIL =="
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1

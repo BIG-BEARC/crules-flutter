@@ -3,7 +3,7 @@
 面向 **Flutter 工程**的 AI 协作规则 plugin：把「AI 怎么跟你安全地干活」固化成机制——危险命令硬拦、改动先过方案确认、交付必过审查、经验自动沉淀。
 独立自持（源自 crules fork，2026-09 起 1.0.0 独立演进）；许可 **MIT**（[LICENSE](LICENSE)）。
 
-> 当前状态：1.3.7（当前形态见 [CHANGELOG](CHANGELOG.md)）
+> 当前状态：1.3.8（当前形态见 [CHANGELOG](CHANGELOG.md)）
 > 术语速查：[docs/清单-黑话白话对照-2026-10-22.md](docs/清单-黑话白话对照-2026-10-22.md)（黑话→白话→出处）
 
 ---
@@ -200,7 +200,7 @@ agents 不复制——plugin 已自动挂载 7 角色（`crules-flutter:frontend
 | 沉淀闸档位 | 分流（默认）/ 全闸 / 降级宽松——独立字段，AI 不得自行升降 | distill「档位」 |
 | 提速档 | standing instruction 走 Gate 例外，须圈死范围/规模/验证档三要素 | `PROJECT.md` §十二（定义：双模板 §十二） |
 | 两类台账 | `.review-ledger`（裁决，供四数聚合）/ `.gate-exceptions`（豁免，供事后审计）——均不进 git | distill §7 / §三 Gate 例外 |
-| 会话压缩计数闸 | SessionStart(compact) 阶梯注入（第 1 次观测催快照／≥2 次人裁弹窗，2＝触发点非硬上限，subagent 压缩计入同任务桶）＋AskUserQuestion 哨兵回传机械记账（含快照 mtime 核 snap_ok）；试点已收口：R2 裁「留」2026-11-11（判据 1✓ 3/3、4✓ 4/4、snap_ok 核 2/2——只验新鲜度、30min 窗未证；mute 面未触发；读数与裁决＝docs/changelog-annex/2026-11.md）；回退＝单删 hooks.json 新两件 | `hooks/compact-gate.py`＋`compact-gate-decision.py`（方案档已随 R2 收口终态删档，git 史可查） |
+| 压缩恢复 v2 | SessionStart(compact) 指针注入（原文未损：transcript 路径＋span 直取纪律，路径三级降级）＋PreCompact 观测件（trigger/sidechain 分桶计数）；速率窗＝主 auto ≥4/90min、混桶 any ≥8/90min（sidechain 无键现行走档）触发 runaway 收尾建议（回落半阈再武装、24h 上限 2）；子代理 sub ≥20/24h 只记 runaway-sub 零注入；startup 断点回读（近 24h runaway 或任一 sid ≥3 发）；弹窗链整条拆除（v1 阶梯注入＋哨兵回传两件随 Q3 即拆退役）；R2 裁「留」2026-11-12 随需求方体验反馈翻转（读数与裁决＝docs/changelog-annex/2026-11.md）；回退＝删 hooks.json PreCompact 件＋还原 SessionStart 件 | `hooks/compact-gate.py`＋`compact-observe.py`＋共享库 `_compact_core.py`＋翻账件 `scripts/compact-report.py`（方案档 [docs/方案-压缩恢复v2-指针与速率-2026-11-12.md](docs/方案-压缩恢复v2-指针与速率-2026-11-12.md)） |
 | no-op 风暴闸 | PreToolUse(Bash) 止损闸——等待后台事件的会话连发裸 true/:（每次＝一次全上下文 API 往返）时：同 sid 300s 滑窗计数达 15 后第 16 发 deny（deny 文案给带超时等待/结束回合两姿势＋「不要结束回合」子代理消解句）、同窗 deny×5 转 ask 人裁弹窗；fail-open（自失效静默放行，与 deny-list 安全闸方向相反）；无记忆库根静默不介入；绕行形态明知不堵（诚实边界） | `hooks/no-op-gate.py`（方案＋评审档已轮次化删档 2026-11-11，git tag v1.3.7 史可查） |
 | 遵守度事实账 | `.compliance-log`——SessionEnd hook 每会话落一行**事实**（计数/布尔，无正文），量化「宪法被遵守几成」；**聚合永不接线（2026-10-19 止损批裁）**——账降格为原始事实账（与 `.review-ledger` 同型，记而备查，判归人工与 diagnose 旁证对拍） | hooks/compliance-audit.py（普查篇已轮次化删档 2026-10-19，git 史可查） |
 | 观测带数 | 每次 minor 随 annex 版本卷必带：常驻基线快照 + distill 四数 | README「每次 minor 例行」 |

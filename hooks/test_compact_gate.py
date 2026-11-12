@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
-# compact-gate.py / compact-gate-decision.py fixture（2026-11-09 会话压缩计数闸，方案 §6.2 自测用例表
-#   逐条映射——方案档已随 R2 收口终态删档（2026-11-11 裁「留」）、git 史可查；逻辑用例十行＋hooks.json
-#   登记断言＋哨兵/回传通道（Q9①）＋跨件集成（mute→静默）＋变异抽查锁两枚（classify 优先级／坏 state 重计））：
-#   - 计数阶梯：第 1 次观测注入／≥2 次无 marker 人裁注入／第 3 次起无 marker 仍问（放行一次语义）
-#   - marker 生效 → 静默但 ledger 行照落（判据 3 记账不断流）
-#   - clear/startup → 删该 sid 计数与 marker；startup 顺带清扫 >7 天孤儿 sid 文件
-#   - 坏输入/缺 sid/source 未知 → exit 0 不计不注（防空串回落共享计数文件互染）
-#   - decision 件：非自家弹窗哨兵先核毫秒级快退零写面；自家 → tool_response.answers 裁决列回填，
-#     「不再提醒」落 marker；answers 异型 → verdict=unparsed 如实记账
-#   - hooks.json 登记：SessionStart matcher 裸 `compact|clear|startup`（\| 转义形永不匹配——防呆）、
-#     PostToolUse(AskUserQuestion)、python3||python 兜底链
-# 隐私对齐 compliance-audit：账行只落计数/布尔/裁决枚举/sid——零对话正文。
+# compact-gate.py / compact-observe.py fixture（压缩恢复 v2 · 2026-11-12，方案 docs/方案-压缩恢复v2-
+#   指针与速率-2026-11-12.md §6.2——两轮评审 30 发现全处置后的 v4 终裁形；v1 阶梯/marker/哨兵回传面
+#   随 Q3「即拆」整体退役，本夹具同步改写——改写清单见方案 §4.4）：
+#   - 指针注入（D3）：每次压缩注入 transcript 指针＋span 直取纪律；路径三级降级（输入字段→cwd+sid
+#     推导＋mtime 弱校验→projects 目录通用指引）
+#   - 计数仲裁（§4.1，二轮 #1 L1）：去重谓词＝同 sid 同 prompt_id 即同发（ts 近邻 ≤120s 仅 fallback，
+#     适用于 prompt_id 缺失/不等）；fixtures 挂方案两用例——同 prompt_id 远隔（>300s）去重、
+#     异 prompt_id 175s 双计；degrade-A 组合（PreCompact=unknown＋SessionStart 去重）防谓词回归
+#   - 速率窗（D4/Q4/Q10）：主窗 auto_ts ≥4/90min；混桶 any_ts ≥8/90min（sidechain 主线程无键的
+#     现行走档）；manual 记账不入窗；sub_ts ≥20/24h 只记账（runaway-sub）不注入（D7）
+#   - 再武装（评审 #6/二轮 #3）：回落半阈复位＋滚动 24h 上限 2 次（载体 runaway_ts＋rearmed）
+#   - 回读通道（§2）：startup 翻账——runaway 或任一 sid ≥3 发/24h → 上次断点指针一行＋handoff 账行
+#   - clear 顺带清窗（D5 依赖解除）；startup 孤儿清扫 >7d；v1 形 {count,marker} 状态容忍（评审 #7）
+#   - 退役面（Q3）：compact-gate-decision.py 应不存在；hooks.json 应无 AskUserQuestion 条目；
+#     PreCompact 单条无 matcher 登记（探针实证：catchall 与专属条同事件并发＝双登记即同发双行）
+#   - 隐私（D6）：账行零正文零路径——断言行内无 transcript_path 键、无工程路径子串
 import json
 import os
 import subprocess
@@ -25,6 +29,7 @@ except Exception:
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 GATE = os.path.join(HERE, "compact-gate.py")
+OBSERVE = os.path.join(HERE, "compact-observe.py")
 DECISION = os.path.join(HERE, "compact-gate-decision.py")
 FAKE_PLUG_VER = "99.99.99"
 _FAKE_DIR = tempfile.mkdtemp(prefix="cf-fakeplug.")
@@ -32,6 +37,7 @@ os.makedirs(os.path.join(_FAKE_DIR, ".claude-plugin"), exist_ok=True)
 with open(os.path.join(_FAKE_DIR, ".claude-plugin", "plugin.json"), "w", encoding="utf-8") as f:
     json.dump({"name": "crules-flutter", "version": FAKE_PLUG_VER}, f)
 fails = 0
+_seq = [0]
 
 
 def check(name, cond):
@@ -41,15 +47,18 @@ def check(name, cond):
         fails += 1
 
 
-def run(hook, payload, cwd):
+def run(hook, payload, cwd, cfg_dir=None):
     env = dict(os.environ, CLAUDE_PLUGIN_ROOT=_FAKE_DIR)
+    if cfg_dir:
+        env["CLAUDE_CONFIG_DIR"] = cfg_dir
+    else:
+        env.pop("CLAUDE_CONFIG_DIR", None)
     p = subprocess.run([sys.executable, hook], input=json.dumps(payload).encode(),
                        capture_output=True, cwd=cwd, env=env)
     return p.returncode, p.stdout.decode()
 
 
 def proj():
-    """带记忆库的临时消费工程（find_project_root 定根前提）"""
     d = tempfile.mkdtemp(prefix="cf-cgate.")
     os.makedirs(os.path.join(d, ".claude", "memory"))
     open(os.path.join(d, ".claude", "memory", "NAVIGATION.md"), "w", encoding="utf-8").close()
@@ -68,6 +77,12 @@ def state_of(d, sid="sA"):
         return None
 
 
+def put_state(d, sid, st):
+    os.makedirs(gdir(d), exist_ok=True)
+    with open(os.path.join(gdir(d), sid + ".json"), "w", encoding="utf-8") as f:
+        json.dump(st, f)
+
+
 def ledger_of(d):
     try:
         with open(os.path.join(gdir(d), "ledger.jsonl"), encoding="utf-8") as f:
@@ -76,209 +91,401 @@ def ledger_of(d):
         return None
 
 
-def compact_payload(d, sid="sA", source="compact"):
-    return {"hook_event_name": "SessionStart", "session_id": sid,
-            "source": source, "cwd": d}
+def iso(epoch):
+    return time.strftime("%Y-%m-%dT%H:%M:%S%z", time.localtime(epoch))
+
+
+def put_ledger(d, rows):
+    os.makedirs(gdir(d), exist_ok=True)
+    with open(os.path.join(gdir(d), "ledger.jsonl"), "w", encoding="utf-8") as f:
+        for r in rows:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+
+
+def gate_payload(d, sid="sA", source="compact", prompt_id=None, tpath=None):
+    p = {"hook_event_name": "SessionStart", "session_id": sid,
+         "source": source, "cwd": d}
+    if prompt_id is not None:
+        p["prompt_id"] = prompt_id
+    if tpath is not None:
+        p["transcript_path"] = tpath
+    return p
+
+
+def obs_payload(d, sid="sA", trigger=None, prompt_id=None, sidechain=...):
+    p = {"hook_event_name": "PreCompact", "session_id": sid, "cwd": d}
+    if trigger is not None:
+        p["trigger"] = trigger
+    if prompt_id is not None:
+        p["prompt_id"] = prompt_id
+    if sidechain is not ...:
+        p["sidechain"] = sidechain
+    return p
 
 
 def ac_of(out):
     if not out.strip():
         return ""
-    j = json.loads(out)
+    try:
+        j = json.loads(out)
+    except Exception:
+        return ""
     hso = j.get("hookSpecificOutput", {})
     if hso.get("hookEventName") != "SessionStart":
         return ""
     return hso.get("additionalContext", "")
 
 
-# —— 阶梯与注入（§6.2 逻辑用例 1–3） ——
+def compacts(led, sid):
+    return [r for r in (led or [])
+            if isinstance(r, dict) and r.get("sid") == sid and r.get("event") == "compact"]
+
+
+def cfg_for(d):
+    """CLAUDE_CONFIG_DIR 伪家居：projects/<sanitized-root>/ 可造 transcript"""
+    c = tempfile.mkdtemp(prefix="cf-cfg.")
+    os.makedirs(os.path.join(c, "projects", d.replace("/", "-")), exist_ok=True)
+    return c
+
+
+def make_transcript(d, cfg, sid):
+    p = os.path.join(cfg, "projects", d.replace("/", "-"), sid + ".jsonl")
+    with open(p, "w", encoding="utf-8") as f:
+        f.write('{"probe":true}\n')
+    return p
+
+
+NOW = time.time()
+
+# —— 指针注入＋degrade-B 独立记账（§4.2 矩阵末行，D3 文案） ——
 d = proj()
-rc, out = run(GATE, compact_payload(d), d)
-ok = rc == 0 and "第 1 次" in ac_of(out) and "上限 2 次" in ac_of(out) and len(ac_of(out)) <= 300
-st, led = state_of(d), ledger_of(d)
-ok = ok and st and st.get("count") == 1 and not st.get("marker")
-ok = ok and led and len(led) == 1 and led[0].get("event") == "compact-1st" \
-    and led[0].get("count") == 1 and led[0].get("verdict") is None \
-    and led[0].get("sid") == "sA" and led[0].get("plugin_ver") == FAKE_PLUG_VER
-check("compact 第 1 次 → 观测注入（≤300 字符）＋计数=1＋ledger 行·未裁决", ok)
+tp = os.path.join(d, "t.jsonl")
+open(tp, "w", encoding="utf-8").close()
+rc, out = run(GATE, gate_payload(d, tpath=tp), d)
+ac = ac_of(out)
+ok = rc == 0 and "[compact-recovery]" in ac and "第 1 次压缩" in ac \
+    and "trigger: unknown" in ac and tp in ac and "勿整文件回读" in ac and len(ac) <= 500
+led = ledger_of(d)
+ok = ok and led and len(led) == 1 and led[0].get("schema") == 2 \
+    and led[0].get("event") == "compact" and led[0].get("trigger") == "unknown" \
+    and led[0].get("sidechain") is None and led[0].get("hook") == "compact-gate" \
+    and led[0].get("prompt_id") is None and led[0].get("plugin_ver") == FAKE_PLUG_VER
+st = state_of(d)
+ok = ok and st and len(st.get("any_ts") or []) == 1 and st.get("auto_ts") == [] \
+    and st.get("sub_ts") == [] and st.get("rearmed") is True
+check("compact 首发（degrade-B）→ 指针注入（L1 输入路径）＋schema2 行＋any_ts 窗=1", ok)
 
-rc, out = run(GATE, compact_payload(d), d)
-ok = rc == 0 and "已达同任务上限" in ac_of(out) and "[compact-gate]" in ac_of(out) \
-    and "放行一次并记账" in ac_of(out) and "落快照后重开" in ac_of(out) and "不再提醒" in ac_of(out) \
-    and "先落断点快照" in ac_of(out) and "完整路径" in ac_of(out) \
-    and len(ac_of(out)) <= 300
-st, led = state_of(d), ledger_of(d)
-ok = ok and st and st.get("count") == 2 and led and len(led) == 2 \
-    and led[1].get("event") == "compact-nth" and led[1].get("count") == 2
-check("compact 第 2 次 → 人裁注入（三选项＋哨兵前缀＋先落快照指令）＋计数=2", ok)
+rc, out = run(GATE, gate_payload(d, prompt_id="p2", tpath=tp), d)
+ok = rc == 0 and "第 2 次压缩" in ac_of(out) and len(compacts(ledger_of(d), "sA")) == 2
+check("序号由 ledger 推导（第 2 发 N=2，阶梯语义退役——文案同形）", ok)
 
-rc, out = run(GATE, compact_payload(d), d)
-ok = rc == 0 and "已达同任务上限" in ac_of(out)
-st, led = state_of(d), ledger_of(d)
-ok = ok and st and st.get("count") == 3 and led and len(led) == 3
-check("compact 第 3 次·无 marker → 仍人裁注入（放行一次语义）＋计数=3", ok)
-d = None  # mkdtemp 不随进程回收：cf- 前缀留残骸可寻（house 惯例，test-self 同款），OS tmp 清理兜底——下组另起新工程
-
-# —— marker 生效 → 静默＋记账不断流（判据 3，§6.2 用例 4） ——
+# —— 路径三级降级（§4.1） ——
 d2 = proj()
-os.makedirs(gdir(d2), exist_ok=True)
-with open(os.path.join(gdir(d2), "sB.json"), "w", encoding="utf-8") as f:
-    json.dump({"count": 2, "marker": True}, f)
-rc, out = run(GATE, compact_payload(d2, sid="sB"), d2)
-ok = rc == 0 and ac_of(out) == ""
-st, led = state_of(d2, "sB"), ledger_of(d2)
-ok = ok and st and st.get("count") == 3 and led and len(led) == 1 \
-    and led[0].get("event") == "compact-muted" and led[0].get("verdict") is None
-check("marker 生效 → 静默＋ledger 行照落（记账不断流）", ok)
+cfg = cfg_for(d2)
+tp2 = make_transcript(d2, cfg, "sA")
+rc, out = run(GATE, gate_payload(d2), d2, cfg_dir=cfg)   # 无 transcript_path 字段 → L2 推导
+ok = rc == 0 and tp2 in ac_of(out)
+check("路径 L2：无输入字段 → cwd+sid 推导＋存在性核验命中", ok)
 
-# —— clear / startup 清零与孤儿清扫（§6.2 用例 8–9） ——
-rc, out = run(GATE, compact_payload(d2, sid="sB", source="clear"), d2)
-ok = rc == 0 and ac_of(out) == "" and state_of(d2, "sB") is None and ledger_of(d2) and len(ledger_of(d2)) == 1
-check("SessionStart(clear) → 删该 sid 计数与 marker、零注入、不记账", ok)
-
-now = time.time()
-for sid, age in (("sB", 8 * 86400), ("sC", 3600), ("sD", 6 * 86400)):
-    with open(os.path.join(gdir(d2), sid + ".json"), "w", encoding="utf-8") as f:
-        json.dump({"count": 1, "marker": False}, f)
-    os.utime(os.path.join(gdir(d2), sid + ".json"), (now - age, now - age))
-rc, out = run(GATE, compact_payload(d2, sid="sE", source="startup"), d2)
-ok = rc == 0 and ac_of(out) == ""
-ok = ok and state_of(d2, "sB") is None and state_of(d2, "sC") is not None \
-    and state_of(d2, "sD") is not None and state_of(d2, "sE") is None
-ok = ok and os.path.exists(os.path.join(gdir(d2), "ledger.jsonl"))   # 清扫不误删 ledger
-check("SessionStart(startup) → 清零＋清扫 >7 天孤儿 sid 文件（6 天/1 小时保留、ledger 不动）", ok)
-
-# —— 坏输入 / 缺 sid / 未知 source（§6.2 用例 10＋防呆） ——
 d3 = proj()
-p = subprocess.run([sys.executable, GATE], input=b"not-json", capture_output=True, cwd=d3)
-check("非法 JSON → exit 0 静默零写面", p.returncode == 0 and p.stdout == b"" and ledger_of(d3) is None)
-rc, out = run(GATE, {k: v for k, v in compact_payload(d3).items() if k != "session_id"}, d3)
-ok = rc == 0 and ac_of(out) == "" and ledger_of(d3) is None and not os.path.exists(gdir(d3))
-check("缺 session_id → exit 0 不计不注（防空串共享计数文件互染）", ok)
-rc, out = run(GATE, compact_payload(d3, source="resume"), d3)
-ok = rc == 0 and ac_of(out) == "" and ledger_of(d3) is None
-rc2, out2 = run(GATE, {**compact_payload(d3), "source": None}, d3)
-ok = ok and rc2 == 0 and ac_of(out2) == "" and ledger_of(d3) is None
-check("source=resume/缺失 → 防御性不计数（matcher 已排除 resume，双保险）", ok)
+cfg3 = cfg_for(d3)   # projects 目录在、该 sid 文件缺 → L3 通用指引
+rc, out = run(GATE, gate_payload(d3), d3, cfg_dir=cfg3)
+ac3 = ac_of(out)
+ok = rc == 0 and "projects" in ac3 and ".jsonl" not in ac3
+check("路径 L3：推导未命中 → projects 目录通用指引（不猜具体路径）", ok)
 
-# —— decision 件（Q9① 回传通道，§4 组件表） ——
-QTEXT = "[compact-gate] 第 2 次压缩，已达同任务上限（2 次）。如何处置？"
-
-
-def decision_payload(d, answers, qtext=QTEXT, sid="sX"):
-    return {"hook_event_name": "PostToolUse", "session_id": sid, "cwd": d,
-            "tool_name": "AskUserQuestion",
-            "tool_input": {"questions": [{"question": qtext, "header": "压缩闸",
-                                          "options": [], "multiSelect": False}]},
-            "tool_response": {"answers": answers}}
-
-
+# —— PreCompact 观测件（§4.2：零拦截零注入，记账＋入窗） ——
 d4 = proj()
-# 非自家弹窗：哨兵先核 → 毫秒级快退零写面
-rc, out = run(DECISION, decision_payload(d4, {"普通问题？": "选项一"}, qtext="普通问题？"), d4)
-ok = rc == 0 and ac_of(out) == "" and ledger_of(d4) is None and not os.path.exists(gdir(d4))
-check("decision 非自家（无哨兵前缀）→ 快退 exit 0 零写面", ok)
-
-# 生产可达序先垫底：两次 compact 使 count=2（裁决只发生在人裁注入之后）
-run(GATE, compact_payload(d4, sid="sX"), d4)
-run(GATE, compact_payload(d4, sid="sX"), d4)
-# 自家 · 不再提醒 → marker 落盘＋裁决列回填
-rc, out = run(DECISION, decision_payload(d4, {QTEXT: {"answer": "本任务不再提醒"}}), d4)
-st, led = state_of(d4, "sX"), ledger_of(d4)
-ok = rc == 0 and st and st.get("marker") is True and st.get("count") == 2 \
-    and led and len(led) == 3 and led[2].get("event") == "decision" \
-    and led[2].get("verdict") == "mute"
-check("decision 自家·不再提醒（answers 值为 dict 形）→ marker 落盘＋verdict=mute", ok)
-
-# 静默端到端集成：marker 后第 3 次 compact → 静默＋记账不断流（mute 语义跨件闭环）
-rc, out = run(GATE, compact_payload(d4, sid="sX"), d4)
+rc, out = run(OBSERVE, obs_payload(d4, trigger="manual", prompt_id="m1"), d4)
 led = ledger_of(d4)
-ok = rc == 0 and ac_of(out) == "" and led and led[-1].get("event") == "compact-muted" \
-    and led[-1].get("count") == 3 and len(led) == 4
-check("集成：decision 落 marker 后同 sid compact → 静默＋记账", ok)
+st = state_of(d4)
+ok = rc == 0 and out == "" and led and len(led) == 1 \
+    and led[0].get("trigger") == "manual" and led[0].get("hook") == "compact-observe" \
+    and led[0].get("event") == "compact" and led[0].get("n_window") is None \
+    and st and st.get("auto_ts") == [] and st.get("any_ts") == [] and st.get("sub_ts") == []
+check("PreCompact manual → 零 stdout＋schema2 行（trigger=manual）＋不入窗（桶语义修正）", ok)
 
-# 自家 · 放行一次 → 无 marker、下次仍问（同样走生产可达序）
+rc, out = run(OBSERVE, obs_payload(d4, trigger="auto", prompt_id="m2"), d4)
+led, st = ledger_of(d4), state_of(d4)
+ok = rc == 0 and out == "" and compacts(led, "sA")[-1].get("trigger") == "auto" \
+    and compacts(led, "sA")[-1].get("n_window") == 1 and len(st.get("any_ts") or []) == 1
+check("PreCompact auto（sidechain 无键＝混桶现行走档）→ any_ts 入窗 n_window=1", ok)
+
+rc, out = run(OBSERVE, obs_payload(d4, trigger="auto", prompt_id="m3", sidechain=True), d4)
+led, st = ledger_of(d4), state_of(d4)
+ok = rc == 0 and compacts(led, "sA")[-1].get("sidechain") is True \
+    and len(st.get("sub_ts") or []) == 1 and len(st.get("any_ts") or []) == 1
+check("PreCompact sidechain=true（a 路保留）→ sub_ts 桶", ok)
+
+p = subprocess.run([sys.executable, OBSERVE], input=b"not-json", capture_output=True, cwd=d4)
+ok = p.returncode == 0 and p.stdout == b"" and len(compacts(ledger_of(d4), "sA")) == 3
 d5 = proj()
-run(GATE, compact_payload(d5, sid="sX"), d5)
-run(GATE, compact_payload(d5, sid="sX"), d5)
-rc, out = run(DECISION, decision_payload(d5, {QTEXT: "放行一次并记账"}), d5)
-st, led = state_of(d5, "sX"), ledger_of(d5)
-ok = rc == 0 and st and not st.get("marker") and st.get("count") == 2 \
-    and led and led[2].get("verdict") == "continue"
-rc, out = run(GATE, compact_payload(d5, sid="sX"), d5)
-ok = ok and "已达同任务上限" in ac_of(out)
-check("decision 自家·放行一次 → verdict=continue 无 marker，下次 compact 仍人裁注入", ok)
+rc2, out2 = run(OBSERVE, {k: v for k, v in obs_payload(d5).items() if k != "session_id"}, d5)
+ok = ok and rc2 == 0 and out2 == "" and ledger_of(d5) is None and not os.path.exists(gdir(d5))
+check("PreCompact 坏 JSON/缺 sid → exit 0 零写面（fail-open 同款）", ok)
 
-# 自家 · 重开 → verdict=reopen 无 marker
+# —— 计数仲裁（§4.1：prompt_id 身份谓词＋ts fallback；fixtures 两用例＋degrade-A） ——
 d6 = proj()
-rc, out = run(DECISION, decision_payload(d6, {QTEXT: "落快照后重开"}), d6)
-led = ledger_of(d6)
-ok = rc == 0 and led and led[0].get("verdict") == "reopen" and not (state_of(d6, "sX") or {}).get("marker")
-check("decision 自家·重开 → verdict=reopen 无 marker", ok)
+run(OBSERVE, obs_payload(d6, trigger="auto", prompt_id="P1"), d6)
+rc, out = run(GATE, gate_payload(d6, prompt_id="P1"), d6)
+led, st = ledger_of(d6), state_of(d6)
+ok = rc == 0 and "trigger: auto" in ac_of(out) and len(compacts(led, "sA")) == 1 \
+    and len(st.get("any_ts") or []) == 1
+check("主路径去重：PreCompact(P1,auto)→SessionStart(P1) → 单行单入窗＋注入携 trigger=auto", ok)
 
-# answers 异型 / 缺失 → unparsed 如实记账，不崩不误标 marker
 d7 = proj()
-rc, out = run(DECISION, {**decision_payload(d7, {}), "tool_response": "格式异常"}, d7)
+run(OBSERVE, obs_payload(d7, prompt_id="P2"), d7)   # trigger 字段缺＝degrade-A
+rc, out = run(GATE, gate_payload(d7, prompt_id="P2"), d7)
 led = ledger_of(d7)
-ok = rc == 0 and led and led[0].get("verdict") == "unparsed"
-rc2, out2 = run(DECISION, decision_payload(d7, {}), d7)   # answers 空对象
-led = ledger_of(d7)
-ok = ok and rc2 == 0 and len(led) == 2 and led[1].get("verdict") == "unparsed"
-check("decision answers 异型/无对应键 → verdict=unparsed 零 marker", ok)
+ok = rc == 0 and "trigger: unknown" in ac_of(out) and len(compacts(led, "sA")) == 1
+check("degrade-A 组合：PreCompact=unknown＋SessionStart 同 prompt_id → 去重仍中（谓词不看 trigger）", ok)
 
-# tool_input 非预期形状（questions 缺/非列表）→ 快退不崩（另起新工程隔离账面）
 d8 = proj()
-rc, out = run(DECISION, {**decision_payload(d8, {}), "tool_input": {"questions": "坏形"}}, d8)
-ok = rc == 0 and ledger_of(d8) is None and not os.path.exists(gdir(d8))
-check("decision tool_input 坏形 → 哨兵不中快退零写面", ok)
+rows = [{"schema": 2, "ts": iso(NOW - 600), "sid": "sA", "trigger": "auto",
+         "sidechain": None, "event": "compact", "n_window": 1,
+         "plugin_ver": FAKE_PLUG_VER, "hook": "compact-observe", "prompt_id": "PX"}]
+put_ledger(d8, rows)
+put_state(d8, "sA", {"auto_ts": [], "any_ts": [NOW - 600], "sub_ts": [], "runaway_ts": [], "rearmed": True})
+rc, out = run(GATE, gate_payload(d8, prompt_id="PX"), d8)
+ok = rc == 0 and len(compacts(ledger_of(d8), "sA")) == 1 and len(state_of(d8).get("any_ts") or []) == 1
+check("同 prompt_id 远隔（>300s）→ 去重（身份谓词不受间隔影响——方案用例①）", ok)
 
-# —— decision snap_ok 机械核（1.3.5 续期批：判据 2 量法机械化——问题文本取路径，mtime 对账末次压缩行） ——
-d11 = proj()
-run(GATE, compact_payload(d11, sid="sP"), d11)
-run(GATE, compact_payload(d11, sid="sP"), d11)
-snap = os.path.join(d11, "snapshot.md")
-QP = "[compact-gate] 第 2 次压缩。断点快照已落 " + snap + " 。如何处置？"
-open(snap, "w", encoding="utf-8").close()   # mtime=现在 ≥ 末次压缩行 → true
-rc, out = run(DECISION, decision_payload(d11, {QP: "放行一次并记账"}, qtext=QP, sid="sP"), d11)
-led = ledger_of(d11)
-ok = rc == 0 and led and led[-1].get("verdict") == "continue" and led[-1].get("snap_ok") is True
-check("decision 快照新鲜（mtime ≥ 末次压缩行）→ snap_ok=true", ok)
-
-os.utime(snap, (now - 3 * 3600, now - 3 * 3600))   # 陈旧 3h（早于末次压缩行）→ false 谎报显形
-rc, out = run(DECISION, decision_payload(d11, {QP: "放行一次并记账"}, qtext=QP, sid="sP"), d11)
-led = ledger_of(d11)
-ok = rc == 0 and led and led[-1].get("snap_ok") is False
-check("decision 快照陈旧（mtime < 末次压缩行）→ snap_ok=false（谎报显形）", ok)
-
-QN = "[compact-gate] 第 2 次压缩。如何处置？"   # 无路径 → null 不猜
-rc, out = run(DECISION, decision_payload(d11, {QN: "放行一次并记账"}, qtext=QN, sid="sP"), d11)
-led = ledger_of(d11)
-ok = rc == 0 and led and led[-1].get("snap_ok") is None
-check("decision 问题无快照路径 → snap_ok=null（不猜）", ok)
-
-# —— 变异抽查锁（2026-11-09 评审点名两缺口） ——
-# ① classify 子串优先级：答案同命中「不再提醒」＋「放行」→ mute 优先（mute>reopen>continue 换序即红）
 d9 = proj()
-run(GATE, compact_payload(d9, sid="sY"), d9)
-run(GATE, compact_payload(d9, sid="sY"), d9)
-rc, out = run(DECISION, decision_payload(d9, {QTEXT: "不放行了，本任务不再提醒"}, qtext=QTEXT, sid="sY"), d9)
-led = ledger_of(d9)
-ok = rc == 0 and led and led[2].get("verdict") == "mute" \
-    and (state_of(d9, "sY") or {}).get("marker") is True
-check("classify 优先级：答案同命中「不再提醒」＋「放行」→ mute 优先", ok)
+rows = [{"schema": 2, "ts": iso(NOW - 175), "sid": "sA", "trigger": "auto",
+         "sidechain": None, "event": "compact", "n_window": 1,
+         "plugin_ver": FAKE_PLUG_VER, "hook": "compact-observe", "prompt_id": "PA"}]
+put_ledger(d9, rows)
+put_state(d9, "sA", {"auto_ts": [], "any_ts": [NOW - 175], "sub_ts": [], "runaway_ts": [], "rearmed": True})
+rc, out = run(GATE, gate_payload(d9, prompt_id="PB"), d9)
+ok = rc == 0 and len(compacts(ledger_of(d9), "sA")) == 2 \
+    and len(state_of(d9).get("any_ts") or []) == 2
+check("异 prompt_id 175s → 双计（fallback 窗 120s 外——方案用例②，最短发间隔不误并）", ok)
 
-# ② gate 坏 state 文件（坏 JSON）→ load_state 回落从 0 重计走观测档，不崩不误档
 d10 = proj()
-os.makedirs(gdir(d10), exist_ok=True)
-with open(os.path.join(gdir(d10), "sZ.json"), "w", encoding="utf-8") as f:
-    f.write("{corrupt json")
-rc, out = run(GATE, compact_payload(d10, sid="sZ"), d10)
-st, led = state_of(d10, "sZ"), ledger_of(d10)
-ok = rc == 0 and "第 1 次" in ac_of(out) and st and st.get("count") == 1 \
-    and led and len(led) == 1 and led[0].get("event") == "compact-1st"
-check("gate 坏 state 文件（坏 JSON）→ 从 0 重计走观测档", ok)
+rows = [{"schema": 2, "ts": iso(NOW - 30), "sid": "sA", "trigger": "auto",
+         "sidechain": None, "event": "compact", "n_window": 1,
+         "plugin_ver": FAKE_PLUG_VER, "hook": "compact-observe"}]   # 旧行无 prompt_id 键
+put_ledger(d10, rows)
+put_state(d10, "sA", {"auto_ts": [], "any_ts": [NOW - 30], "sub_ts": [], "runaway_ts": [], "rearmed": True})
+rc, out = run(GATE, gate_payload(d10), d10)   # 输入也无 prompt_id → fallback 生效
+ok = rc == 0 and len(compacts(ledger_of(d10), "sA")) == 1 and len(state_of(d10).get("any_ts") or []) == 1
+check("prompt_id 双缺 → ts 近邻 fallback（≤120s）去重中", ok)
 
-# —— hooks.json 登记断言（防呆：matcher 裸竖线；python3||python 兜底链） ——
+# —— 速率窗（D4/Q4/Q10：混桶 ≥8、主窗 ≥4、manual 不入窗、sub 只记账） ——
+d11 = proj()
+tp11 = os.path.join(d11, "t.jsonl")
+open(tp11, "w", encoding="utf-8").close()
+for i in range(7):   # 7 发 auto 对（混桶 7 < 8）
+    run(OBSERVE, obs_payload(d11, trigger="auto", prompt_id=f"a{i}"), d11)
+rc, out = run(GATE, gate_payload(d11, prompt_id="a6", tpath=tp11), d11)
+ok = rc == 0 and "速率异常" not in ac_of(out) \
+    and not any(r.get("event") == "runaway" for r in ledger_of(d11) or [])
+check("混桶 7 发/90min → 不触（≥8 占位阈——b5ae44d8 峰值 ~7 不误报）", ok)
+
+run(OBSERVE, obs_payload(d11, trigger="auto", prompt_id="a7"), d11)
+rc, out = run(GATE, gate_payload(d11, prompt_id="a7", tpath=tp11), d11)
+ac11 = ac_of(out)
+led11, st11 = ledger_of(d11), state_of(d11)
+rw = [r for r in led11 if r.get("event") == "runaway"]
+ok = rc == 0 and "速率异常" in ac11 and "窗内 8 发" in ac11 and "落终态" in ac11 \
+    and len(rw) == 1 and rw[0].get("n_window") == 8 \
+    and len(st11.get("runaway_ts") or []) == 1 and st11.get("rearmed") is False
+check("混桶第 8 发 → 速率告警叠加＋runaway 账行＋runaway_ts 记载＋rearmed 卸载", ok)
+
+for i in (8, 9):   # 未回落连发 → 不重触
+    run(OBSERVE, obs_payload(d11, trigger="auto", prompt_id=f"a{i}"), d11)
+    rc, out = run(GATE, gate_payload(d11, prompt_id=f"a{i}", tpath=tp11), d11)
+led11 = ledger_of(d11)
+ok = len([r for r in led11 if r.get("event") == "runaway"]) == 1 \
+    and "速率异常" not in ac_of(out)
+check("触发后未回落（窗 9-10 发）→ 不重触（防 b5ae44d8 式 16 连注）", ok)
+
+st11["any_ts"] = [NOW - 7200] * 3   # 窗老化殆尽 → 下次入窗 pre_len 0 < 半阈 → 再武装
+put_state(d11, "sA", st11)
+for i in range(10, 18):
+    run(OBSERVE, obs_payload(d11, trigger="auto", prompt_id=f"a{i}"), d11)
+rc, out = run(GATE, gate_payload(d11, prompt_id="a17", tpath=tp11), d11)
+led11, st11 = ledger_of(d11), state_of(d11)
+ok = len([r for r in led11 if r.get("event") == "runaway"]) == 2 \
+    and "速率异常" in ac_of(out) and len(st11.get("runaway_ts") or []) == 2
+check("回落半阈以下再达阈 → 再武装二次注入（评审 #6）", ok)
+
+d12 = proj()
+tp12 = os.path.join(d12, "t.jsonl")
+open(tp12, "w", encoding="utf-8").close()
+run(OBSERVE, obs_payload(d12, trigger="auto", prompt_id="z0"), d12)
+put_state(d12, "sA", {"auto_ts": [], "any_ts": [NOW - 3600, NOW - 7200], "sub_ts": [],
+                      "runaway_ts": [NOW - 3600, NOW - 7200], "rearmed": True})
+for i in range(1, 8):
+    run(OBSERVE, obs_payload(d12, trigger="auto", prompt_id=f"z{i}"), d12)
+rc, out = run(GATE, gate_payload(d12, prompt_id="z7", tpath=tp12), d12)
+led12 = ledger_of(d12)
+ok = rc == 0 and len([r for r in led12 if r.get("event") == "runaway"]) == 0 \
+    and "速率异常" not in ac_of(out)
+check("滚动 24h 上限 2 次 → 第三次拒绝（只注入指针）", ok)
+
+d13 = proj()
+tp13 = os.path.join(d13, "t.jsonl")
+open(tp13, "w", encoding="utf-8").close()
+for i in range(3):
+    run(OBSERVE, obs_payload(d13, trigger="auto", prompt_id=f"b{i}", sidechain=False), d13)
+rc, out = run(GATE, gate_payload(d13, prompt_id="b3", tpath=tp13), d13)
+led13, st13 = ledger_of(d13), state_of(d13)
+# gate 独立记账（b3 无对行）入第 4 条 → 主窗 ≥4 触发
+run(OBSERVE, obs_payload(d13, trigger="auto", prompt_id="b3", sidechain=False), d13)
+rc, out = run(GATE, gate_payload(d13, prompt_id="b3", tpath=tp13), d13)
+led13, st13 = ledger_of(d13), state_of(d13)
+ok = len(st13.get("auto_ts") or []) == 4 \
+    and len([r for r in led13 if r.get("event") == "runaway"]) == 1 and "速率异常" in ac_of(out)
+check("a 路保留：sidechain=false＋auto → auto_ts 主窗 ≥4/90min 触发（现行混桶外的分桶档）", ok)
+
+d14 = proj()
+tp14 = os.path.join(d14, "t.jsonl")
+open(tp14, "w", encoding="utf-8").close()
+for i in range(5):
+    run(OBSERVE, obs_payload(d14, trigger="manual", prompt_id=f"c{i}"), d14)
+rc, out = run(GATE, gate_payload(d14, prompt_id="c4", tpath=tp14), d14)
+led14, st14 = ledger_of(d14), state_of(d14)
+ok = len(compacts(led14, "sA")) == 5 and st14.get("auto_ts") == [] and st14.get("any_ts") == [] \
+    and st14.get("sub_ts") == [] \
+    and "trigger: manual" in ac_of(out) and "速率异常" not in ac_of(out)
+check("manual 记账不入窗（v1「手动与失控同桶」缺陷修正）——5 发零 runaway、三窗全空", ok)
+
+d15 = proj()
+for i in range(19):
+    run(OBSERVE, obs_payload(d15, trigger="auto", prompt_id=f"s{i}", sidechain=True), d15)
+run(OBSERVE, obs_payload(d15, trigger="auto", prompt_id="s19", sidechain=True), d15)
+rc, out = run(GATE, gate_payload(d15, prompt_id="s19"), d15)
+led15, st15 = ledger_of(d15), state_of(d15)
+ok = rc == 0 and out.strip() == "" and len(st15.get("sub_ts") or []) == 20 \
+    and len([r for r in led15 if r.get("event") == "runaway-sub"]) == 1
+check("子代理聚合 ≥20/24h → runaway-sub 只记账零注入（D7：投递对象不存在）", ok)
+
+d16 = proj()
+for i in range(10):
+    run(OBSERVE, obs_payload(d16, trigger="auto", prompt_id=f"t{i}", sidechain=True), d16)
+rc, out = run(GATE, gate_payload(d16, prompt_id="t9"), d16)
+ok = rc == 0 and out.strip() == "" \
+    and not any(r.get("event") == "runaway-sub" for r in ledger_of(d16) or [])
+check("子代理 10 发/24h → 不触 runaway-sub（b5ae44d8 实弹 10 发不误报）", ok)
+
+# —— clear / startup（D5＋孤儿清扫＋回读通道 §2） ——
+d17 = proj()
+put_state(d17, "sA", {"auto_ts": [NOW], "any_ts": [], "sub_ts": [], "runaway_ts": [], "rearmed": False})
+led17_len = 0
+rc, out = run(GATE, gate_payload(d17, source="clear"), d17)
+ok = rc == 0 and ac_of(out) == "" and state_of(d17, "sA") is None \
+    and ledger_of(d17) is None
+check("clear → 顺带清窗（状态文件删）＋零注入零账行（D5 依赖解除）", ok)
+
+d18 = proj()
+os.makedirs(gdir(d18), exist_ok=True)
+for sid, age in (("old1", 8 * 86400), ("old2", 6 * 86400), ("keep", 3600)):
+    with open(os.path.join(gdir(d18), sid + ".json"), "w", encoding="utf-8") as f:
+        json.dump({"auto_ts": [], "any_ts": [], "sub_ts": [], "runaway_ts": [], "rearmed": True}, f)
+    os.utime(os.path.join(gdir(d18), sid + ".json"), (NOW - age, NOW - age))
+open(os.path.join(gdir(d18), "ledger.jsonl"), "w", encoding="utf-8").close()
+rc, out = run(GATE, gate_payload(d18, sid="new", source="startup"), d18)
+ok = rc == 0 and ac_of(out) == "" \
+    and not os.path.exists(os.path.join(gdir(d18), "old1.json")) \
+    and os.path.exists(os.path.join(gdir(d18), "old2.json")) \
+    and os.path.exists(os.path.join(gdir(d18), "keep.json")) \
+    and os.path.exists(os.path.join(gdir(d18), "ledger.jsonl"))
+check("startup → 孤儿清扫 >7d（6 天/1h 保留、ledger 不动）＋无回读条件静默", ok)
+
+d19 = proj()
+cfg19 = cfg_for(d19)
+tp19 = make_transcript(d19, cfg19, "sOLD")
+put_ledger(d19, [{"schema": 2, "ts": iso(NOW - 3600 * i), "sid": "sOLD",
+                  "trigger": "auto", "sidechain": None, "event": "compact",
+                  "n_window": i, "plugin_ver": FAKE_PLUG_VER,
+                  "hook": "compact-observe", "prompt_id": f"o{i}"} for i in range(3)])
+rc, out = run(GATE, gate_payload(d19, sid="sNEW", source="startup"), d19, cfg_dir=cfg19)
+ac19 = ac_of(out)
+led19 = ledger_of(d19)
+hd = [r for r in led19 if r.get("event") == "handoff"]
+ok = rc == 0 and "上次断点" in ac19 and tp19 in ac19 and "近 3 发" in ac19 \
+    and len(hd) == 1 and hd[0].get("trigger") == ">=3/24h" and hd[0].get("sid") == "sNEW" \
+    and hd[0].get("n_window") == 3
+check("startup 回读·≥3/24h → 断点指针一行＋handoff 账行（trigger=条件枚举）", ok)
+
+d20 = proj()
+cfg20 = cfg_for(d20)
+tp20 = make_transcript(d20, cfg20, "sR")
+put_ledger(d20, [{"schema": 2, "ts": iso(NOW - 600), "sid": "sR", "trigger": "auto",
+                  "sidechain": None, "event": "compact", "n_window": 8,
+                  "plugin_ver": FAKE_PLUG_VER, "hook": "compact-observe", "prompt_id": "r0"},
+                 {"schema": 2, "ts": iso(NOW - 590), "sid": "sR", "trigger": "auto",
+                  "sidechain": None, "event": "runaway", "n_window": 8,
+                  "plugin_ver": FAKE_PLUG_VER, "hook": "compact-gate"}])
+rc, out = run(GATE, gate_payload(d20, sid="sNEW", source="startup"), d20, cfg_dir=cfg20)
+hd = [r for r in ledger_of(d20) if r.get("event") == "handoff"]
+ok = rc == 0 and "上次断点" in ac_of(out) and len(hd) == 1 and hd[0].get("trigger") == "runaway"
+check("startup 回读·runaway 条件 → 注入＋handoff（trigger=runaway 优先枚举）", ok)
+
+d21 = proj()
+put_ledger(d21, [{"schema": 2, "ts": iso(NOW - 600), "sid": "sX", "trigger": "auto",
+                  "sidechain": None, "event": "compact", "n_window": 1,
+                  "plugin_ver": FAKE_PLUG_VER, "hook": "compact-observe", "prompt_id": "q0"},
+                 {"schema": 2, "ts": iso(NOW - 500), "sid": "sX", "trigger": "auto",
+                  "sidechain": None, "event": "compact", "n_window": 2,
+                  "plugin_ver": FAKE_PLUG_VER, "hook": "compact-observe", "prompt_id": "q1"}])
+rc, out = run(GATE, gate_payload(d21, sid="sNEW", source="startup"), d21)
+ok = rc == 0 and ac_of(out) == "" and not any(r.get("event") == "handoff" for r in ledger_of(d21))
+check("startup 回读不触（<3 发且无 runaway）→ 静默零账行", ok)
+
+d22 = proj()
+cfg22 = cfg_for(d22)   # ledger 达阈但 transcript 文件缺 → mtime 核失败 → 静默
+put_ledger(d22, [{"schema": 2, "ts": iso(NOW - 3600 * i), "sid": "sGONE",
+                  "trigger": "auto", "sidechain": None, "event": "compact",
+                  "n_window": i, "plugin_ver": FAKE_PLUG_VER,
+                  "hook": "compact-observe", "prompt_id": f"g{i}"} for i in range(3)])
+rc, out = run(GATE, gate_payload(d22, sid="sNEW", source="startup"), d22, cfg_dir=cfg22)
+ok = rc == 0 and ac_of(out) == "" and not any(r.get("event") == "handoff" for r in ledger_of(d22))
+check("startup 断点 transcript 缺 → 存在性核验失败静默（无 handoff 账行）", ok)
+
+# —— 坏输入 / 旧状态容忍（评审 #7）/ 隐私 ——
+d23 = proj()
+p = subprocess.run([sys.executable, GATE], input=b"not-json", capture_output=True, cwd=d23)
+ok = p.returncode == 0 and p.stdout == b"" and ledger_of(d23) is None
+rc, out = run(GATE, {k: v for k, v in gate_payload(d23).items() if k != "session_id"}, d23)
+ok = ok and rc == 0 and ac_of(out) == "" and not os.path.exists(gdir(d23))
+rc2, out2 = run(GATE, gate_payload(d23, source="resume"), d23)
+ok = ok and rc2 == 0 and ac_of(out2) == "" and ledger_of(d23) is None
+check("gate 坏 JSON/缺 sid/source=resume → exit 0 零写面（防呆沿 v1）", ok)
+
+d24 = proj()
+tp24 = os.path.join(d24, "t.jsonl")
+open(tp24, "w", encoding="utf-8").close()
+put_state(d24, "sA", {"count": 2, "marker": True})   # v1 形
+rc, out = run(GATE, gate_payload(d24, tpath=tp24), d24)
+st24 = state_of(d24)
+ok = rc == 0 and "第 1 次压缩" in ac_of(out) and st24 \
+    and st24.get("auto_ts") == [] and len(st24.get("any_ts") or []) == 1 \
+    and "count" not in st24 and "marker" not in st24
+check("v1 形 {count,marker} 状态 → 缺键弃用从空窗起（不迁移不崩）", ok)
+
+d25 = proj()
+tp25 = os.path.join(d25, "t.jsonl")
+open(tp25, "w", encoding="utf-8").close()
+os.makedirs(gdir(d25), exist_ok=True)
+with open(os.path.join(gdir(d25), "sA.json"), "w", encoding="utf-8") as f:
+    f.write("{corrupt json")
+rc, out = run(GATE, gate_payload(d25, tpath=tp25), d25)
+ok = rc == 0 and "第 1 次压缩" in ac_of(out) and len(state_of(d25).get("any_ts") or []) == 1
+check("坏状态文件 → 从空窗起不崩（沿 v1 变异锁）", ok)
+
+d26 = proj()
+run(GATE, gate_payload(d26), d26)
+run(OBSERVE, obs_payload(d26, trigger="auto", prompt_id="k1"), d26)
+raw = open(os.path.join(gdir(d26), "ledger.jsonl"), encoding="utf-8").read()
+ok = "transcript_path" not in raw and d26 not in raw and "custom_instructions" not in raw
+check("隐私（D6）：账行零路径零正文——无 transcript_path/工程路径/custom_instructions 键", ok)
+
+# —— 退役面＋登记断言（Q3 即拆＋§6.1 生产登记形） ——
+ok = not os.path.exists(DECISION)
+check("Q3 即拆：compact-gate-decision.py 已退役（文件不在——防无批复活）", ok)
+
 with open(os.path.join(HERE, "hooks.json"), encoding="utf-8") as f:
     hj_raw = f.read()
 try:
@@ -286,20 +493,20 @@ try:
 except Exception:
     hj = {}
 ss = hj.get("SessionStart") or []
+pc = hj.get("PreCompact") or []
 pt = hj.get("PostToolUse") or []
 ss_m = [e.get("matcher") for e in ss]
-pt_m = [e.get("matcher") for e in pt]
-check("hooks.json SessionStart matcher＝裸 compact|clear|startup（\\| 转义形永不匹配——防呆）",
+check("hooks.json SessionStart matcher＝裸 compact|clear|startup（\\| 转义形永不匹配——防呆沿 v1）",
       "compact|clear|startup" in ss_m and "compact\\|clear\\|startup" not in hj_raw.replace("\\\\", "\\"))
-check("hooks.json PostToolUse 含 AskUserQuestion 登记且指向 compact-gate-decision.py",
-      "AskUserQuestion" in pt_m
-      and any("compact-gate-decision.py" in h.get("command", "")
-              for e in pt if e.get("matcher") == "AskUserQuestion" for h in e.get("hooks", [])))
-new_hooks = [h for e in ss + pt
-             if e.get("matcher") in ("compact|clear|startup", "AskUserQuestion")
-             for h in e.get("hooks", [])]
-check("新两件均 python3||python 兜底链（Windows 无 python3 静默失效先例同款）",
-      len(new_hooks) == 2 and all("|| python " in h.get("command", "") for h in new_hooks))
+pc_cmds = [h.get("command", "") for e in pc for h in e.get("hooks", [])]
+ok = len(pc) == 1 and pc[0].get("matcher") is None and len(pc_cmds) == 1 \
+    and "compact-observe.py" in pc_cmds[0] and "|| python " in pc_cmds[0] \
+    and pc[0].get("hooks", [{}])[0].get("async") is False \
+    and pc[0].get("hooks", [{}])[0].get("timeout") == 10
+check("hooks.json PreCompact＝单条无 matcher 登记（探针实证双登记即同发双行）＋async:false＋timeout 10", ok)
+ok = not any(e.get("matcher") == "AskUserQuestion" for e in pt) \
+    and "compact-gate-decision.py" not in hj_raw
+check("hooks.json PostToolUse(AskUserQuestion) 条目已删（弹窗链整条拆除——防复活）", ok)
 
-print(f"compact-gate fixture: {'全绿' if fails == 0 else f'{fails} 失败'}")
+print(f"compact-gate v2 fixture: {'全绿' if fails == 0 else f'{fails} 失败'}")
 sys.exit(1 if fails else 0)

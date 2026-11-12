@@ -43,14 +43,16 @@
             "async": true
           }
         ]
-      },
+      }
+    ],
+    "PreCompact": [
       {
-        "matcher": "AskUserQuestion",
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/compact-gate-decision.py\" || python \"${CLAUDE_PLUGIN_ROOT}/hooks/compact-gate-decision.py\"",
-            "async": true
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/compact-observe.py\" || python \"${CLAUDE_PLUGIN_ROOT}/hooks/compact-observe.py\"",
+            "timeout": 10,
+            "async": false
           }
         ]
       }

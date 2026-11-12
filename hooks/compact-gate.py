@@ -1,33 +1,43 @@
 #!/usr/bin/env python3
-# crules-flutter 会话压缩计数闸（SessionStart hook · 2026-11-09；Q1–Q9 需求方全裁通过后落码、
-#   试点 R2 收口裁「留」2026-11-11——方案档随批终态删档，读数与裁决＝annex 2026-11 卷，git 史可查）
-# 闸形（D1）：压缩后注入，不做压缩前拦截——PreCompact block 有恢复路径失败＋死锁面双证（方案 §3.5）。
-# 阶梯（D2/Q2）：同任务上限 2 次＝**人裁触发点非硬上限**——第 1 次观测注入（催落快照）；≥2 次且无
-#   marker 人裁注入（第 3 次起仍问＝「放行一次」语义的自然结果）；手动 /compact 与 idle compaction
-#   同计数（SessionStart 输入无 trigger 字段，source=compact 不分 manual/auto）。
-# 人裁回传（D3/Q3/Q4/Q9①）：本 hook 只注入；裁决由模型转手 AskUserQuestion（问题文本以
-#   「[compact-gate]」开头并附快照文件完整路径），compact-gate-decision.py 挂 PostToolUse 回填
-#   ledger 裁决列／snap_ok 快照 mtime 核／落 marker（1.3.5 续期批：去自报化——先落快照再弹窗，
-#   试点首夜谎报快照一例实锤后裁——R2 读数见 annex 2026-11 卷）。
-#   marker＝「本任务不再提醒」（clear 清零，与计数同文件存防跨计数残留；decision 件在 state 缺失
-#   回落时可产 count=0+marker 态——无害：第 1 次档恒观测注入，静默只在 ≥2 档生效）。
-# 无人值守缺省（D5/Q5）：不阻塞不静默——账行恒落（机械面），注入是建议非强制（遵守面）；
-#   未裁决账行留浮现通道（下次压缩无 marker 再问 / 聚合侧翻账），与 MAINTENANCE 无人值守硬线同构。
-# 状态落点（D6）：.claude/memory/compact-gate/<净化 sid>.json（house 形，复用 find_project_root＋
-#   sanitize_sid，天然分工程分会话）；ledger 同目录 ledger.jsonl append-only（照 .compliance-log 形，
-#   隐私对齐：只落计数/布尔/裁决枚举/sid，零对话正文）。clear/startup 删该 sid 状态；startup 顺带
-#   清扫 >7 天孤儿 sid 文件（不触 ledger）。
+# crules-flutter 压缩恢复 v2 · 指针注入件（SessionStart hook · 2026-11-12；方案 docs/方案-压缩
+#   恢复v2-指针与速率-2026-11-12.md §4.1。v1 阶梯注入/AskUserQuestion 转手/快照 mtime 核链随
+#   Q3「即拆」整条退役（compact-gate-decision.py 删除；R2「留」翻转记档＝annex 2026-11 卷），
+#   本件换血为指针＋速率形——同时清偿 v1 六缺陷，依据见方案 §3 实证）。
+# 闸形（承 v1 D1）：只注入不拦截——PreCompact block 有恢复路径失败＋死锁面双证，不翻案。
+# 指针（D3）：恢复＝指针非重建。每次压缩注入「原文未损：<transcript_path>＋span 直取纪律」
+#   ——不再催模型写快照（v1 让模型重写幸存摘要的劣化复制品）。路径三级降级：输入
+#   transcript_path 字段（探针实证在场）→ cwd+sid 推导＋存在性核验＋mtime 近邻弱校验
+#   → projects 目录通用指引。
+# 计数仲裁（§4.1，一轮 #1＋二轮 #1 L1 修正）：序号与 trigger 由 ledger 推导；去重谓词不依赖
+#   trigger 值——**同 sid 且同 prompt_id＝同发事件**（实弹三行共享 prompt_id，§6.1 实弹判读），
+#   且配对面只认 hook=compact-observe 行（SessionStart 自写行＝上一发完整事件，非本发配对）；
+#   ts 近邻 ≤120s 仅 fallback（prompt_id 缺失/不等；窗不放宽——实弹对 96s、最短发间隔 175s，
+#   放宽＝degrade-A 快连对漏计）。
+# 速率告警（D4/Q4/Q10）：主窗 auto_ts ≥4/90min；混桶 any_ts ≥8/90min（sidechain 无键现行走档
+#   ——同桶双阈值保守者生效）→ 追加收尾建议＋runaway 账行。再武装（评审 #6）：窗内计数回落
+#   半阈以下复位，滚动 24h 上限 2 次（载体 runaway_ts＋rearmed，§4.3）。子代理聚合 sub_ts
+#   ≥20/24h 只记 runaway-sub 账行、零注入（D7：子代理上下文非收尾指令的正确投递对象）。
+# 回读通道（§2）：startup 翻账——近 24h runaway 或任一 sid ≥3 发压缩 → 注入断点指针一行
+#   ＋handoff 账行（断点＝最近压缩账行 sid；路径推导＋存在性核验＋mtime 近邻弱校验，无则静默）。
+# 状态（§4.3）：.claude/memory/compact-gate/<净化 sid>.json＝{auto_ts/any_ts/sub_ts/runaway_ts
+#   ＋rearmed}（滚动窗自裁剪；v1 形 {count,marker} 缺键弃用）。clear 顺带清窗（D5 依赖解除——
+#   窗自然衰减，不依赖 clear 到达；v1「clear 重置重新武装梯子」根因切除）。startup 顺带清扫
+#   >7d 孤儿 sid 文件（不触 ledger）。ledger schema 2 追加式（旧行不迁移兼容）。
+# 隐私对齐 D6：账行零对话正文零路径——sid/prompt_id 为 opaque id，枚举/布尔之外不落。
 # 输入契约 fail-open（stop-reminder 同款）：stdin 非法 JSON / 顶层非对象 / 缺 sid / source 未知
-#   → exit 0 不计不注——缺 sid 落地即空串共享计数文件互染，防呆优先。
-# matcher 纪律（hooks.json）：裸 `compact|clear|startup`——resume 刻意不在列（--continue 续会话
-#   计数应延续）；JSON 内写 `\|` 转义形会按字面竖线匹配、永不触发（防呆断言在 test_compact_gate.py）。
-# Windows 纪律：无 python3 时经 hooks.json 兜底链退化 python；进程期 SetErrorMode 压框（六 hook 同款）。
+#   → exit 0 不计不注。matcher 纪律沿 v1（裸 compact|clear|startup，resume 刻意不在列）。
+# Windows 纪律：hooks.json python3||python 兜底链＋进程期 SetErrorMode 压框（七 hook 同款）。
 import json
 import os
 import sys
 import time
-from _common import (emit_additional_context, find_project_root,
-                     plugin_version, sanitize_sid, _hook_utf8_streams)
+
+from _common import (emit_additional_context, find_project_root, plugin_version,
+                     sanitize_sid, _hook_utf8_streams)
+from _compact_core import (DEDUP_WIN, ORPHAN_TTL, RUNAWAY_CAP_N, SUB_LIMIT,
+                           append_ledger, bucket_for, derive_transcript, feed_window,
+                           ledger_row, load_state, parse_ts, projects_dir, read_ledger,
+                           save_state, trim_state)
 
 if sys.platform == "win32":
     try:
@@ -36,46 +46,62 @@ if sys.platform == "win32":
     except Exception:
         pass
 
-ORPHAN_TTL = 7 * 86400  # 孤儿 sid 状态文件清扫阈值（D6：startup 顺带，不触 ledger）
-LIMIT = 2               # 同任务人裁触发点（Q2：非硬上限——放行后可超、超限进账）
-
 _hook_utf8_streams()
 
-COPY_1ST = (f"压缩计数：本会话第 1 次压缩（同任务上限 {LIMIT} 次）。断点快照尚未落盘。"
-            "工程纪律要求压缩后立即落快照（台账/task 回写/结论归位）；摄入面节读、不回读整文件。")
-COPY_NTH = (f"压缩计数：第 {{n}} 次压缩，已达同任务上限（{LIMIT} 次）。工程纪律要求：①先落断点快照（台账/task 回写），"
-            "再以 AskUserQuestion 征询需求方裁决，问题文本以「[compact-gate]」开头并附快照文件完整路径，"
-            "选项＝放行一次并记账／落快照后重开／本任务不再提醒；"
-            "AskUserQuestion 不可用时落快照＋继续（compact-nth 账行 verdict=null 即未裁决记录）。")
+
+def resolve_pointer(data, root, sid, last_compact_epoch):
+    """路径三级降级（§4.1）：输入字段 → 推导＋存在性＋mtime 弱校验 → 通用指引"""
+    tp = data.get("transcript_path")
+    if isinstance(tp, str) and os.path.exists(tp):
+        return tp
+    cand = derive_transcript(root, sid)
+    if os.path.exists(cand):
+        try:
+            anchor = last_compact_epoch if last_compact_epoch else time.time()
+            if os.path.getmtime(cand) > anchor - 24 * 3600:   # 弱校验：近 24h 有写
+                return cand
+        except OSError:
+            pass
+    return (projects_dir() + " 下按工程目录与 sid 定位 transcript（本机推导未命中——"
+            "指针降级为指引，勿因此整文件扫描）")
 
 
-def ledger_line(gdir_path, event, sid, count, verdict=None):
-    rec = {"schema": 1,
-           "ts": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
-           "sid": sid,
-           "plugin_ver": plugin_version(),
-           "hook": "compact-gate",
-           "event": event,
-           "count": count,
-           "verdict": verdict}
-    with open(os.path.join(gdir_path, "ledger.jsonl"), "a", encoding="utf-8") as fh:
-        fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
-
-
-def load_state(path):
+def handoff(root, sid, gdir_path, data):
+    """startup 回读（§2）：近 24h runaway 或任一 sid ≥3 发 → 断点指针一行＋handoff 账行"""
+    now = time.time()
+    rows = read_ledger(gdir_path)
+    recent = [r for r in rows if (parse_ts(r.get("ts")) or 0) > now - 24 * 3600]
+    compacts24 = [r for r in recent if str(r.get("event", "")).startswith("compact")]
+    has_runaway = any(r.get("event") == "runaway" for r in recent)
+    per = {}
+    for r in compacts24:
+        per[r.get("sid")] = per.get(r.get("sid"), 0) + 1
+    if has_runaway:
+        cond = "runaway"
+    elif any(c >= 3 for c in per.values()):
+        cond = ">=3/24h"
+    else:
+        return   # 无回读条件 → 静默
+    last = compacts24[-1] if compacts24 else \
+        [r for r in recent if r.get("event") == "runaway"][-1]
+    bp_sid = last.get("sid")
+    n_bp = sum(1 for r in compacts24 if r.get("sid") == bp_sid)
+    last_ts = parse_ts(last.get("ts"))
+    cand = derive_transcript(root, bp_sid)
     try:
-        with open(path, encoding="utf-8") as f:
-            st = json.load(f)
-        if isinstance(st, dict) and isinstance(st.get("count"), int):
-            return {"count": st["count"], "marker": bool(st.get("marker"))}
-    except Exception:
-        pass
-    return {"count": 0, "marker": False}
-
-
-def save_state(path, st):
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(st, f, ensure_ascii=False)
+        fresh = last_ts is not None and os.path.getmtime(cand) >= last_ts - 300
+    except OSError:
+        fresh = False
+    if not fresh:
+        return   # 存在性核验/mtime 近邻弱校验失败 → 静默（§2）
+    emit_additional_context(
+        "SessionStart",
+        f"[compact-recovery] 上次断点：transcript {cand}（该 sid 近 {n_bp} 发压缩）。"
+        "继任会话需要细节时 grep/jq 直取相关 span，勿整文件回读。")
+    pid = data.get("prompt_id") if isinstance(data.get("prompt_id"), str) else None
+    append_ledger(gdir_path,
+                  ledger_row(sid, cond, None, "handoff", n_bp, pid,
+                             "compact-gate", plugin_version()))
 
 
 try:
@@ -92,24 +118,30 @@ if source not in ("compact", "clear", "startup"):
     sys.exit(0)   # resume（--continue 应延续计数）与未知值防御性不介入
 root = find_project_root(data.get("cwd") if isinstance(data.get("cwd"), str) else os.getcwd())
 if not root:
-    sys.exit(0)   # 无记忆库（轻量档/未 init）→ 不介入（house 闸同款定根前提）
+    sys.exit(0)   # 无记忆库根 → 不介入（house 闸同款定根前提）
 gdir_path = os.path.join(root, ".claude", "memory", "compact-gate")
 state_path = os.path.join(gdir_path, sid + ".json")
 
-if source in ("clear", "startup"):
+if source == "clear":
     try:
-        os.remove(state_path)   # 任务边界：计数与 marker 同殁（Q4 本任务语义＝clear 前）
+        os.remove(state_path)   # D5：顺带清窗（fail-open；clear 不到无碍——窗自然衰减）
     except OSError:
         pass
-    if source == "startup":
-        try:   # 孤儿清扫（>7 天未动的 sid 状态文件；崩溃/收尾遗留），ledger 不在清扫面
-            now = time.time()
-            for name in os.listdir(gdir_path):
-                p = os.path.join(gdir_path, name)
-                if name.endswith(".json") and now - os.path.getmtime(p) > ORPHAN_TTL:
-                    os.remove(p)
-        except OSError:
-            pass
+    sys.exit(0)
+
+if source == "startup":
+    try:   # 孤儿清扫沿 v1（>7d sid 状态文件；ledger 不在清扫面）
+        now = time.time()
+        for name in os.listdir(gdir_path):
+            p = os.path.join(gdir_path, name)
+            if name.endswith(".json") and now - os.path.getmtime(p) > ORPHAN_TTL:
+                os.remove(p)
+    except OSError:
+        pass
+    try:
+        handoff(root, sid, gdir_path, data)
+    except Exception:
+        pass   # fail-open：回读失败不阻塞会话启动
     sys.exit(0)
 
 # source == "compact"
@@ -117,23 +149,87 @@ try:
     os.makedirs(gdir_path, exist_ok=True)
 except OSError:
     sys.exit(0)
+
+pid = data.get("prompt_id") if isinstance(data.get("prompt_id"), str) else None
+sc = data.get("sidechain")
+rows = read_ledger(gdir_path)
+now = time.time()
+
+# —— 计数仲裁：配对面只认 PreCompact 观测行（hook 字段区分写入者，§4.1） ——
+last = None
+for r in rows:
+    if r.get("sid") == sid and r.get("event") == "compact":
+        last = r   # 该 sid 末条 compact 行
+dup = False
+trig = "unknown"
+sidechain = sc if isinstance(sc, bool) else None
+if last is not None and last.get("hook") == "compact-observe":
+    lt = parse_ts(last.get("ts"))
+    lpid = last.get("prompt_id")
+    if pid and isinstance(lpid, str) and pid == lpid:
+        dup = True   # 同发身份命中（谓词主面，不受压缩耗时长短影响）
+    elif lt is not None and now - lt <= DEDUP_WIN:
+        dup = True   # fallback：prompt_id 缺失/不等＋近邻 ≤120s
+if last is not None:
+    trig = last.get("trigger") if last.get("trigger") in ("manual", "auto") else "unknown"
+    lsc = last.get("sidechain")
+    if isinstance(lsc, bool):
+        sidechain = lsc
+
 st = load_state(state_path)
-st["count"] += 1
-n = st["count"]
-if n == 1:
-    emit_additional_context("SessionStart", COPY_1ST)
-    event = "compact-1st"
-elif not st["marker"]:
-    emit_additional_context("SessionStart", COPY_NTH.format(n=n))
-    event = "compact-nth"
-else:
-    event = "compact-muted"   # 不再提醒生效中：静默但记账不断流（判据 3）
+mutated = False
+if not dup:
+    bucket, n = feed_window(st, "unknown", sidechain, now)
+    append_ledger(gdir_path,
+                  ledger_row(sid, "unknown", sidechain, "compact", n, pid,
+                             "compact-gate", plugin_version()))
+    mutated = True
+
+# —— 速率判定（§4.1：仅主窗/混桶注入收尾建议；子代理聚合只记账） ——
+fired = False
+cnt = 0
+bucket, limit = bucket_for(trig, sidechain)
+trim_state(st, now)
+if bucket == "sub_ts":
+    cnt = len(st["sub_ts"])
+    if cnt >= SUB_LIMIT:
+        append_ledger(gdir_path,
+                      ledger_row(sid, trig, sidechain, "runaway-sub", cnt, None,
+                                 "compact-gate", plugin_version()))
+        mutated = True
+elif bucket is not None:
+    cnt = len(st[bucket])
+    if cnt >= limit and st.get("rearmed", True) and len(st["runaway_ts"]) < RUNAWAY_CAP_N:
+        st["runaway_ts"].append(now)
+        st["rearmed"] = False
+        append_ledger(gdir_path,
+                      ledger_row(sid, trig, sidechain, "runaway", cnt, None,
+                                 "compact-gate", plugin_version()))
+        mutated = True
+        fired = True
+if mutated:
+    try:
+        save_state(state_path, st)
+    except Exception:
+        pass   # 状态落盘失败不阻断注入（下次读账窗短一拍，阈值面小损可忍）
+
+if sidechain is True:
+    sys.exit(0)   # D7：子代理上下文零注入（非收尾指令的正确投递对象）
+
+n_count = sum(1 for r in rows if r.get("sid") == sid and r.get("event") == "compact") \
+    + (0 if dup else 1)
 try:
-    ledger_line(gdir_path, event, sid, n)
+    path = resolve_pointer(data, root, sid, parse_ts(last.get("ts")) if last else None)
 except Exception:
-    pass   # 记账失败不阻断注入（注入面优先；缺口由账行缺失在聚合侧显形）
+    path = projects_dir() + "（指针解析异常——降级为指引）"
+copy = (f"[compact-recovery] 第 {n_count} 次压缩（trigger: {trig}）。原文未损：{path}。"
+        "恢复纪律：需要细节时 grep/jq 该文件直取相关 span，勿整文件回读、"
+        "勿凭摘要臆断已读过的内容。")
+if fired:
+    copy += (f"上下文消耗速率异常（窗内 {cnt} 发）。建议：落终态→报告→任务分解；"
+             "原文指针同上。")
 try:
-    save_state(state_path, st)
+    emit_additional_context("SessionStart", copy)
 except Exception:
     pass
 sys.exit(0)

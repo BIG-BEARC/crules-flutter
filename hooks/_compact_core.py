@@ -8,6 +8,7 @@
 #   主线程 4 发/52min 触发主窗 ≥4（兜底在）。
 import json
 import os
+import re
 import time
 from datetime import datetime
 
@@ -157,5 +158,8 @@ def projects_dir():
 
 
 def derive_transcript(root, sid):
-    """cwd+sid 推导（§4.1 L2／§2 回读）：~/.claude/projects/<cwd 斜线转横线>/<sid>.jsonl"""
-    return os.path.join(projects_dir(), root.replace("/", "-"), sid + ".jsonl")
+    """cwd+sid 推导（§4.1 L2／§2 回读）：projects/<cwd 净化>/<sid>.jsonl。净化＝全非字母数字
+    转横线（1.3.9 修正）：Claude Code 实际行为不止斜线——super_printer → super-printer、
+    .git/modules → --git-modules- 双证；v1 只换 / 在根含 _/. 时推导必 miss（startup 回读
+    整路失效、L2 降 L3）。夹具 san() 同规则造伪家居，红绿同源。"""
+    return os.path.join(projects_dir(), re.sub(r"[^A-Za-z0-9]", "-", root), sid + ".jsonl")

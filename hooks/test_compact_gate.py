@@ -17,6 +17,7 @@
 #   - 隐私（D6）：账行零正文零路径——断言行内无 transcript_path 键、无工程路径子串
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -141,15 +142,21 @@ def compacts(led, sid):
             if isinstance(r, dict) and r.get("sid") == sid and r.get("event") == "compact"]
 
 
+def san(d):
+    """Claude Code 实际净化规则（1.3.9 修正依据）：路径全非字母数字转横线，不止斜线——
+    生产双证：super_printer → super-printer、.git/modules → --git-modules-"""
+    return re.sub(r"[^A-Za-z0-9]", "-", d)
+
+
 def cfg_for(d):
     """CLAUDE_CONFIG_DIR 伪家居：projects/<sanitized-root>/ 可造 transcript"""
     c = tempfile.mkdtemp(prefix="cf-cfg.")
-    os.makedirs(os.path.join(c, "projects", d.replace("/", "-")), exist_ok=True)
+    os.makedirs(os.path.join(c, "projects", san(d)), exist_ok=True)
     return c
 
 
 def make_transcript(d, cfg, sid):
-    p = os.path.join(cfg, "projects", d.replace("/", "-"), sid + ".jsonl")
+    p = os.path.join(cfg, "projects", san(d), sid + ".jsonl")
     with open(p, "w", encoding="utf-8") as f:
         f.write('{"probe":true}\n')
     return p
@@ -193,6 +200,17 @@ rc, out = run(GATE, gate_payload(d3), d3, cfg_dir=cfg3)
 ac3 = ac_of(out)
 ok = rc == 0 and "projects" in ac3 and ".jsonl" not in ac3
 check("路径 L3：推导未命中 → projects 目录通用指引（不猜具体路径）", ok)
+
+# —— 路径 L2 净化修正（1.3.9：super_printer 实弹根含 _ 推导 miss 溯源；v1 夹具与实现
+#    共用 replace("/","-") 同错——夹具改按 Claude Code 真实净化规则造家居，红→修→绿） ——
+d6u = os.path.join(tempfile.mkdtemp(prefix="cf-cgate."), "super_printer")   # 根含 _ 与 .
+os.makedirs(os.path.join(d6u, ".claude", "memory"))   # 定根脚手架（find_project_root 判据）
+open(os.path.join(d6u, ".claude", "memory", "NAVIGATION.md"), "w", encoding="utf-8").close()
+cfg6 = cfg_for(d6u)
+tp6 = make_transcript(d6u, cfg6, "sA")
+rc, out = run(GATE, gate_payload(d6u), d6u, cfg_dir=cfg6)   # 无 transcript_path → L2 推导
+ok = rc == 0 and tp6 in ac_of(out)
+check("路径 L2（净化修正）：根含 _/. → 全非字母数字转横线后命中（startup 回读同路同修）", ok)
 
 # —— PreCompact 观测件（§4.2：零拦截零注入，记账＋入窗） ——
 d4 = proj()

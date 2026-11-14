@@ -81,8 +81,9 @@ flutter_screenutil（.w/.h 按稿缩放）。注：5.9.3 后 ~28 个月无稳定
 
 - **关键字体打包进 app**，不依赖系统回退：Android 机型 OEM ROM 可能裁剪 Roboto/
   中文字重（字重只剩两档）；Windows 可能缺可用中文字体——按目标平台打包（如 Roboto
-  全字重 + 桌面中文字体），pubspec 显式声明 family 与字重映射（离线 / 内网设备的
-  google_fonts 禁用口径与坑卡见 [theming.md](theming.md)「自定义字体分场景」）
+  全字重 + 桌面中文字体），pubspec 显式声明 family 与字重映射（坑卡见
+  [platform-pitfalls.md](platform-pitfalls.md)「系统字体回退不可信」）
+- **分场景接入**：离线 / 内网设备（POS、KDS、工控屏等）**禁用 `google_fonts` 运行时拉取**——首次用字体在线下载在离线环境必失败回退；字体文件直接打包 assets（打包模式下 google_fonts 亦无必要）。仅普通联网消费 App 适合 `google_fonts` + `TextTheme` 统一挂载（不逐组件指定）；跨端一致性要求 / OEM 机型项目，关键字体一律打包
 - **统一注入点**：平台条件 fontFamily 走统一 TextStyle 工厂/getter；**禁内联
   TextStyle**（内联即绕过注入，桌面端/OEM 机型即现字体缺陷）
 - fontFamilyFallback 显式声明兜底链

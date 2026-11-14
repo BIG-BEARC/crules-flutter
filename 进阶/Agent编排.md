@@ -167,6 +167,8 @@ sequenceDiagram
 - **流水线任务书**：评审代理跑着的 5-20 分钟里，主控把下一任务书写好（主线空转是纯浪费）
 - **无文件冲突的独立任务并行**（保守串行是默认，并行需显式判断无冲突）
 
+> 派 fan-out 子 agent 前，先过 parity-rewrite [orchestration.md](../skills/parity-rewrite/references/orchestration.md)「fan-out 契约」两条：子 agent 不新增 key / 命名 / 接口语义；收口命令（生成器 / 门禁闸 / 全量测试）一律主线跑。
+
 ---
 
 ## 编排执行规范

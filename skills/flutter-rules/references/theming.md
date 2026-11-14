@@ -64,7 +64,7 @@ final ButtonStyle myButtonStyle = ButtonStyle(
 ## 字体
 
 - 全 App 限 1–2 个字族；字号阶梯落在 `TextTheme`（displayLarge…labelSmall），组件从 `Theme.of(context).textTheme` 取
-- **自定义字体分场景**：离线 / 内网设备（POS、KDS、工控屏等）**禁用 `google_fonts` 运行时拉取**——首次用字体在线下载在离线环境必失败回退；字体文件直接打包 assets（pubspec 显式声明 family 与字重映射，打包模式下 google_fonts 亦无必要）。仅普通联网消费 App 适合 `google_fonts` + `TextTheme` 统一挂载（不逐组件指定）；跨端一致性要求 / OEM 机型项目，关键字体一律打包（见坑卡「系统字体回退不可信」）
+- 字体接入策略单源在 [layout.md](layout.md)「字体策略」（分场景拉取取舍、打包铁律、统一注入点全在其节内）；本节只持主题令牌面（字族数量、TextTheme 阶梯）
 
 ## 资源与网络图
 

@@ -24,6 +24,12 @@ SRC=$(cd "$(dirname "$0")/.." && pwd)
 # 压缩恢复 v2 批（2026-11-12）+1 至 78（新夹具 scripts/test_compact_report.py 8 检查——翻账件
 #   聚合/双 schema 兼容/只读/零正文；hooks 计数闸口径扩 `_` 前缀排除——_compact_core.py 系
 #   import 库非 hook，沿 _common 先例）；计数以实跑为准
+# derive 净化修正批（2026-11-13）78 不变（夹具内部 test_compact_gate.py 36→37——san() 真实净化
+#   规则＋underscore/dot 根用例；断言行零增，计数以实跑为准）
+# 分工卫生微批（2026-11-14）+4 至 82（字体单归属 google_fonts references 命中文件数=1／外设四件
+#   锚口径对拍／教程文案基线戳 minor 差 ≤1 tripwire／Agent编排 fan-out 指针在位——:754 闸不可锚
+#   粗体节故专用断言钉行；方案＋Gate＋评审录 docs/方案-分工卫生微批-2026-11-14.md）。测试落位
+#   惯例明文：fixture 随宿主目录（hooks/test_*.py ×7＋scripts/test_compact_report.py ×1）
 # 1.0.39/40 曾误记「52/0」、1.0.39 起点曾误记 48——09-24 三 tag 隔离实跑勘误：51/51/54，且本机无 pwsh 时 ps1 夹具
 # SKIP 不计（有 pwsh 环境 +1），跨环境对数先对齐 SKIP 面）。在无 .git 的拷贝里
 # （典型：插件 cache = 全仓文件快照、非 clone）draft 吃 git 报错码 128 → **假红**；tag 则落到「读 HEAD 失败」
@@ -1124,6 +1130,43 @@ grep -qF -- '压缩恢复 v2' "${SRC}/README.md" || { d11_ok=0; echo "  ↳ READ
 [ "${d11_ok}" = "1" ] \
   && { PASS=$((PASS+1)); echo "PASS  压缩面收口态：v1 方案删档维持＋annex 卷双条目（R2 收口＋v2 落地）＋README v2 行"; } \
   || { FAIL=$((FAIL+1)); echo "FAIL  压缩面收口面（见上）"; }
+
+# —— 分工卫生微批（2026-11-14）×4：字体单归属／锚口径对拍／教程 tripwire／fan-out 指针 ——
+gf_n=$(grep -l google_fonts "${SRC}"/skills/flutter-rules/references/*.md 2>/dev/null | wc -l | tr -d ' ')
+if [ "${gf_n:-1}" = "1" ]; then
+  PASS=$((PASS+1)); echo "PASS  字体单归属（google_fonts 在 references 命中文件数=1——A′ 切分后策略单源 layout，theming 只持令牌、回指不带字面）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  字体归属面命中 ${gf_n:-?} 文件（应=1，单源 layout.md）："; grep -l google_fonts "${SRC}"/skills/flutter-rules/references/*.md 2>/dev/null
+fi
+anchor_n=$(python3 - "${SRC}" <<'PYEOF'
+import sys
+fs = ['printer', 'scale', 'scanner', 'iot-devices']
+lines = {open(f'{sys.argv[1]}/skills/flutter-rules/references/{f}.md', encoding='utf-8').readlines()[5].rstrip('\n') for f in fs}
+print(len(lines))
+PYEOF
+)
+if [ "${anchor_n:-2}" = "1" ]; then
+  PASS=$((PASS+1)); echo "PASS  锚口径四件对拍（printer/scale/scanner/iot-devices :6 逐字同款、核验戳独立成行；network-comms 另款不入面）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  锚口径四件不同款 ×${anchor_n:-2}"
+fi
+stamp_gap=$(python3 - "${SRC}" <<'PYEOF'
+import json, re, sys
+md = open(f'{sys.argv[1]}/进阶/上手教程.md', encoding='utf-8').read()
+m = re.search(r'文案基线 v(\d+)\.(\d+)\.(\d+)', md)
+q = re.match(r'(\d+)\.(\d+)\.(\d+)', json.load(open(f'{sys.argv[1]}/.claude-plugin/plugin.json', encoding='utf-8'))['version'])
+print('MISS' if not (m and q) else abs(int(m.group(2)) - int(q.group(2))))
+PYEOF
+)
+case "${stamp_gap:-MISS}" in
+  0|1) PASS=$((PASS+1)); echo "PASS  教程文案基线 tripwire（戳 minor 与 plugin.json 差=${stamp_gap} ≤1——拦粗漂移；同 minor 内漂移系声明局限不设防）";;
+  *) FAIL=$((FAIL+1)); echo "FAIL  教程基线戳 minor 差=${stamp_gap:-MISS}（>1 须复核示例对话并更戳；MISS=戳或版本不可解析）";;
+esac
+if grep -qF -- 'fan-out 子 agent 前' "${SRC}/进阶/Agent编排.md" && grep -qF -- 'orchestration.md' "${SRC}/进阶/Agent编排.md"; then
+  PASS=$((PASS+1)); echo "PASS  Agent编排 fan-out 契约指针在位（两条内联＋orchestration 单源链；:754 闸不可锚粗体节，专用断言钉行）"
+else
+  FAIL=$((FAIL+1)); echo "FAIL  Agent编排 fan-out 指针行缺失"
+fi
 
 echo "== 脚本自测：PASS=$PASS FAIL=$FAIL =="
 [ "$FAIL" -eq 0 ] && exit 0 || exit 1

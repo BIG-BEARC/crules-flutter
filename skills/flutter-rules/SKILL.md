@@ -16,8 +16,8 @@ description: Flutter/Dart 技术最佳实践参考——写/审 Flutter 代码�
 |---|---|---|
 | 写设计方案 / 出方案 / PRD | [references/design-doc.md](references/design-doc.md) | 方案骨架（章节模板 / 裁剪档位 / Gate 映射 / 6.2 自测用例表生命周期 / 行业参考查证纪律）+ 配图约定（图型对照 / AI 常驻文件不加图） |
 | 引依赖 / 写平台代码 / 升级 SDK / 平台排障 | [references/platform-pitfalls.md](references/platform-pitfalls.md) | 平台坑库（三归属坑卡带出处与最后核验 / 入预置门槛 / 维护义务——维护者侧内容也在此，不占消费侧常驻） |
-| 主题 / 颜色 / 字体 / 暗黑 / Material 3 / A11Y | [references/theming.md](references/theming.md) | ThemeExtension 设计令牌（copyWith/lerp 全例）/ ColorScheme.fromSeed / WidgetStateProperty / WCAG 对比度 / Semantics / google_fonts |
-| 布局 / Overflow / 叠层 / 浮层 / 屏幕适配 / 字体策略 | [references/layout.md](references/layout.md) | Expanded-Flexible-Wrap 边界 / 滚动容器选型 / Stack 定位 / OverlayPortal 浮层全例 / 适配三选一（A1/A2/A3）/ 字体策略（1.3.0 自双模板 §七 下沉） |
+| 主题 / 颜色 / 字体令牌（字族·TextTheme 阶梯）/ 暗黑 / Material 3 / A11Y | [references/theming.md](references/theming.md) | ThemeExtension 设计令牌（copyWith/lerp 全例）/ ColorScheme.fromSeed / WidgetStateProperty / WCAG 对比度 / Semantics（字体接入策略在 layout 行） |
+| 布局 / Overflow / 叠层 / 浮层 / 屏幕适配 / 字体策略 / google_fonts 取舍 | [references/layout.md](references/layout.md) | Expanded-Flexible-Wrap 边界 / 滚动容器选型 / Stack 定位 / OverlayPortal 浮层全例 / 适配三选一（A1/A2/A3）/ 字体策略单源（打包铁律 · 分场景接入 · 统一注入点；1.3.0 自双模板 §七 下沉） |
 | 技术栈预设族（app 预设 A/B/C＋plugin 类型 A/B）/ 状态管理 | [references/state-management.md](references/state-management.md) | 预设族全文与选型注记（1.3.0 自双模板 §七 下沉）/ Notifier 模式 / Provider 就近组织 / ConsumerWidget vs ConsumerStatefulWidget 强制 / autoDispose 生命周期（选 A 时生效） |
 | 分层 / 架构纪律 | [references/architecture.md](references/architecture.md) | app 分层架构（MVVM/Repository）/ plugin 架构纪律与类型 A/B 额外纪律（1.3.0 自双模板 §十 下沉） |
 | 通用工程规范 / plugin 专项 | [references/general.md](references/general.md) | app 全栈通用（assets / 文件头 / import 排序）/ plugin 专项（平台通道选型 / pub 发布检查）（1.3.0 自双模板 §八 下沉） |
@@ -32,6 +32,8 @@ description: Flutter/Dart 技术最佳实践参考——写/审 Flutter 代码�
 | 支付 / 退款 / 核销 / 涉钱接口 | [references/payment.md](references/payment.md) | 防重三层口径（判定线 / 请求号语义警示）/ 不可逆操作时序 / 重试红线 |
 
 ## dart-flutter skill 速查（1.0.10 自双模板 §十一下沉）
+
+> 非全量·按场景映射——全量与最新以 dart-flutter 插件本体为准（映射面外部目录无闸看守，观察项记 annex 2026-11 卷）。
 
 **App 向**（App 工程）：
 

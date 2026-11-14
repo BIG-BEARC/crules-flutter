@@ -6,7 +6,7 @@
 #   「甄别列」= markers/closing_q/edits 三个**独立事实位**，组合判读留聚合侧，本 hook 不加综合字段。
 #   ②**转录只作采料场**——本机实测留存仅数日，持久账必须由本 hook 落盘。③**窗口口径钉死**——
 #   本账自装版起算、非全历史（「无数≠零样本」同族病的构造性预防）。
-# 判据常量与 scripts/closing-audit.py（批1 探针 = 本 hook 前稿）同源——**改判据两处同步**；
+# 判据常量单源在本文件（批1 探针 closing-audit.py 已 2026-11-14 退役删档，git 史可寻回）；
 #   找根/截断长/三流编码系 hooks/_common.py 共享实现（1.0.39 收编，本文件曾为第三例拷贝）。
 # SessionEnd 契约边界（1.0.37 实核官方文档）：
 #   - 每会话终结触发一次，reason ∈ clear|resume|logout|prompt_input_exit|other；多次终结多次触发
@@ -51,7 +51,7 @@ except ValueError:
     BUDGET_S = 10.0
 TAIL_CAP = 4000    # 末条文本只留尾部这么长参与标记判定（内存占用上限，不进账）
 
-# —— 判据常量：与 scripts/closing-audit.py 同源，改动两处同步 ——
+# —— 判据常量（单源；前稿 closing-audit.py 已退役）——
 EDIT_TOOLS = {"Edit", "Write", "NotebookEdit"}
 EXEC_RE = re.compile(r"\b(flutter test|dart test|test-self|flutter analyze|dart analyze|pytest|npm test|dart run build_runner)\b")
 COMMIT_RE = re.compile(r"\bgit\b[^;|]*\bcommit\b")

@@ -30,6 +30,13 @@ SRC=$(cd "$(dirname "$0")/.." && pwd)
 #   锚口径对拍／教程文案基线戳 minor 差 ≤1 tripwire／Agent编排 fan-out 指针在位——:754 闸不可锚
 #   粗体节故专用断言钉行；方案＋Gate＋评审录 docs/方案-分工卫生微批-2026-11-14.md）。测试落位
 #   惯例明文：fixture 随宿主目录（hooks/test_*.py ×7＋scripts/test_compact_report.py ×1）
+# 声明面成环批 1（2026-11-18）+1 至 83（新夹具 scripts/test_scope_audit.py 15 检查〔U1–U14＋用法错附〕——收尾机械比对件
+#   scope-audit.py：三分类 rc0/1/2＋解析规约五项＋噪音四类单列＋--baseline 口径＋零 diff 警示；
+#   方案 docs/方案-质量验证机制-声明面成环-2026-11-18.md）；fixture 惯例计数随更（scripts/ ×2）；
+#   计数以实跑为准
+# 声明面成环批 2（2026-11-18）+3 至 86（看守锚——「新增执行面不得零断言」F11 先例：design-doc 骨架
+#   封闭 block 节／closing-tiers 单一源＋双模板生成面 scope-audit 触发句／条 7 双连带＋plan-reviewer
+#   四清单检查项在位）；计数以实跑为准
 # 1.0.39/40 曾误记「52/0」、1.0.39 起点曾误记 48——09-24 三 tag 隔离实跑勘误：51/51/54，且本机无 pwsh 时 ps1 夹具
 # SKIP 不计（有 pwsh 环境 +1），跨环境对数先对齐 SKIP 面）。在无 .git 的拷贝里
 # （典型：插件 cache = 全仓文件快照、非 clone）draft 吃 git 报错码 128 → **假红**；tag 则落到「读 HEAD 失败」
@@ -70,6 +77,10 @@ t 0 "python3 $SRC/hooks/test_queue_contract.py"           "跨 hook 队列契约
 t 0 "python3 $SRC/hooks/test_compliance.py"               "compliance-audit fixture 应全绿（1.0.37 批2 遵守度事实账）"
 t 0 "python3 $SRC/hooks/test_compact_gate.py"             "compact-gate fixture 应全绿（压缩恢复 v2 指针注入件：指针三级降级/速率窗再武装/去重谓词/回读通道/hooks.json 登记）"
 t 0 "python3 $SRC/scripts/test_compact_report.py"         "compact-report fixture 应全绿（v2 翻账件：按 sid 聚合＋trigger/主子比＋双 schema 兼容＋只读零正文）"
+t 0 "python3 $SRC/scripts/test_scope_audit.py"            "scope-audit fixture 应全绿（声明面成环批 1：三分类＋解析规约五项＋噪音单列＋baseline 口径＋零 diff 警示）"
+t 0 "grep -qF -- 'crules-scope-v1' $SRC/skills/flutter-rules/references/design-doc.md" "看守：design-doc 骨架含封闭 block 节（声明面成环批 2）"
+t 0 "grep -q 'scope-audit' $SRC/canonical/closing-tiers.md && grep -q 'scope-audit' $SRC/app/CLAUDE.md && grep -q 'scope-audit' $SRC/plugin/CLAUDE.md" "看守：closing-tiers 单一源＋双模板生成面均含 scope-audit 触发句（批 2·D8）"
+t 0 "grep -qF -- 'scope block' $SRC/checklist.md && grep -qF -- 'scope block' $SRC/进阶/审查与复核纪律.md && grep -qF -- '视觉规格清单' $SRC/agents/plan-reviewer.md" "看守：条 7 升级双连带＋plan-reviewer 四清单检查项在位（批 2）"
 t 0 "python3 $SRC/hooks/test_noop_gate.py"                "no-op-gate fixture 应全绿（no-op 风暴闸：窗口率截断/ask 升级/兜底链幸存/无根静默/hooks.json 登记）"
 # 1.0.42 断言①：parity-rewrite 零项目值+引用悬空双扫描——
 # 扫 skills/parity-rewrite/ 全树：①禁列 token（05 计划 Global Constraints 全表 + 裸 ARB）

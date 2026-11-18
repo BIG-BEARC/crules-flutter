@@ -34,3 +34,13 @@ linter:
 # - 「禁 inline 颜色字面量 / 禁传 ref 参数 / import 五段分组」等语义规则 analyzer 原生不覆盖，
 #   属 custom_lint 范畴（外审⑦ 大杠杆项，二期：颜色字面量 / ConsumerWidget ref 传参 / import 分组均可写成 custom_lint 规则）
 # - strict-* 三开关会暴露存量代码告警——新项目直接用；存量项目可先注释 strict 段渐进收紧
+# - custom_lint/riverpod_lint 通电采纳注记（质量闸通电批 1b · 2026-11-18，方案 docs/方案-质量闸通电-2026-11-18.md）：
+#   装了两包而本档无 plugins 段＝装而未通电（插件规则零生效）。采纳＝把下面两行拷进上面 analyzer: 段——
+#     plugins:
+#       - custom_lint
+#   前置条件（同 flutter_lints 静默跳过纪律）：pubspec dev_dependencies 须已装 custom_lint，缺依赖 analyzer 静默跳过。
+#   版本矩阵（U7 真机实测 2026-11-18，flutter 3.27.4/Dart 3.6.2）：custom_lint 0.7.3＋riverpod_lint 2.6.4 可通；
+#   老版 0.6.x 不可编译（analyzer 7 API 断档）；analyzer_plugin 须 dependency_overrides 钉 0.13.4
+#   （custom_lint 插件宿主临时仓自行 pub get，经工程 pubspec_overrides.yaml 通道钉版——本档注释不代钉）。
+#   通电后收尾告警比对走插件 cache `scripts/analyze-baseline.py`（首跑 --init-baseline 冻结存量、只拦新增）。
+#   已采纳建议稿的存量工程（.crules-state ao_adopted）收此注记＝建议非变更，更新按需手工（存量同步通道裁决）。

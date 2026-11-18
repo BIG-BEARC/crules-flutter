@@ -3,7 +3,7 @@
 面向 **Flutter 工程**的 AI 协作规则 plugin：把「AI 怎么跟你安全地干活」固化成机制——危险命令硬拦、改动先过方案确认、交付必过审查、经验自动沉淀。
 独立自持（源自 crules fork，2026-09 起 1.0.0 独立演进）；许可 **MIT**（[LICENSE](LICENSE)）。
 
-> 当前状态：1.3.10（当前形态见 [CHANGELOG](CHANGELOG.md)）
+> 当前状态：1.3.11（当前形态见 [CHANGELOG](CHANGELOG.md)）
 > 术语速查：[docs/清单-黑话白话对照-2026-10-22.md](docs/清单-黑话白话对照-2026-10-22.md)（黑话→白话→出处）
 
 ---
@@ -193,6 +193,7 @@ agents 不复制——plugin 已自动挂载 7 角色（`crules-flutter:frontend
 | 双 Gate | 非平凡改动先需求确认（要解决的问题/范围/验收）、再方案确认（七要素） | 双模板 §三 |
 | 收尾三档 | 极简（机械验证+一行）/ 标准（+review）/ 重型（+校验层）——按**任务规模**判 | 双模板 §三 |
 | 声明面成环 | 方案档改动面清单（crules-scope-v1 block）↔ 收尾 git 实际变化三分类机械比对（清单外改存量＝越界嫌疑 rc 1）；骨架四清单同批落位（影响面处置态四格/兼容性四面/视觉规格清单〔图必须被读成清单〕/批次卡四必答含 baseline 口径） | `scripts/scope-audit.py`＋flutter-rules references/design-doc.md（方案档 [docs/方案-质量验证机制-声明面成环-2026-11-18.md](docs/方案-质量验证机制-声明面成环-2026-11-18.md)） |
+| 质量闸通电 | analyze 告警面基线外置比对：首跑 `--init-baseline` 冻结存量只拦新增、比对键 path＋code＋severity 不带行号（行漂移不假对）、消除差集强制节（防基线只增不减）；取数口双源＝flutter analyze --machine（原生面）＋dart run custom_lint --format=json（插件面，U7 真机实测定档）；收尾标准档挂载＋仓根 AO 模板注释区通电注记（版本矩阵在案） | `scripts/analyze-baseline.py`＋canonical/closing-tiers.md 挂载句（方案档 [docs/方案-质量闸通电-2026-11-18.md](docs/方案-质量闸通电-2026-11-18.md)） |
 | 项目档位 | 轻量〔light〕/ 标准〔normal〕/ 完整〔full〕——init 一次定，改行为件头不减常驻 | `PROJECT.md` 档位行（定义：双模板 §十二） |
 | 证据 5 级 | 静态 → 构建 → 测试环境 → 目标环境 → 生产，逐级不可互推 | 双模板 §四 |
 | 可达性 L0-L2 | 代码路径成立 / 触发条件存在 / 业务真实可达——**AI 能力上限是 L1** | 插件 cache 进阶/审查与复核纪律 |

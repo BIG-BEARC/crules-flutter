@@ -45,6 +45,10 @@ SRC=$(cd "$(dirname "$0")/.." && pwd)
 # 质量闸通电批 1b（2026-11-18）+1 至 88（挂载看守锚：closing-tiers 单一源＋双模板生成面＋仓根
 #   analysis_options.yaml 采纳注记三面均含 analyze-baseline——「新增执行面不得零断言」沿批 2 先例）；
 #   计数以实跑为准
+# UI 视觉验证批 1（2026-11-23）+1 至 89（挂载看守锚：review-core 规程条生成三连带〔canonical＋checklist＋
+#   进阶〕＋closing-tiers 单一源与双模板生成面视觉验收句＋design-doc 四必答 UI 扩句＋复刻专项句手改
+#   〔围栏外〕勾销并入差异表——「新增执行面不得零断言」沿批 1b 先例；方案 docs/方案-UI视觉验证-2026-11-23.md）；
+#   计数以实跑为准
 # 1.0.39/40 曾误记「52/0」、1.0.39 起点曾误记 48——09-24 三 tag 隔离实跑勘误：51/51/54，且本机无 pwsh 时 ps1 夹具
 # SKIP 不计（有 pwsh 环境 +1），跨环境对数先对齐 SKIP 面）。在无 .git 的拷贝里
 # （典型：插件 cache = 全仓文件快照、非 clone）draft 吃 git 报错码 128 → **假红**；tag 则落到「读 HEAD 失败」
@@ -90,6 +94,7 @@ t 0 "python3 $SRC/scripts/test_analyze_baseline.py"       "analyze-baseline fixt
 t 0 "grep -qF -- 'crules-scope-v1' $SRC/skills/flutter-rules/references/design-doc.md" "看守：design-doc 骨架含封闭 block 节（声明面成环批 2）"
 t 0 "grep -q 'scope-audit' $SRC/canonical/closing-tiers.md && grep -q 'scope-audit' $SRC/app/CLAUDE.md && grep -q 'scope-audit' $SRC/plugin/CLAUDE.md" "看守：closing-tiers 单一源＋双模板生成面均含 scope-audit 触发句（批 2·D8）"
 t 0 "grep -q 'analyze-baseline' $SRC/canonical/closing-tiers.md && grep -q 'analyze-baseline' $SRC/app/CLAUDE.md && grep -q 'analyze-baseline' $SRC/plugin/CLAUDE.md && grep -q 'analyze-baseline' $SRC/analysis_options.yaml" "看守：closing-tiers 挂载句＋双模板生成面＋仓根 AO 采纳注记四面均在位（质量闸通电批 1b）"
+t 0 "grep -q '视觉验收' $SRC/canonical/review-core.md && grep -q '视觉验收' $SRC/checklist.md && grep -q '视觉验收' $SRC/进阶/审查与复核纪律.md && grep -q '视觉验收' $SRC/canonical/closing-tiers.md && grep -q '视觉验收' $SRC/app/CLAUDE.md && grep -q '视觉验收' $SRC/plugin/CLAUDE.md && grep -q '参照物落位' $SRC/skills/flutter-rules/references/design-doc.md && grep -q '并入视觉验收差异表' $SRC/checklist.md" "看守：视觉验收规程条三连带＋closing-tiers 挂载句双模板＋design-doc UI 扩句＋复刻句手改在位（UI 视觉验证批 1）"
 t 0 "grep -qF -- 'scope block' $SRC/checklist.md && grep -qF -- 'scope block' $SRC/进阶/审查与复核纪律.md && grep -qF -- '视觉规格清单' $SRC/agents/plan-reviewer.md" "看守：条 7 升级双连带＋plan-reviewer 四清单检查项在位（批 2）"
 t 0 "python3 $SRC/hooks/test_noop_gate.py"                "no-op-gate fixture 应全绿（no-op 风暴闸：窗口率截断/ask 升级/兜底链幸存/无根静默/hooks.json 登记）"
 # 1.0.42 断言①：parity-rewrite 零项目值+引用悬空双扫描——
@@ -510,12 +515,12 @@ else
   FAIL=$((FAIL+1)); echo "FAIL  skills·进阶 内裸写 checklist（须「插件 cache \`checklist.md\`）："; printf '%s\n' "$ck_bad"
 fi
 
-# ⑤ checklist 编号对账：通用条目 0–9 连续在位（自述「10 条·编号 0–9」与实际一致）
+# ⑤ checklist 编号对账：通用条目 0–10 连续在位（自述「11 条·编号 0–10」与实际一致；1.3.12 条 10 入编）
 ck_nums=$(grep -oE '^\*\*[0-9]+\.' "$SRC/checklist.md" | grep -oE '[0-9]+' | sort -nu | tr -d '\n')
-if [ "$ck_nums" = "0123456789" ]; then
-  PASS=$((PASS+1)); echo "PASS  checklist 编号 0–9 对账（连续无缺号）"
+if [ "$ck_nums" = "012345678910" ]; then
+  PASS=$((PASS+1)); echo "PASS  checklist 编号 0–10 对账（连续无缺号）"
 else
-  FAIL=$((FAIL+1)); echo "FAIL  checklist 编号漂移（实得 ${ck_nums:-无}，期望 0123456789）"
+  FAIL=$((FAIL+1)); echo "FAIL  checklist 编号漂移（实得 ${ck_nums:-无}，期望 012345678910）"
 fi
 
 # 1.0.33 断言：三 hook AV 弹框压制守卫防删改（36→37）——Windows 注入型管控 agent 会使 hook 进程期

@@ -4,7 +4,7 @@
 
 ## 多环境（flavor / dart-define）
 
-- **选型**：简单环境差异（API 域名 / 开关）用 `--dart-define` 起步；需要**共存多包**（测试包 + 生产包同机安装）才上 flavor（Android `productFlavors` + iOS scheme/configuration，两端都要配，漏一侧行为不一致）
+- **选型**：简单环境差异（API 域名 / 开关）用 `--dart-define` 起步；需要**共存多包**（测试包 + 生产包同机安装）才上 flavor（Android `productFlavors` + iOS scheme/configuration，两端都要配，漏一侧行为不一致）——多渠道马甲包（四平台逐步实操/渠道矩阵/坑表）见 [flavors-channels.md](flavors-channels.md)
 - 环境值集中定义（一处常量表 / 构建脚本注入），禁散落硬编码；`String.fromEnvironment` 的默认值须是**生产安全值**（拿不到 define 时宁可指向生产也不指向不存在的环境）
 - CI 每 PR 跑 analyze + test，发布流水线跑构建 + 产物归档——CI 配置文件（`.github/workflows` 等）入 git，密钥走环境变量 / secret，不入库
 

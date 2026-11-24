@@ -1,6 +1,6 @@
 ---
 name: flutter-rules
-description: Flutter/Dart 技术最佳实践参考——写/审 Flutter 代码时查找风格、架构、主题、布局、颜色、字体、无障碍等规范细节用；技术栈预设族全文（app 预设 A/B/C＋plugin 类型 A/B——原双模板 §七，1.3.0 下沉）与状态管理纪律用 references/state-management.md、testing.md（TDD 适用范围）；分层架构用 references/architecture.md；通用与 plugin 专项规范用 references/general.md；写设计方案 / 出方案时用「方案骨架」（references/design-doc.md）；引平台依赖、写平台代码、升级或排障时查「平台坑库」（references/platform-pitfalls.md）；选 dart-flutter skill 时查「dart-flutter skill 速查」节。与 dart-flutter skills 重叠处以 dart-flutter skills 为准，本 skill 是补充参考（清单/规范类内容为主，按域拆 references/ 分文件按需 Read）。
+description: Flutter/Dart 技术最佳实践参考——写/审 Flutter 代码时查找风格、架构、主题、布局、颜色、字体、无障碍等规范细节用；技术栈预设族全文（app 预设 A/B/C＋plugin 类型 A/B——原双模板 §七，1.3.0 下沉）与状态管理纪律用 references/state-management.md、testing.md（TDD 适用范围）；分层架构用 references/architecture.md；通用与 plugin 专项规范用 references/general.md；写设计方案 / 出方案时用「方案骨架」（references/design-doc.md）；引平台依赖、写平台代码、升级或排障时查「平台坑库」（references/platform-pitfalls.md）；打多渠道马甲包/新增渠道/四平台 flavor 落地时查「马甲包指南」（references/flavors-channels.md）；选 dart-flutter skill 时查「dart-flutter skill 速查」节。与 dart-flutter skills 重叠处以 dart-flutter skills 为准，本 skill 是补充参考（清单/规范类内容为主，按域拆 references/ 分文件按需 Read）。
 ---
 
 # AI rules for Flutter（crules-flutter 技术参考库）
@@ -29,6 +29,7 @@ description: Flutter/Dart 技术最佳实践参考——写/审 Flutter 代码�
 | MQTT / 消息推送接入 / 推送到达性排障 | [references/network-comms.md](references/network-comms.md) | 网络通信域（连接生命周期·重连重订 / 订阅与 QoS·分发面 / 业务到达性案卷 / broker 配置安全） |
 | 卡顿 / 内存 / 低配设备 / 线上崩溃 | [references/performance.md](references/performance.md) | DevTools 双线程归因（UI/Raster 列说话）/ 图片按显示尺寸解码（低配 OOM 头号根因）/ FlutterError + PlatformDispatcher 双钩子 / 符号化依赖 |
 | 配 CI / 出包 / 签名 / 混淆 / 发 pub 包 | [references/build-release.md](references/build-release.md) | flavor 与 dart-define 选型 / keystore 与 iOS 证书纪律 / symbols 归档 / App 发布前检查与 pub 发布检查 |
+| 打多渠道马甲包 / 新增渠道 / 四平台 flavor 落地 | [references/flavors-channels.md](references/flavors-channels.md) | 马甲包三层心智模型 / 版本门槛（Windows flavor 需 3.47+）/ 渠道矩阵（7 渠道，密钥脱敏）/ Android·iOS·Windows·macOS 逐步实操＋验证标准 / Jenkins 链路 / 坑位速查表 |
 | 支付 / 退款 / 核销 / 涉钱接口 | [references/payment.md](references/payment.md) | 防重三层口径（判定线 / 请求号语义警示）/ 不可逆操作时序 / 重试红线 |
 
 ## dart-flutter skill 速查（1.0.10 自双模板 §十一下沉）

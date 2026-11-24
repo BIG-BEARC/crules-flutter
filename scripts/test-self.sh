@@ -49,6 +49,9 @@ SRC=$(cd "$(dirname "$0")/.." && pwd)
 #   进阶〕＋closing-tiers 单一源与双模板生成面视觉验收句＋design-doc 四必答 UI 扩句＋复刻专项句手改
 #   〔围栏外〕勾销并入差异表——「新增执行面不得零断言」沿批 1b 先例；方案 docs/方案-UI视觉验证-2026-11-23.md）；
 #   计数以实跑为准
+# 多渠道马甲包指南批（2026-11-24）+1 至 90（挂载看守锚：马甲包指南域文件 flavors-channels.md 在位＋
+#   SKILL.md 按域取用表行与 frontmatter 触发词＋build-release 选型条互链——「新增执行面不得零断言」沿批 1b 先例）；
+#   计数以实跑为准
 # 1.0.39/40 曾误记「52/0」、1.0.39 起点曾误记 48——09-24 三 tag 隔离实跑勘误：51/51/54，且本机无 pwsh 时 ps1 夹具
 # SKIP 不计（有 pwsh 环境 +1），跨环境对数先对齐 SKIP 面）。在无 .git 的拷贝里
 # （典型：插件 cache = 全仓文件快照、非 clone）draft 吃 git 报错码 128 → **假红**；tag 则落到「读 HEAD 失败」
@@ -95,6 +98,7 @@ t 0 "grep -qF -- 'crules-scope-v1' $SRC/skills/flutter-rules/references/design-d
 t 0 "grep -q 'scope-audit' $SRC/canonical/closing-tiers.md && grep -q 'scope-audit' $SRC/app/CLAUDE.md && grep -q 'scope-audit' $SRC/plugin/CLAUDE.md" "看守：closing-tiers 单一源＋双模板生成面均含 scope-audit 触发句（批 2·D8）"
 t 0 "grep -q 'analyze-baseline' $SRC/canonical/closing-tiers.md && grep -q 'analyze-baseline' $SRC/app/CLAUDE.md && grep -q 'analyze-baseline' $SRC/plugin/CLAUDE.md && grep -q 'analyze-baseline' $SRC/analysis_options.yaml" "看守：closing-tiers 挂载句＋双模板生成面＋仓根 AO 采纳注记四面均在位（质量闸通电批 1b）"
 t 0 "grep -q '视觉验收' $SRC/canonical/review-core.md && grep -q '视觉验收' $SRC/checklist.md && grep -q '视觉验收' $SRC/进阶/审查与复核纪律.md && grep -q '视觉验收' $SRC/canonical/closing-tiers.md && grep -q '视觉验收' $SRC/app/CLAUDE.md && grep -q '视觉验收' $SRC/plugin/CLAUDE.md && grep -q '参照物落位' $SRC/skills/flutter-rules/references/design-doc.md && grep -q '并入视觉验收差异表' $SRC/checklist.md" "看守：视觉验收规程条三连带＋closing-tiers 挂载句双模板＋design-doc UI 扩句＋复刻句手改在位（UI 视觉验证批 1）"
+t 0 "grep -q 'flavors-channels' $SRC/skills/flutter-rules/SKILL.md && grep -q '马甲包' $SRC/skills/flutter-rules/SKILL.md && [ -f $SRC/skills/flutter-rules/references/flavors-channels.md ] && grep -q '渠道矩阵' $SRC/skills/flutter-rules/references/flavors-channels.md && grep -q '坑位速查' $SRC/skills/flutter-rules/references/flavors-channels.md && grep -q 'flavors-channels' $SRC/skills/flutter-rules/references/build-release.md" "看守：马甲包指南域文件（矩阵＋坑表）＋SKILL.md 表行/触发词＋build-release 互链在位（多渠道马甲包指南批）"
 t 0 "grep -qF -- 'scope block' $SRC/checklist.md && grep -qF -- 'scope block' $SRC/进阶/审查与复核纪律.md && grep -qF -- '视觉规格清单' $SRC/agents/plan-reviewer.md" "看守：条 7 升级双连带＋plan-reviewer 四清单检查项在位（批 2）"
 t 0 "python3 $SRC/hooks/test_noop_gate.py"                "no-op-gate fixture 应全绿（no-op 风暴闸：窗口率截断/ask 升级/兜底链幸存/无根静默/hooks.json 登记）"
 # 1.0.42 断言①：parity-rewrite 零项目值+引用悬空双扫描——

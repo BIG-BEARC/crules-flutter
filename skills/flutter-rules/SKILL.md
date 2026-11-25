@@ -1,6 +1,6 @@
 ---
 name: flutter-rules
-description: Flutter/Dart 技术最佳实践参考——写/审 Flutter 代码时查找风格、架构、主题、布局、颜色、字体、无障碍等规范细节用；技术栈预设族全文（app 预设 A/B/C＋plugin 类型 A/B——原双模板 §七，1.3.0 下沉）与状态管理纪律用 references/state-management.md、testing.md（TDD 适用范围）；分层架构用 references/architecture.md；通用与 plugin 专项规范用 references/general.md；写设计方案 / 出方案时用「方案骨架」（references/design-doc.md）；引平台依赖、写平台代码、升级或排障时查「平台坑库」（references/platform-pitfalls.md）；打多渠道马甲包/新增渠道/四平台 flavor 落地时查「马甲包指南」（references/flavors-channels.md）；选 dart-flutter skill 时查「dart-flutter skill 速查」节。与 dart-flutter skills 重叠处以 dart-flutter skills 为准，本 skill 是补充参考（清单/规范类内容为主，按域拆 references/ 分文件按需 Read）。
+description: Flutter/Dart 技术最佳实践参考——写/审 Flutter 代码时查找风格、架构、主题、布局、颜色、字体、无障碍等规范细节用；技术栈预设族全文（app 预设 A/B/C＋plugin 类型 A/B——原双模板 §七，1.3.0 下沉）与状态管理纪律用 references/state-management.md、testing.md（TDD 适用范围）；分层架构用 references/architecture.md；通用与 plugin 专项规范用 references/general.md；写设计方案 / 出方案时用「方案骨架」（references/design-doc.md）；引平台依赖、写平台代码、升级或排障时查「平台坑库」（references/platform-pitfalls.md）；打多渠道马甲包/新增渠道/四平台 flavor 落地时查「马甲包指南」（references/flavors-channels.md）；查第三方包在已装版本上的 API 与行为（写非基础用法 / SDK 版本门槛特性 / 升级后报错排障）时查「三方包版本核验」（references/dependency-verification.md）；选 dart-flutter skill 时查「dart-flutter skill 速查」节。与 dart-flutter skills 重叠处以 dart-flutter skills 为准，本 skill 是补充参考（清单/规范类内容为主，按域拆 references/ 分文件按需 Read）。
 ---
 
 # AI rules for Flutter（crules-flutter 技术参考库）
@@ -15,7 +15,7 @@ description: Flutter/Dart 技术最佳实践参考——写/审 Flutter 代码�
 | 场景 | Read | 内容 |
 |---|---|---|
 | 写设计方案 / 出方案 / PRD | [references/design-doc.md](references/design-doc.md) | 方案骨架（章节模板 / 裁剪档位 / Gate 映射 / 6.2 自测用例表生命周期 / 行业参考查证纪律）+ 配图约定（图型对照 / AI 常驻文件不加图） |
-| 引依赖 / 写平台代码 / 升级 SDK / 平台排障 | [references/platform-pitfalls.md](references/platform-pitfalls.md) | 平台坑库（三归属坑卡带出处与最后核验 / 入预置门槛 / 维护义务——维护者侧内容也在此，不占消费侧常驻） |
+| 引依赖 / 写平台代码 / 升级 SDK / 平台排障 | [references/platform-pitfalls.md](references/platform-pitfalls.md) | 平台坑库（三归属坑卡带出处与最后核验 / 入预置门槛 / 维护义务——维护者侧内容也在此，不占消费侧常驻）；写调用前先核已装版本另见 [references/dependency-verification.md](references/dependency-verification.md) |
 | 主题 / 颜色 / 字体令牌（字族·TextTheme 阶梯）/ 暗黑 / Material 3 / A11Y | [references/theming.md](references/theming.md) | ThemeExtension 设计令牌（copyWith/lerp 全例）/ ColorScheme.fromSeed / WidgetStateProperty / WCAG 对比度 / Semantics（字体接入策略在 layout 行） |
 | 布局 / Overflow / 叠层 / 浮层 / 屏幕适配 / 字体策略 / google_fonts 取舍 | [references/layout.md](references/layout.md) | Expanded-Flexible-Wrap 边界 / 滚动容器选型 / Stack 定位 / OverlayPortal 浮层全例 / 适配三选一（A1/A2/A3）/ 字体策略单源（打包铁律 · 分场景接入 · 统一注入点；1.3.0 自双模板 §七 下沉） |
 | 技术栈预设族（app 预设 A/B/C＋plugin 类型 A/B）/ 状态管理 | [references/state-management.md](references/state-management.md) | 预设族全文与选型注记（1.3.0 自双模板 §七 下沉）/ Notifier 模式 / Provider 就近组织 / ConsumerWidget vs ConsumerStatefulWidget 强制 / autoDispose 生命周期（选 A 时生效） |
@@ -30,6 +30,7 @@ description: Flutter/Dart 技术最佳实践参考——写/审 Flutter 代码�
 | 卡顿 / 内存 / 低配设备 / 线上崩溃 | [references/performance.md](references/performance.md) | DevTools 双线程归因（UI/Raster 列说话）/ 图片按显示尺寸解码（低配 OOM 头号根因）/ FlutterError + PlatformDispatcher 双钩子 / 符号化依赖 |
 | 配 CI / 出包 / 签名 / 混淆 / 发 pub 包 | [references/build-release.md](references/build-release.md) | flavor 与 dart-define 选型 / keystore 与 iOS 证书纪律 / symbols 归档 / App 发布前检查与 pub 发布检查 |
 | 打多渠道马甲包 / 新增渠道 / 四平台 flavor 落地 | [references/flavors-channels.md](references/flavors-channels.md) | 马甲包三层心智模型 / 版本门槛（Windows flavor 需 3.47+）/ 渠道矩阵（7 渠道，密钥脱敏）/ Android·iOS·Windows·macOS 逐步实操＋验证标准 / Jenkins 链路 / 坑位速查表 |
+| 写第三方包调用（非基础用法）/ 版本门槛特性 / 升级后报错 | [references/dependency-verification.md](references/dependency-verification.md) | 定位已装版本（package_config → pub cache：hosted／git 检出；Windows/PUB_CACHE）→ 读源码与 CHANGELOG → 拿不准以 analyze/test 实跑判定 |
 | 支付 / 退款 / 核销 / 涉钱接口 | [references/payment.md](references/payment.md) | 防重三层口径（判定线 / 请求号语义警示）/ 不可逆操作时序 / 重试红线 |
 
 ## dart-flutter skill 速查（1.0.10 自双模板 §十一下沉）
